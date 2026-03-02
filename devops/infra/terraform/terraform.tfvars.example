@@ -1,0 +1,23 @@
+# Copy to terraform.tfvars and set values. Do not commit terraform.tfvars if it contains secrets.
+# Required (no default): db_username, db_password, repo_url, api_url
+# Optional: backend_image (if unset, ECR repo is created by Terraform and image = repo_url:backend_image_tag)
+
+aws_region   = "eu-north-1"
+project_name = "community-board"
+
+db_username = "postgres"
+# db_password = "set-me"           # required, use TF_VAR_db_password or -var
+db_name     = "communityboard"
+
+# ECR is created by Terraform. Leave backend_image unset to use repo_url:backend_image_tag.
+# backend_image_tag = "latest"     # or set to git sha; CI pushes :latest and :<sha>
+# ecr_repository_name = "communityboard-backend"  # must match CI ECR_REPOSITORY
+
+# JWT secret for backend (or set TF_VAR_jwt_secret)
+# jwt_secret = ""
+
+repo_url = "https://github.com/your-org/your-repo"
+# api_url: after first apply use ALB DNS, e.g. "http://community-board-alb-xxxxx.eu-north-1.elb.amazonaws.com"
+api_url = ""
+
+# github_token = ""  # optional for private repo

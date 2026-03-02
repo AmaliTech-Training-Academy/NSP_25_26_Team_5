@@ -1,0 +1,18 @@
+# Production environment – copy to terraform.tfvars and set secrets. Do not commit terraform.tfvars.
+
+environment = "production"
+aws_region  = "eu-north-1"
+
+vpc_cidr = "10.2.0.0/16"
+
+db_username       = "postgres"
+# db_password       = "set-me"
+db_name           = "communityboard"
+db_instance_class = "db.t3.small"
+
+# jwt_secret = ""
+repo_url = "https://github.com/your-org/your-repo"
+# github_token = ""
+
+# SNS: set alert email for production notifications
+alert_email = "prod-alerts@example.com"

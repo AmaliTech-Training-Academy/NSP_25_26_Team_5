@@ -1,0 +1,39 @@
+import React, { type MouseEvent } from "react";
+import { Link } from "react-router";
+import { useAuth } from "../context/AuthContext";
+
+const Navbar = () => {
+  const { user, logout } = useAuth();
+
+  const handleLogoutClick = (e: MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    logout();
+  };
+
+  return (
+    <nav className="navbar">
+      <Link to="/" style={{ fontSize: "20px", fontWeight: "bold" }}>
+        CommunityBoard
+      </Link>
+      <div>
+        <Link to="/">Home</Link>
+        {user ? (
+          <>
+            <Link to="/create-post">New Post</Link>
+            <span style={{ marginLeft: 20 }}>Hi, {user.name}</span>
+            <a href="#" onClick={handleLogoutClick} style={{ marginLeft: 20 }}>
+              Logout
+            </a>
+          </>
+        ) : (
+          <>
+            <Link to="/login">Login</Link>
+            <Link to="/register">Register</Link>
+          </>
+        )}
+      </div>
+    </nav>
+  );
+};
+
+export default Navbar;
