@@ -57,7 +57,7 @@ jobs:
         working-directory: ./frontend
         run: npm run build
 
-  codeqwality
+  codeqwality:
     name: codeQL analysis
     runs-on: ubuntu-latest
     steps:
