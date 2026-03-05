@@ -7,9 +7,14 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d communityboard"]
+      interval: 2s
+      timeout: 5s
+      retries: 5
 
   backend:
     build: ./backend
@@ -21,7 +26,8 @@ services:
       SPRING_DATASOURCE_PASSWORD: postgres
       JWT_SECRET: communityboard-secret-key-amalitech-2024
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
 
   frontend:
     build: ./frontend
