@@ -104,8 +104,10 @@ jobs:
       - name: Build Docker image
         run: docker build -t communityboard-backend ./backend
       - name: Tag Docker image
-        run: docker tag communityboard-backend ${{ secrets.DOCKER_USERNAME }}/communityboard-backend:${{ github.sha }}
+        run: docker tag communityboard-backend ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/communityboard-backend:${{ github.sha }}
       - name: Push Docker image to ECR  
         run: aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
         run: docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/communityboard-backend:${{ github.sha }}
+      - name: Deploy to ECS
+        run: aws ecs update-service --cluster communityboard-cluster --service communityboard-service --force-new-deployment
 
