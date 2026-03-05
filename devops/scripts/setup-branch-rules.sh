@@ -1,6 +1,6 @@
 #!/bin/bash
 # Configure branch protection rules for the repository via GitHub API.
-#
+# 
 # Rules applied:
 #   1. No direct push to main — require a pull request to merge
 #   2. No force push
@@ -41,7 +41,7 @@ fi
 
 if [ -z "$GITHUB_TOKEN" ]; then
   echo "Error: GITHUB_TOKEN is not set."
-  echo "Create a token at: https://github.com/settings/tokens (scope: repo)"
+  echo "Create a token at: https://github.com/settings/tokens (scope: repo)"  
   exit 1
 fi
 
