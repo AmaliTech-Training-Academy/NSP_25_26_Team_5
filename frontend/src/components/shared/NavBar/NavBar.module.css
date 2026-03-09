@@ -1,0 +1,298 @@
+.navBar {
+  width: 100%;
+  padding: 10px 24px;
+  border-bottom: 1px solid #e6eaeb;
+  background: #fdfdfd;
+  font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.mobileMenuToggle {
+  position: fixed;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.mobileContent {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mobileLogo {
+  width: 70px;
+  height: auto;
+  display: block;
+}
+
+.iconOnlyButton {
+  border: none;
+  background: transparent;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.mobileMenuIcon {
+  width: 24px;
+  height: 24px;
+  color: #08283b;
+}
+
+.desktopContent {
+  display: none;
+}
+
+.mobileSidebar {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: #fdfdfd;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+  padding: 24px 24px 0;
+}
+
+.mobileMenuToggle:checked ~ .mobileSidebar {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.mobileSidebarTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  width: 100%;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e6eaeb;
+}
+
+.mobileSidebarUserInfo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.mobileSidebarAvatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: #c3c3c2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #222220;
+  text-align: center;
+  font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 12px;
+  flex-shrink: 0;
+}
+
+.mobileSidebarUserText {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+}
+
+.mobileSidebarUserName {
+  margin: 0;
+  color: #08283b;
+  font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 600;
+  line-height: 14px;
+  white-space: nowrap;
+}
+
+.mobileSidebarUserEmail {
+  margin: 0;
+  color: #395362;
+  font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 12px;
+  white-space: nowrap;
+}
+
+.sidebarCloseButton {
+  border: none;
+  background: transparent;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.sidebarCloseIcon {
+  width: 24px;
+  height: 24px;
+  color: #08283b;
+}
+
+.mobileSidebarActions {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-top: 20px;
+}
+
+.mobileActionButton {
+  width: 100%;
+  border: none;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.mobileLogoutActionButton {
+  border-top: 1px solid #e6eaeb;
+  border-radius: 0;
+  padding-top: 20px;
+}
+
+.actionIcon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.analyticsIcon {
+  color: #061c2a;
+}
+
+.analyticsText {
+  color: #061c2a;
+  font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.logoutText {
+  color: #c81e1e;
+  font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+@media (min-width: 1024px) {
+  .mobileMenuToggle,
+  .mobileSidebar {
+    display: none;
+  }
+
+  .navBar {
+    padding: 10px 120px;
+  }
+
+  .mobileContent {
+    display: none;
+  }
+
+  .desktopContent {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .desktopLogo {
+    width: 100px;
+    height: auto;
+    display: block;
+  }
+
+  .desktopActions {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .desktopActionButton {
+    border: none;
+    background: transparent;
+    padding: 10px 20px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+  }
+
+  .userInfo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    background: #c3c3c2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #222220;
+    text-align: center;
+    font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 12px;
+    font-style: normal;
+    font-weight: 500;
+    line-height: 12px;
+  }
+
+  .userText {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .userName {
+    margin: 0;
+    color: #08283b;
+    font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 14px;
+    font-style: normal;
+    font-weight: 600;
+    line-height: 14px;
+    white-space: nowrap;
+  }
+
+  .userEmail {
+    margin: 0;
+    color: #395362;
+    font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 12px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 12px;
+    white-space: nowrap;
+  }
+
+}
