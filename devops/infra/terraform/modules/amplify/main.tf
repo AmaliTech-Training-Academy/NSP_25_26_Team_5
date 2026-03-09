@@ -69,9 +69,9 @@ resource "aws_iam_role_policy_attachment" "amplify_cloudwatch" {
   policy_arn = "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
 }
 
-resource "aws_amplify_branch" "main" {
+resource "aws_amplify_branch" "dev" {
   app_id      = aws_amplify_app.frontend.id
-  branch_name = "main"
+  branch_name = "dev"
 
   enable_auto_build = true
 
