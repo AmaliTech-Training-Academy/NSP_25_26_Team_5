@@ -7,7 +7,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import CreatePost from "./pages/CreatePost";
 
-function App() {
+const App = () => {
   return (
     <AuthProvider>
       <Router>
@@ -23,6 +23,6 @@ function App() {
       </Router>
     </AuthProvider>
   );
-}
+};
 
 export default App;
