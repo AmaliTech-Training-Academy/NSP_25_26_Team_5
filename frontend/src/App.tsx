@@ -1,27 +1,26 @@
-import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router";
-import { AuthProvider } from "./context/AuthContext";
-import Navbar from "./components/Navbar";
+import { Route, Routes } from "react-router";
+import PublicRoute from "./app/router/PublicRoute";
+import Login from "./features/auth/pages/Login/Login";
+import Register from "./features/auth/pages/Register/Register";
+import ProtectedRoute from "./app/router/ProtectedRoute";
+import MainLayout from "./components/shared/MainLayout/MainLayout";
 import Home from "./pages/Home";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import CreatePost from "./pages/CreatePost";
+
 
 const App = () => {
   return (
-    <AuthProvider>
-      <Router>
-        <Navbar />
-        <div className="container">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/create-post" element={<CreatePost />} />
-          </Routes>
-        </div>
-      </Router>
-    </AuthProvider>
+    <Routes>
+      <Route element={<PublicRoute />}>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+      </Route>
+
+      <Route element={<ProtectedRoute />}>
+        <Route element={<MainLayout />}>
+          <Route index element={<Home />} />
+        </Route>
+      </Route>
+    </Routes>
   );
 };
 
