@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { postAPI } from "../services/api";
+import { postAPI, type Post } from "../services/api";
 
 const Home = () => {
-  const [posts, setPosts] = useState([]);
+  const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
