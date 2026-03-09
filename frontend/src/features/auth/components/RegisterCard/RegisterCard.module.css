@@ -1,0 +1,85 @@
+.registerCard {
+  width: 100%;
+  max-width: 428px;
+  padding: 20px;
+  background: #f5f6f8;
+  border-radius: 20px;
+}
+
+.registerCardContent {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 36px;
+}
+
+.headerSection {
+  width: min(100%, 311px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.logo {
+  width: 86px;
+  height: 35.26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logoSvg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.titleGroup {
+  width: 100%;
+  text-align: center;
+}
+
+.title {
+  margin: 0;
+  color: #041620;
+  font-family: "Poppins", "Segoe UI", sans-serif;
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.subtitle {
+  margin: 0;
+  color: #395362;
+  font-family: "Inter", "Segoe UI", sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+@media (min-width: 521px) {
+  .registerCard {
+    padding: 24px 32px;
+
+    border: 1px solid #e6eaeb;
+  }
+
+  .registerCardContent {
+    gap: 48px;
+  }
+
+  .headerSection {
+    gap: 32px;
+  }
+
+  .logo {
+    width: 100px;
+    height: 41px;
+  }
+
+  .title {
+    font-size: 32px;
+  }
+}
