@@ -9,6 +9,6 @@ terraform {
   }
 
   backend "s3" {
-          
+
   }
 }

@@ -15,6 +15,12 @@ dnf install -y docker
 systemctl enable docker
 systemctl start docker
 
+# Wait for IAM instance profile to be available (propagation delay)
+for i in 1 2 3 4 5 6 7 8 9 10; do
+  if aws sts get-caller-identity --region "$AWS_REGION" 2>/dev/null; then break; fi
+  sleep 3
+done
+
 # ECR login (instance role has ECR read); $$ escapes for Terraform template
 aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$${ECR_BACKEND%%/*}"
 
@@ -31,6 +37,7 @@ docker run -d --name postgres --restart unless-stopped --network appnet \
 
 # Wait for Postgres to accept connections
 until docker exec postgres pg_isready -U "$DB_USER" -d "$DB_NAME"; do sleep 2; done
+sleep 5
 
 # Backend: connect to postgres via container name
 docker run -d --name backend --restart unless-stopped --network appnet \

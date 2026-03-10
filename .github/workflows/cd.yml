@@ -103,6 +103,13 @@ jobs:
           -backend-config="region=${{ secrets.AWS_REGION }}" \
           -backend-config="dynamodb_table=${{ secrets.TF_LOCK_TABLE }}"
 
+      - name: Ensure head SHA is set
+        run: |
+          if [ -z "${{ needs.setup.outputs.head_sha }}" ]; then
+            echo "::error::head_sha is empty; cannot tag images"
+            exit 1
+          fi
+
       - name: Terraform plan
         working-directory: ${{ needs.setup.outputs.tf_working_dir }}
         run: terraform plan -input=false -no-color -out=tfplan

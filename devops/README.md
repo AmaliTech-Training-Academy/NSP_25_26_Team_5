@@ -16,6 +16,7 @@ This folder contains the **CI/CD pipelines** (GitHub Actions) and **AWS infrastr
 - [Local Deployment](#local-deployment)
 - [Backend for all environments](#backend-for-all-environments)
 - [Required Secrets & Variables](#required-secrets--variables)
+- [Deployment failure causes](#deployment-failure-causes)
 - [Runbook](#runbook)
 
 ---
@@ -392,6 +393,28 @@ Use when a variable must **differ per environment** (e.g. different alert email 
 - **Environment** = one value per GitHub Environment (dev, staging, production); use for env-specific config (different DB, JWT, alert email). The CD deploy job uses `environment: ${{ env.ENVIRONMENT }}`, so it reads that environment’s secrets and variables.
 - **Secrets** = sensitive (passwords, JWT). **Variables** = non-sensitive (e.g. alert email); can still be overridden per environment.
 - State key is derived as `community-board/<env>/terraform.tfstate`. ECR repos: `communityboard-<env>` (backend), `communityboard-frontend-<env>` (frontend).
+
+---
+
+## Deployment failure causes
+
+Things that can cause CD or runtime to fail, and how to avoid or fix them:
+
+| Cause | Symptom | Fix |
+|-------|---------|-----|
+| **Missing GitHub secrets** | Terraform plan/apply fails with “variable not set” or empty value | Set `TF_VAR_DB_USERNAME`, `TF_VAR_DB_PASSWORD`, `TF_VAR_JWT_SECRET` (and `AWS_ROLE_ARN`, `AWS_REGION`, `TF_STATE_BUCKET`, `TF_LOCK_TABLE`) for the repo or the deploy environment. |
+| **CI did not succeed** | CD never runs | CD runs only when `workflow_run` (CI) completes with `conclusion == 'success'`. Fix CI (tests, build, lint) first. |
+| **Wrong workflow trigger** | CD not triggered | CD is triggered only for branches `main`, `dev`, `staging`. Push/merge to one of these and ensure CI runs on that branch. |
+| **Empty `head_sha`** | CD fails at “Ensure head SHA is set” or invalid image tag | Unusual; re-run after a normal push. Ensure workflow is triggered by `workflow_run` with a valid commit. |
+| **Terraform fmt check** | “terraform fmt -check” fails in validate job | Run `terraform fmt -recursive` under `devops/infra/terraform` and commit. |
+| **ECR apply / push order** | Images not found when EC2 user-data runs | CD applies ECR → builds and pushes both images → then applies rest. Do not run “apply remaining” alone before images exist; run full CD. |
+| **IAM not ready on boot** | user-data: `aws ecr get-login-password` or `aws sts get-caller-identity` fails | Instance profile can take a few seconds. User-data now retries for ~30s; if it still fails, check IAM role and instance profile attachment. |
+| **No NAT / no outbound** | EC2 cannot pull from ECR (connection timeout) | EC2 is in private subnet; it needs a NAT Gateway and private route to 0.0.0.0/0. Network module provides this; ensure it’s applied. |
+| **Backend or frontend build fails** | Docker build step fails in CD | Fix backend (Maven) or frontend (npm) build locally; check Dockerfile and dependencies. |
+| **Backend fails to start** | ALB backend target group unhealthy (e.g. /api/categories not 200) | Check EC2 system log or container logs: DB connect (user/password, `postgres` host), schema/data.sql errors. Ensure `defer-datasource-initialization: true` and Postgres is up before backend starts. |
+| **Frontend container fails** | ALB frontend target group unhealthy | Check that frontend image builds (Vite `outDir: "build"`) and Nginx serves `/`; check EC2/container logs. |
+| **Secrets with special characters** | user-data script fails or wrong env in container | Avoid `$`, `"`, `` ` `` in `TF_VAR_DB_PASSWORD` and `TF_VAR_JWT_SECRET`; or escape for shell if you need them. |
+| **Instance replaced every deploy** | Short downtime on each deploy | `user_data_replace_on_change = true` and new image tags force new instance. Expected; new instance takes 2–5 min to boot and pass health checks. |
 
 ---
 
