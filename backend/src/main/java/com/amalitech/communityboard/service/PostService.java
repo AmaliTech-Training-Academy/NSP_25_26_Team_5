@@ -52,7 +52,8 @@ public class PostService {
     public PostResponse updatePost(Long id, PostRequest request, User author) {
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Post not found"));
-        if (!post.getAuthor().getId().equals(author.getId())) {
+        if (!post.getAuthor().getId().equals(author.getId())
+                && !author.getRole().name().equals("ADMIN")) {
             throw new RuntimeException("Not authorized to update this post");
         }
         post.setTitle(request.getTitle());

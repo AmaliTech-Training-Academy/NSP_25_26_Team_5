@@ -9,7 +9,10 @@ import { useAuth } from "../../context/AuthContext/AuthContext";
 import { postAPI } from "../../features/post/api/api.post";
 import CreatePostModal from "../../features/post/components/CreatePostModal";
 import type { CreatePostFormValues } from "../../features/post/components/CreatePostModal";
+import EditPostModal from "../../features/post/components/EditPostModal";
+import type { EditPostFormValues } from "../../features/post/components/EditPostModal";
 import PostFeed from "../../features/post/components/PostFeed/PostFeed";
+import type { PostCardData } from "../../features/post/components/PostCard/PostCard.types";
 import { usePaginatedPosts } from "../../hooks";
 import styles from "./Home.module.css";
 import { mapPostToCardData } from "./Home.utils";
@@ -24,6 +27,8 @@ export default function HomePage() {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
+  const [isEditPostOpen, setIsEditPostOpen] = useState(false);
+  const [postBeingEdited, setPostBeingEdited] = useState<PostCardData | null>(null);
   const [postFeedScope, setPostFeedScope] = useState<PostFeedScope>("ALL_POSTS");
   const [postActionErrorMessage, setPostActionErrorMessage] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState("");
@@ -119,9 +124,42 @@ export default function HomePage() {
     }
   }
 
-  // Opens a post detail route as the current edit-entry point.
+  // Opens the edit modal for the selected post card.
   function handleEditPost(postId: string) {
-    navigate(`/posts/${postId}`);
+    const targetPost = homePosts.find((post) => post.id === postId);
+
+    if (!targetPost) {
+      return;
+    }
+
+    setPostActionErrorMessage(null);
+    setPostBeingEdited(targetPost);
+    setIsEditPostOpen(true);
+  }
+
+  // Closes edit modal and clears selected post state.
+  function handleCloseEditPostModal() {
+    setIsEditPostOpen(false);
+    setPostBeingEdited(null);
+  }
+
+  // Submits post update payload and refreshes the edited card in the feed.
+  async function handleEditPostSubmit(values: EditPostFormValues): Promise<void> {
+    try {
+      const response = await postAPI.update(Number(values.postId), {
+        title: values.title,
+        content: values.body,
+        categoryId: values.categoryId,
+      });
+
+      const updatedPost = mapPostToCardData(response.data);
+      setHomePosts((previousPosts) =>
+        previousPosts.map((post) => (post.id === updatedPost.id ? updatedPost : post)),
+      );
+      setPostActionErrorMessage(null);
+    } catch {
+      throw new Error("Unable to update this post right now. Please try again.");
+    }
   }
 
   // Deletes a post and removes it from the current feed view.
@@ -250,6 +288,15 @@ export default function HomePage() {
           isOpen={isCreatePostOpen}
           onClose={handleCloseCreatePostModal}
           onCreatePost={handleCreatePost}
+        />
+      )}
+
+      {isAuthenticated && (
+        <EditPostModal
+          isOpen={isEditPostOpen}
+          post={postBeingEdited}
+          onClose={handleCloseEditPostModal}
+          onEditPost={handleEditPostSubmit}
         />
       )}
     </main>
