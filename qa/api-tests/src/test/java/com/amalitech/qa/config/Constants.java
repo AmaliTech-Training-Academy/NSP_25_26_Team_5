@@ -26,10 +26,10 @@ public final class Constants {
     public static final String ANALYTICS = "/api/analytics";
 
     // Seeded credentials
-    public static final String ADMIN_EMAIL    = "admin@amalitech.com";
+    public static final String ADMIN_EMAIL    = "peace@gmail.com";
     public static final String ADMIN_PASSWORD = "password123";
-    public static final String USER_EMAIL     = "user@amalitech.com";
-    public static final String USER_PASSWORD  = "password123";
+//    public static final String USER_EMAIL     = "user@amalitech.com";
+//    public static final String USER_PASSWORD  = "password123";
 
     // Categories
     public static final String CATEGORY_EVENTS          = "Events";

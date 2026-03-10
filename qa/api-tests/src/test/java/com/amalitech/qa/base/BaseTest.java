@@ -31,6 +31,10 @@ public abstract class BaseTest {
     private static String adminToken;
     private static String userToken;
 
+    // Self-provisioned user credentials — created once per session
+    private static final String DYNAMIC_USER_EMAIL    = "testuser." + System.currentTimeMillis() + "@test.com";
+    private static final String DYNAMIC_USER_PASSWORD = "Secure@123";
+
     @BeforeAll
     static void init() {
         RestAssured.baseURI = Constants.BASE_URL;
@@ -47,7 +51,18 @@ public abstract class BaseTest {
 
     protected static String userToken() {
         if (userToken == null) {
-            userToken = fetchToken(Constants.USER_EMAIL, Constants.USER_PASSWORD);
+            // Register a fresh user, then immediately login
+            given()
+                    .spec(guestSpec())
+                    .body(Map.of(
+                            "fullName", "Test User",
+                            "email",    DYNAMIC_USER_EMAIL,
+                            "password", DYNAMIC_USER_PASSWORD
+                    ))
+                    .when()
+                    .post(Constants.REGISTER);
+
+            userToken = fetchToken(DYNAMIC_USER_EMAIL, DYNAMIC_USER_PASSWORD);
         }
         return userToken;
     }
