@@ -1,4 +1,6 @@
 
+import type { BadgeType } from "../../../components/ui/Button/Button.types";
+
 export interface PagedResponse<T> {
   content: T[];
   totalElements: number;
@@ -14,9 +16,15 @@ export interface PagedResponse<T> {
 export interface PostPayload {
   title: string;
   content: string;
-  categoryId: number | string | null;}
+  categoryId: number | string | null;
+}
 
-  export interface Post {
+export interface CategoryData {
+  badgeLabel: string;
+  badgeType?: BadgeType;
+}
+
+export interface Post {
   id: number;
   title: string;
   content: string;
