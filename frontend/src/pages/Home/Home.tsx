@@ -22,9 +22,10 @@ type PostFeedScope = "ALL_POSTS" | "MY_POSTS";
 // Renders the home feed with search and category controls for mobile and desktop.
 export default function HomePage() {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   const [postFeedScope, setPostFeedScope] = useState<PostFeedScope>("ALL_POSTS");
+  const [postActionErrorMessage, setPostActionErrorMessage] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<FilterCategory>("ALL");
@@ -85,6 +86,7 @@ export default function HomePage() {
   // Toggles between all posts and authenticated-user posts.
   function handleToggleYourPosts() {
     setCurrentPage(1);
+    setPostActionErrorMessage(null);
     setPostFeedScope((previousScope) =>
       previousScope === "MY_POSTS" ? "ALL_POSTS" : "MY_POSTS",
     );
@@ -117,7 +119,46 @@ export default function HomePage() {
     }
   }
 
+  // Opens a post detail route as the current edit-entry point.
+  function handleEditPost(postId: string) {
+    navigate(`/posts/${postId}`);
+  }
+
+  // Deletes a post and removes it from the current feed view.
+  async function handleDeletePost(postId: string) {
+    const parsedPostId = Number(postId);
+
+    if (Number.isNaN(parsedPostId)) {
+      return;
+    }
+
+    const hasConfirmedDelete = window.confirm(
+      "Are you sure you want to delete this post?",
+    );
+
+    if (!hasConfirmedDelete) {
+      return;
+    }
+
+    setPostActionErrorMessage(null);
+
+    try {
+      await postAPI.delete(parsedPostId);
+      setHomePosts((previousPosts) =>
+        previousPosts.filter((post) => post.id !== postId),
+      );
+    } catch {
+      setPostActionErrorMessage(
+        "Unable to delete this post right now. Please try again.",
+      );
+    }
+  }
+
+  const normalizedRole = user?.role?.toUpperCase();
+  const isAdminUser =
+    normalizedRole === "ADMIN" || normalizedRole === "ROLE_ADMIN";
   const isYourPostsActive = postFeedScope === "MY_POSTS";
+  const canManageVisiblePosts = isAdminUser || isYourPostsActive;
   const shouldCenterEmptyFeed = filteredPosts.length === 0;
 
   return (
@@ -178,9 +219,20 @@ export default function HomePage() {
         </p>
       )}
 
+      {!isLoadingPosts && !postsErrorMessage && postActionErrorMessage && (
+        <p className={styles.errorMessage} role="alert">
+          {postActionErrorMessage}
+        </p>
+      )}
+
       {!isLoadingPosts && !postsErrorMessage && (
         <div className={shouldCenterEmptyFeed ? styles.emptyFeed : undefined}>
-          <PostFeed posts={filteredPosts} />
+          <PostFeed
+            posts={filteredPosts}
+            showPostActions={canManageVisiblePosts}
+            onEditPost={handleEditPost}
+            onDeletePost={handleDeletePost}
+          />
         </div>
       )}
 

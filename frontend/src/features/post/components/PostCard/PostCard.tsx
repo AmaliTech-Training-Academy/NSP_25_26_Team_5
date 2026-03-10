@@ -5,9 +5,17 @@ import { joinButtonClassName } from "../../../../components/ui/Button/Button.uti
 import Button from "../../../../components/ui/Button/Button";
 import MessageCircleMoreIcon from "../../../../assets/Icons/MessageCircleMoreIcon";
 import ClockIcon from "../../../../assets/Icons/ClockIcon";
+import PenIcon from "../../../../assets/Icons/PenIcon";
+import Trash2Icon from "../../../../assets/Icons/Trash2Icon";
 
 
-export default function PostCard({ post, className }: PostCardProps) {
+export default function PostCard({
+  post,
+  className,
+  canManage = false,
+  onEdit,
+  onDelete,
+}: PostCardProps) {
   const badgeClassName = styles.badge;
   const containerClassName = joinButtonClassName(styles.postCard, className);
 
@@ -36,9 +44,41 @@ export default function PostCard({ post, className }: PostCardProps) {
           </div>
         </div>
 
-        <div className={styles.comments} aria-label={`${post.commentsCount} comments`}>
-          <MessageCircleMoreIcon className={styles.icon} />
-          <p className={styles.commentCount}>{post.commentsCount}</p>
+        <div className={styles.footerRight}>
+          {canManage && (
+            <div className={styles.postActions} aria-label="Post actions">
+              <button
+                type="button"
+                className={styles.postActionButton}
+                aria-label={`Edit ${post.title}`}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  onEdit?.(post.id);
+                }}
+              >
+                <PenIcon className={styles.editIcon} />
+              </button>
+
+              <button
+                type="button"
+                className={styles.postActionButton}
+                aria-label={`Delete ${post.title}`}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  onDelete?.(post.id);
+                }}
+              >
+                <Trash2Icon className={styles.deleteIcon} />
+              </button>
+            </div>
+          )}
+
+          <div className={styles.comments} aria-label={`${post.commentsCount} comments`}>
+            <MessageCircleMoreIcon className={styles.icon} />
+            <p className={styles.commentCount}>{post.commentsCount}</p>
+          </div>
         </div>
       </footer>
     </article>

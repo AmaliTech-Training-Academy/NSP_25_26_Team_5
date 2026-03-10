@@ -96,8 +96,54 @@
   white-space: nowrap;
 }
 
-.comments {
+.footerRight {
   margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.postActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.postActionButton {
+  border: none;
+  background: transparent;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.editIcon,
+.deleteIcon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.editIcon {
+  color: #08283b;
+}
+
+.deleteIcon {
+  color: #dc2626;
+}
+
+.postActionButton:focus-visible {
+  outline: 2px solid #0f4f75;
+  outline-offset: 2px;
+}
+
+.comments {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -118,6 +164,21 @@
   height: 16px;
   color: #5a6f7c;
   flex-shrink: 0;
+}
+
+.postCard:hover .postActions,
+.postCard:focus-within .postActions {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+@media (hover: none) {
+  .postActions {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
 }
 
 @media (min-width: 521px) {
