@@ -1,7 +1,8 @@
 import type { EmptyPostsProps } from "./EmptyPosts.types";
 import { joinClassName } from "./EmptyPosts.utils";
 import styles from "./EmptyPosts.module.css";
-import EmptyPostsIcon from "../Icons/EmptyPostsIcon";
+import EmptyPostsIcon from "../../../../assets/Icons/EmptyPostsIcon";
+
 
 export default function EmptyPosts({
   className,

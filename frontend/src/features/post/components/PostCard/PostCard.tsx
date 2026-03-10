@@ -1,9 +1,10 @@
-import Button from "../Button/Button";
-import { joinButtonClassName } from "../Button/Button.utils";
-import ClockIcon from "../Icons/ClockIcon";
-import MessageCircleMoreIcon from "../Icons/MessageCircleMoreIcon";
+
 import type { PostCardProps } from "./PostCard.types";
 import styles from "./PostCard.module.css";
+import { joinButtonClassName } from "../../../../components/ui/Button/Button.utils";
+import Button from "../../../../components/ui/Button/Button";
+import MessageCircleMoreIcon from "../../../../assets/Icons/MessageCircleMoreIcon";
+import ClockIcon from "../../../../assets/Icons/ClockIcon";
 
 
 export default function PostCard({ post, className }: PostCardProps) {
