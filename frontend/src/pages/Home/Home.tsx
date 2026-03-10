@@ -1,9 +1,13 @@
 import { useMemo, useState } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router";
 import type { FilterCategory } from "../../components/shared/FilterBar";
 import FilterBar from "../../components/shared/FilterBar";
 import Paginations from "../../components/shared/Paginations";
 import SearchBar from "../../components/shared/SearchBar";
 import Button from "../../components/ui/Button/Button";
+import { useAuth } from "../../context/AuthContext/AuthContext";
+import { postAPI } from "../../features/post/api/api.post";
 import CreatePostModal from "../../features/post/components/CreatePostModal";
 import type { CreatePostFormValues } from "../../features/post/components/CreatePostModal";
 import PostFeed from "../../features/post/components/PostFeed/PostFeed";
@@ -11,11 +15,15 @@ import type { PostCardData } from "../../features/post/components/PostCard/PostC
 import { usePaginatedPosts } from "../../hooks";
 import styles from "./Home.module.css";
 import { mapPostToCardData } from "./Home.utils";
+import { findCreatePostErrorMessage } from "../../features/post/utils/post.utils";
 
 const PAGE_SIZE = 10;
 
+
 // Renders the home feed with search and category controls for mobile and desktop.
 export default function HomePage() {
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -74,19 +82,26 @@ export default function HomePage() {
   }
 
   // Adds a newly created post to the top of the feed.
-  function handleCreatePost(values: CreatePostFormValues) {
-    const nextPost: PostCardData = {
-      id: `post-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      title: values.title,
-      content: values.details,
-      writerName: "John Doe",
-      time: "just now",
-      commentsCount: 0,
-      badgeLabel: values.categoryLabel,
-      badgeType: values.category,
-    };
+  async function handleCreatePost(values: CreatePostFormValues): Promise<void> {
+    try {
+      const response = await postAPI.create({
+        title: values.title,
+        content: values.body,
+        categoryId: values.categoryId,
+      });
 
-    setHomePosts((previousPosts) => [nextPost, ...previousPosts]);
+      const createdPost = mapPostToCardData(response.data);
+      const nextPost: PostCardData = {
+        ...createdPost,
+        badgeLabel: values.categoryLabel,
+        badgeType: values.category,
+      };
+
+      setHomePosts((previousPosts) => [nextPost, ...previousPosts]);
+      navigate(`/posts/${response.data.id}`);
+    } catch (error) {
+      throw new Error(findCreatePostErrorMessage(error));
+    }
   }
 
   return (
@@ -100,17 +115,19 @@ export default function HomePage() {
             onSearch={handleSearch}
           />
 
-          <Button
-            variant="primary"
-            className={styles.createPostButton}
-            aria-label="Create post"
-            onClick={handleOpenCreatePostModal}
-          >
-            <span className={styles.createPostIcon} aria-hidden="true">
-              +
-            </span>
-            <span>Create post</span>
-          </Button>
+          {isAuthenticated && (
+            <Button
+              variant="primary"
+              className={styles.createPostButton}
+              aria-label="Create post"
+              onClick={handleOpenCreatePostModal}
+            >
+              <span className={styles.createPostIcon} aria-hidden="true">
+                +
+              </span>
+              <span>Create post</span>
+            </Button>
+          )}
         </div>
 
         <FilterBar
@@ -143,11 +160,13 @@ export default function HomePage() {
         />
       )}
 
-      <CreatePostModal
-        isOpen={isCreatePostOpen}
-        onClose={handleCloseCreatePostModal}
-        onCreatePost={handleCreatePost}
-      />
+      {isAuthenticated && (
+        <CreatePostModal
+          isOpen={isCreatePostOpen}
+          onClose={handleCloseCreatePostModal}
+          onCreatePost={handleCreatePost}
+        />
+      )}
     </main>
   );
 }

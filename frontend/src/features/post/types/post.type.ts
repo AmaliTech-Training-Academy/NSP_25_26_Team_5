@@ -19,8 +19,10 @@ export interface PostPayload {
   categoryId: number | string | null;
 }
 
+export type CategoryLabel = "NEWS" | "EVENT" | "DISCUSSION" | "ALERT";
+
 export interface CategoryData {
-  badgeLabel: string;
+  badgeLabel: CategoryLabel;
   badgeType?: BadgeType;
 }
 
@@ -35,4 +37,8 @@ export interface Post {
   createdAt: string;
   updatedAt: string;
   commentCount: number;
+}
+export interface ApiErrorPayload {
+  message?: string;
+  error?: string;
 }

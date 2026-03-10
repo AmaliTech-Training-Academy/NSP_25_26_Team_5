@@ -9,16 +9,25 @@ export function findCategoryData(categoryName: string | null): CategoryData {
   switch (normalized) {
     case BadgeType.EVENT:
     case "EVENTS":
-      return { badgeLabel: "Events", badgeType: BadgeType.EVENT };
-    case BadgeType.ALERT:
-      return { badgeLabel: "Alert", badgeType: BadgeType.ALERT };
+      return { badgeLabel: "EVENT", badgeType: BadgeType.EVENT };
+    case "TECH":
+    case "RECOMMENDATIONS":
     case BadgeType.DISCUSSION:
-      return { badgeLabel: "Discussion", badgeType: BadgeType.DISCUSSION };
+      return { badgeLabel: "DISCUSSION", badgeType: BadgeType.DISCUSSION };
+    case "HELP":
+    case "HELP REQUEST":
+    case "HELP REQUESTS":
+    case "LOST & FOUND":
+    case "LOST AND FOUND":
+    case BadgeType.ALERT:
+      return { badgeLabel: "ALERT", badgeType: BadgeType.ALERT };
     case BadgeType.NEWS:
-      return { badgeLabel: "News", badgeType: BadgeType.NEWS };
+    case "GENERAL":
+      return { badgeLabel: "NEWS", badgeType: BadgeType.NEWS };
     default:
       return {
-        badgeLabel: categoryName?.trim() || "General",
+        badgeLabel: "NEWS",
+        badgeType: BadgeType.NEWS,
       };
   }
 }
