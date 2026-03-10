@@ -10,45 +10,106 @@ import CloseIcon from "../../../assets/Icons/CloseIcon";
 
 export default function NavBar({
   className,
-  user = { name: "no name", email: "" },
+  user,
   onMenuClick,
   onAnalyticsClick,
   onLogoutClick,
 }: NavBarProps) {
   const navBarClassName = joinNavBarClassName(styles.navBar, className);
-  const initials = user.initials ?? getUserInitials(user.name);
+  const initials = user ? user.initials ?? getUserInitials(user.name) : "";
   const mobileMenuToggleId = useId();
 
   return (
     <>
-      <input
-        id={mobileMenuToggleId}
-        type="checkbox"
-        className={styles.mobileMenuToggle}
-        aria-hidden="true"
-      />
+      {user && (
+        <input
+          id={mobileMenuToggleId}
+          type="checkbox"
+          className={styles.mobileMenuToggle}
+          aria-hidden="true"
+        />
+      )}
 
       <header className={navBarClassName}>
         <div className={styles.mobileContent}>
           <PingLogoIcon className={styles.mobileLogo} />
 
-          <label
-            htmlFor={mobileMenuToggleId}
-            className={styles.iconOnlyButton}
-            aria-label="Open menu"
-            onClick={onMenuClick}
-          >
-            <MenuIcon className={styles.mobileMenuIcon} />
-          </label>
+          {user && (
+            <label
+              htmlFor={mobileMenuToggleId}
+              className={styles.iconOnlyButton}
+              aria-label="Open menu"
+              onClick={onMenuClick}
+            >
+              <MenuIcon className={styles.mobileMenuIcon} />
+            </label>
+          )}
         </div>
 
         <div className={styles.desktopContent}>
           <PingLogoIcon className={styles.desktopLogo} />
 
-          <div className={styles.desktopActions}>
+          {user && (
+            <div className={styles.desktopActions}>
+              <button
+                type="button"
+                className={styles.desktopActionButton}
+                onClick={onAnalyticsClick}
+              >
+                <ChartColumnIcon
+                  className={joinNavBarClassName(
+                    styles.actionIcon,
+                    styles.analyticsIcon,
+                  )}
+                />
+                <span className={styles.analyticsText}>Analytics</span>
+              </button>
+
+              <div className={styles.userInfo}>
+                <div className={styles.avatar}>{initials}</div>
+                <div className={styles.userText}>
+                  <p className={styles.userName}>{user.name}</p>
+                  <p className={styles.userEmail}>{user.email}</p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className={styles.desktopActionButton}
+                onClick={onLogoutClick}
+              >
+                <LogOutIcon className={styles.actionIcon} />
+                <span className={styles.logoutText}>Log out</span>
+              </button>
+            </div>
+          )}
+        </div>
+      </header>
+
+      {user && (
+        <aside className={styles.mobileSidebar} aria-label="Mobile menu">
+          <div className={styles.mobileSidebarTop}>
+            <div className={styles.mobileSidebarUserInfo}>
+              <div className={styles.mobileSidebarAvatar}>{initials}</div>
+              <div className={styles.mobileSidebarUserText}>
+                <p className={styles.mobileSidebarUserName}>{user.name}</p>
+                <p className={styles.mobileSidebarUserEmail}>{user.email}</p>
+              </div>
+            </div>
+
+            <label
+              htmlFor={mobileMenuToggleId}
+              className={styles.sidebarCloseButton}
+              aria-label="Close menu"
+            >
+              <CloseIcon className={styles.sidebarCloseIcon} />
+            </label>
+          </div>
+
+          <div className={styles.mobileSidebarActions}>
             <button
               type="button"
-              className={styles.desktopActionButton}
+              className={styles.mobileActionButton}
               onClick={onAnalyticsClick}
             >
               <ChartColumnIcon
@@ -60,73 +121,20 @@ export default function NavBar({
               <span className={styles.analyticsText}>Analytics</span>
             </button>
 
-            <div className={styles.userInfo}>
-              <div className={styles.avatar}>{initials}</div>
-              <div className={styles.userText}>
-                <p className={styles.userName}>{user.name}</p>
-                <p className={styles.userEmail}>{user.email}</p>
-              </div>
-            </div>
-
             <button
               type="button"
-              className={styles.desktopActionButton}
+              className={joinNavBarClassName(
+                styles.mobileActionButton,
+                styles.mobileLogoutActionButton,
+              )}
               onClick={onLogoutClick}
             >
               <LogOutIcon className={styles.actionIcon} />
               <span className={styles.logoutText}>Log out</span>
             </button>
           </div>
-        </div>
-      </header>
-
-      <aside className={styles.mobileSidebar} aria-label="Mobile menu">
-        <div className={styles.mobileSidebarTop}>
-          <div className={styles.mobileSidebarUserInfo}>
-            <div className={styles.mobileSidebarAvatar}>{initials}</div>
-            <div className={styles.mobileSidebarUserText}>
-              <p className={styles.mobileSidebarUserName}>{user.name}</p>
-              <p className={styles.mobileSidebarUserEmail}>{user.email}</p>
-            </div>
-          </div>
-
-          <label
-            htmlFor={mobileMenuToggleId}
-            className={styles.sidebarCloseButton}
-            aria-label="Close menu"
-          >
-            <CloseIcon className={styles.sidebarCloseIcon} />
-          </label>
-        </div>
-
-        <div className={styles.mobileSidebarActions}>
-          <button
-            type="button"
-            className={styles.mobileActionButton}
-            onClick={onAnalyticsClick}
-          >
-            <ChartColumnIcon
-              className={joinNavBarClassName(
-                styles.actionIcon,
-                styles.analyticsIcon,
-              )}
-            />
-            <span className={styles.analyticsText}>Analytics</span>
-          </button>
-
-          <button
-            type="button"
-            className={joinNavBarClassName(
-              styles.mobileActionButton,
-              styles.mobileLogoutActionButton,
-            )}
-            onClick={onLogoutClick}
-          >
-            <LogOutIcon className={styles.actionIcon} />
-            <span className={styles.logoutText}>Log out</span>
-          </button>
-        </div>
-      </aside>
+        </aside>
+      )}
     </>
   );
 }

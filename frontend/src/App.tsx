@@ -16,10 +16,13 @@ const App = () => {
         <Route path="/register" element={<Register />} />
       </Route>
 
+      <Route element={<MainLayout />}>
+        <Route path="posts/:postId" element={<PostDetail />} />
+      </Route>
+
       <Route element={<ProtectedRoute />}>
         <Route element={<MainLayout />}>
           <Route index element={<Home />} />
-          <Route path="posts/:postId" element={<PostDetail />} />
         </Route>
       </Route>
     </Routes>
