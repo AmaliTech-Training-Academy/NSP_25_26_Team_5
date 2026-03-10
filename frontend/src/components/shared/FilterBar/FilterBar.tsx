@@ -1,4 +1,5 @@
-import Button from "../Button/Button";
+
+import Button from "../../ui/Button/Button";
 import styles from "./FilterBar.module.css";
 import type { FilterBarProps } from "./FilterBar.types";
 import { FILTER_OPTIONS, joinFilterBarClassName } from "./FilterBar.utils";
