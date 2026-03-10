@@ -9,14 +9,19 @@ import {
 
 import styles from "./CreatePostModal.module.css";
 import type {
+  CreatePostFormErrors,
   CreatePostFormValues,
   CreatePostModalProps,
 } from "./CreatePostModal.types";
 import {
   CREATE_POST_CATEGORIES,
+  findCreatePostErrorMessage,
   findCreatePostCategoryId,
   findCreatePostCategoryLabel,
   joinCreatePostModalClassName,
+  TITLE_MAX_LENGTH,
+  TITLE_WARNING_THRESHOLD,
+  validateCreatePostForm,
 } from "./CreatePostModal.utils";
 import { BadgeType } from "../../../../components/ui/Button/Button.types";
 import CloseIcon from "../../../../assets/Icons/CloseIcon";
@@ -26,49 +31,6 @@ import ChevronUpIcon from "../../../../assets/Icons/ChevronUpIcon";
 import ChevronDownIcon from "../../../../assets/Icons/ChevronDownIcon";
 import HouseIcon from "../../../../assets/Icons/HouseIcon";
 import Breadcrumbs from "../../../../components/shared/Breadcrumbs/Breadcrumbs";
-
-const TITLE_MAX_LENGTH = 100;
-const TITLE_WARNING_THRESHOLD = 90;
-
-interface CreatePostFormErrors {
-  title?: string;
-  body?: string;
-  category?: string;
-}
-
-// Validates modal form values and returns field-level error messages.
-function validateCreatePostForm(
-  title: string,
-  body: string,
-  selectedCategory: BadgeType | null,
-): CreatePostFormErrors {
-  const errors: CreatePostFormErrors = {};
-
-  if (title.trim().length === 0) {
-    errors.title = "Title is required.";
-  } else if (title.trim().length > TITLE_MAX_LENGTH) {
-    errors.title = `Title must be ${TITLE_MAX_LENGTH} characters or less.`;
-  }
-
-  if (body.trim().length === 0) {
-    errors.body = "Body is required.";
-  }
-
-  if (!selectedCategory) {
-    errors.category = "Please select a category.";
-  }
-
-  return errors;
-}
-
-// Resolves a user-facing message for unexpected create-post failures.
-function findCreatePostErrorMessage(error: unknown): string {
-  if (error instanceof Error && error.message.trim().length > 0) {
-    return error.message;
-  }
-
-  return "We couldn't create your post right now. Please try again.";
-}
 
 // Renders the create-post modal and submits a new post payload to the parent.
 export default function CreatePostModal({
