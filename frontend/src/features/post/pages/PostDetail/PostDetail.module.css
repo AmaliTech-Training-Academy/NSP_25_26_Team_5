@@ -179,12 +179,19 @@
   line-height: 1.5;
 }
 
-.commentNotice {
+.commentFeedback {
   margin: 0;
-  color: #5a6f7c;
   font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   font-size: 14px;
   line-height: 1.5;
+}
+
+.commentFeedbackSuccess {
+  color: #395362;
+}
+
+.commentFeedbackError {
+  color: #8a1c1c;
 }
 
 .commentsSection {

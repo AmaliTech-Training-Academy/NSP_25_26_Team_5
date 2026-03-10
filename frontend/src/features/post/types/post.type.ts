@@ -19,6 +19,10 @@ export interface PostPayload {
   categoryId: number | string | null;
 }
 
+export interface CommentPayload {
+  content: string;
+}
+
 export type CategoryLabel =
   | "News"
   | "Event"

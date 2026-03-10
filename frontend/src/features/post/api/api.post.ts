@@ -1,5 +1,6 @@
 import { apiClient } from "../../../lib/axios/client";
 import type {
+  CommentPayload,
   PagedResponse,
   Post,
   PostComment,
@@ -25,6 +26,10 @@ export const postAPI = {
 
   getComments(postId: number) {
     return apiClient.get<PostComment[]>(`/posts/${postId}/comments`);
+  },
+
+  createComment(postId: number, data: CommentPayload) {
+    return apiClient.post<PostComment>(`/posts/${postId}/comments`, data);
   },
 
   create(data: PostPayload) {

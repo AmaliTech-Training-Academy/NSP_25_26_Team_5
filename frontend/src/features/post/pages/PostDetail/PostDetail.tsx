@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState, type FormEvent } from "react";
 import { useNavigate, useParams } from "react-router";
 import HouseIcon from "../../../../assets/Icons/HouseIcon";
 import ClockIcon from "../../../../assets/Icons/ClockIcon";
@@ -26,14 +26,18 @@ export default function PostDetail() {
   const [postErrorMessage, setPostErrorMessage] = useState<string | null>(null);
   const [commentsErrorMessage, setCommentsErrorMessage] = useState<string | null>(null);
   const [commentDraft, setCommentDraft] = useState("");
-  const [commentNotice, setCommentNotice] = useState<string | null>(null);
+  const [commentFeedbackMessage, setCommentFeedbackMessage] = useState<string | null>(null);
+  const [isCommentFeedbackError, setIsCommentFeedbackError] = useState(false);
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
 
   useEffect(() => {
     let isUnmounted = false;
     const parsedPostId = Number(postId);
 
     setCommentDraft("");
-    setCommentNotice(null);
+    setCommentFeedbackMessage(null);
+    setIsCommentFeedbackError(false);
+    setIsSubmittingComment(false);
 
     if (!postId || Number.isNaN(parsedPostId) || parsedPostId <= 0) {
       setPost(null);
@@ -116,18 +120,46 @@ export default function PostDetail() {
   // Keeps the comment composer in sync and clears temporary notice text.
   function handleCommentDraftChange(nextValue: string) {
     setCommentDraft(nextValue);
-    setCommentNotice(null);
+    setCommentFeedbackMessage(null);
+    setIsCommentFeedbackError(false);
   }
 
-  // Preserves the designed comment composer while POST comments are unavailable.
-  function handleCommentSubmit(event: React.FormEvent<HTMLFormElement>) {
+  // Submits a new comment and appends it to the current comment list on success.
+  async function handleCommentSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (commentDraft.trim().length === 0) {
+    const parsedPostId = Number(postId);
+    const trimmedComment = commentDraft.trim();
+
+    if (trimmedComment.length === 0 || Number.isNaN(parsedPostId) || parsedPostId <= 0) {
       return;
     }
 
-    setCommentNotice("Comment posting is not available yet.");
+    setCommentFeedbackMessage(null);
+    setIsCommentFeedbackError(false);
+    setIsSubmittingComment(true);
+
+    try {
+      const response = await postAPI.createComment(parsedPostId, {
+        content: trimmedComment,
+      });
+
+      setComments((previousComments) => [...previousComments, response.data]);
+      setCommentsErrorMessage(null);
+      setCommentDraft("");
+      setCommentFeedbackMessage("Comment added.");
+    } catch (error) {
+      setIsCommentFeedbackError(true);
+      setCommentFeedbackMessage(
+        findPostRequestErrorMessage(
+          error,
+          "Unable to add your comment right now. Please try again.",
+          "You are not authorized to add comments. Please sign in again.",
+        ),
+      );
+    } finally {
+      setIsSubmittingComment(false);
+    }
   }
 
   return (
@@ -189,12 +221,25 @@ export default function PostDetail() {
                   value={commentDraft}
                   onChange={(event) => handleCommentDraftChange(event.target.value)}
                 />
-                <Button type="submit" variant="primary" className={styles.commentButton}>
-                  Add comment
+                <Button
+                  type="submit"
+                  variant="primary"
+                  className={styles.commentButton}
+                  disabled={isSubmittingComment || commentDraft.trim().length === 0}
+                >
+                  {isSubmittingComment ? "Adding comment..." : "Add comment"}
                 </Button>
-                {commentNotice && (
-                  <p className={styles.commentNotice} role="status" aria-live="polite">
-                    {commentNotice}
+                {commentFeedbackMessage && (
+                  <p
+                    className={
+                      isCommentFeedbackError
+                        ? `${styles.commentFeedback} ${styles.commentFeedbackError}`
+                        : `${styles.commentFeedback} ${styles.commentFeedbackSuccess}`
+                    }
+                    role="status"
+                    aria-live="polite"
+                  >
+                    {commentFeedbackMessage}
                   </p>
                 )}
               </form>

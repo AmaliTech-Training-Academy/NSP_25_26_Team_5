@@ -20,8 +20,19 @@ public class CommentService {
                 .map(this::toResponse).toList();
     }
 
-    // TODO: Implement createComment
-    // public CommentResponse createComment(Long postId, CommentRequest request, User author) { ... }
+    public CommentResponse createComment(Long postId, CommentRequest request, User author) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
+
+        Comment comment = Comment.builder()
+                .content(request.getContent().trim())
+                .post(post)
+                .author(author)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        return toResponse(commentRepository.save(comment));
+    }
 
     // TODO: Implement deleteComment
     // public void deleteComment(Long commentId, User author) { ... }
