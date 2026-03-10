@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useId,
   useRef,
   useState,
   type FormEvent,
@@ -13,6 +14,7 @@ import type {
 } from "./CreatePostModal.types";
 import {
   CREATE_POST_CATEGORIES,
+  findCreatePostCategoryId,
   findCreatePostCategoryLabel,
   joinCreatePostModalClassName,
 } from "./CreatePostModal.utils";
@@ -25,6 +27,49 @@ import ChevronDownIcon from "../../../../assets/Icons/ChevronDownIcon";
 import HouseIcon from "../../../../assets/Icons/HouseIcon";
 import Breadcrumbs from "../../../../components/shared/Breadcrumbs/Breadcrumbs";
 
+const TITLE_MAX_LENGTH = 100;
+const TITLE_WARNING_THRESHOLD = 90;
+
+interface CreatePostFormErrors {
+  title?: string;
+  body?: string;
+  category?: string;
+}
+
+// Validates modal form values and returns field-level error messages.
+function validateCreatePostForm(
+  title: string,
+  body: string,
+  selectedCategory: BadgeType | null,
+): CreatePostFormErrors {
+  const errors: CreatePostFormErrors = {};
+
+  if (title.trim().length === 0) {
+    errors.title = "Title is required.";
+  } else if (title.trim().length > TITLE_MAX_LENGTH) {
+    errors.title = `Title must be ${TITLE_MAX_LENGTH} characters or less.`;
+  }
+
+  if (body.trim().length === 0) {
+    errors.body = "Body is required.";
+  }
+
+  if (!selectedCategory) {
+    errors.category = "Please select a category.";
+  }
+
+  return errors;
+}
+
+// Resolves a user-facing message for unexpected create-post failures.
+function findCreatePostErrorMessage(error: unknown): string {
+  if (error instanceof Error && error.message.trim().length > 0) {
+    return error.message;
+  }
+
+  return "We couldn't create your post right now. Please try again.";
+}
+
 // Renders the create-post modal and submits a new post payload to the parent.
 export default function CreatePostModal({
   className,
@@ -33,14 +78,25 @@ export default function CreatePostModal({
   onCreatePost,
 }: CreatePostModalProps) {
   const [title, setTitle] = useState("");
-  const [details, setDetails] = useState("");
+  const [body, setBody] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<BadgeType | null>(null);
   const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false);
+  const [formErrors, setFormErrors] = useState<CreatePostFormErrors>({});
+  const [submitErrorMessage, setSubmitErrorMessage] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const categorySectionRef = useRef<HTMLDivElement | null>(null);
+  const bodyInputId = useId();
 
   const overlayClassName = joinCreatePostModalClassName(styles.overlay, className);
   const selectedCategoryLabel = selectedCategory ? findCreatePostCategoryLabel(selectedCategory) : "";
-  const canSubmit = title.trim().length > 0 && details.trim().length > 0 && selectedCategory !== null;
+  const titleLength = title.length;
+  const isTitleNearLimit = titleLength >= TITLE_WARNING_THRESHOLD;
+  const canSubmit =
+    !isSubmitting &&
+    title.trim().length > 0 &&
+    title.trim().length <= TITLE_MAX_LENGTH &&
+    body.trim().length > 0 &&
+    selectedCategory !== null;
 
   // Locks body scrolling while the modal is active.
   useEffect(() => {
@@ -73,7 +129,7 @@ export default function CreatePostModal({
     return () => {
       document.removeEventListener("keydown", handleEscapeKeyDown);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, isSubmitting, onClose]);
 
   // Closes the category menu when clicking outside of its trigger/list area.
   useEffect(() => {
@@ -101,9 +157,12 @@ export default function CreatePostModal({
   // Resets all form fields and closes the category menu.
   function resetFormState() {
     setTitle("");
-    setDetails("");
+    setBody("");
     setSelectedCategory(null);
     setIsCategoryMenuOpen(false);
+    setFormErrors({});
+    setSubmitErrorMessage(null);
+    setIsSubmitting(false);
   }
 
   // Closes the modal when the desktop backdrop is clicked.
@@ -117,31 +176,50 @@ export default function CreatePostModal({
   function handleCategorySelect(category: BadgeType) {
     setSelectedCategory(category);
     setIsCategoryMenuOpen(false);
+    setFormErrors((previousErrors) => ({ ...previousErrors, category: undefined }));
+    setSubmitErrorMessage(null);
   }
 
   // Closes the modal and clears temporary input state.
-  function handleCancel() {
+  function handleCancel(forceClose = false) {
+    if (isSubmitting && !forceClose) {
+      return;
+    }
+
     resetFormState();
     onClose();
   }
 
   // Emits the new post payload and closes the modal.
-  function handleCreatePostSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleCreatePostSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!selectedCategory || !canSubmit) {
+    const nextErrors = validateCreatePostForm(title, body, selectedCategory);
+    setFormErrors(nextErrors);
+
+    if (Object.keys(nextErrors).length > 0 || !selectedCategory || !onCreatePost) {
       return;
     }
 
     const payload: CreatePostFormValues = {
       title: title.trim(),
-      details: details.trim(),
+      body: body.trim(),
       category: selectedCategory,
       categoryLabel: findCreatePostCategoryLabel(selectedCategory),
+      categoryId: findCreatePostCategoryId(selectedCategory),
     };
 
-    onCreatePost?.(payload);
-    handleCancel();
+    setSubmitErrorMessage(null);
+    setIsSubmitting(true);
+
+    try {
+      await onCreatePost(payload);
+      handleCancel(true);
+    } catch (error) {
+      setSubmitErrorMessage(findCreatePostErrorMessage(error));
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   if (!isOpen) {
@@ -169,7 +247,8 @@ export default function CreatePostModal({
             type="button"
             className={styles.closeButton}
             aria-label="Close create post modal"
-            onClick={handleCancel}
+            onClick={() => handleCancel()}
+            disabled={isSubmitting}
           >
             <CloseIcon className={styles.closeIcon} />
           </button>
@@ -187,8 +266,31 @@ export default function CreatePostModal({
             placeholder="Enter a clear, descriptive title"
             value={title}
             autoComplete="off"
-            onChange={(event) => setTitle(event.target.value)}
+            maxLength={TITLE_MAX_LENGTH}
+            hasError={Boolean(formErrors.title)}
+            onChange={(event) => {
+              setTitle(event.target.value);
+              setFormErrors((previousErrors) => ({
+                ...previousErrors,
+                title: undefined,
+              }));
+              setSubmitErrorMessage(null);
+            }}
           />
+          <p
+            className={joinCreatePostModalClassName(
+              styles.titleMeta,
+              isTitleNearLimit ? styles.titleMetaWarning : undefined,
+            )}
+          >
+            {titleLength}/{TITLE_MAX_LENGTH} characters
+            {isTitleNearLimit ? " - approaching the limit" : ""}
+          </p>
+          {formErrors.title && (
+            <p className={styles.fieldError} role="alert">
+              {formErrors.title}
+            </p>
+          )}
 
           <div className={styles.categorySection} ref={categorySectionRef}>
             <Input
@@ -197,9 +299,14 @@ export default function CreatePostModal({
               placeholder="Select"
               value={selectedCategoryLabel}
               readOnly
-              onInputContainerClick={() =>
-                setIsCategoryMenuOpen((isCurrentlyOpen) => !isCurrentlyOpen)
-              }
+              hasError={Boolean(formErrors.category)}
+              onInputContainerClick={() => {
+                if (isSubmitting) {
+                  return;
+                }
+
+                setIsCategoryMenuOpen((isCurrentlyOpen) => !isCurrentlyOpen);
+              }}
               rightIcon={
                 isCategoryMenuOpen ? (
                   <ChevronUpIcon className={styles.selectIcon} />
@@ -223,27 +330,62 @@ export default function CreatePostModal({
                         : undefined,
                     )}
                     onClick={() => handleCategorySelect(option.value)}
+                    disabled={isSubmitting}
                   >
                     {option.label}
                   </button>
                 ))}
               </div>
             )}
+            {formErrors.category && (
+              <p className={styles.fieldError} role="alert">
+                {formErrors.category}
+              </p>
+            )}
           </div>
 
-          <textarea
-            className={styles.textarea}
-            placeholder="Share the details of your post..."
-            value={details}
-            onChange={(event) => setDetails(event.target.value)}
-          />
+          <div className={styles.bodyField}>
+            <label className={styles.fieldLabel} htmlFor={bodyInputId}>
+              Post Body
+            </label>
+            <textarea
+              id={bodyInputId}
+              className={joinCreatePostModalClassName(
+                styles.textarea,
+                formErrors.body ? styles.textareaError : undefined,
+              )}
+              placeholder="Share the details of your post..."
+              value={body}
+              aria-invalid={Boolean(formErrors.body)}
+              onChange={(event) => {
+                setBody(event.target.value);
+                setFormErrors((previousErrors) => ({
+                  ...previousErrors,
+                  body: undefined,
+                }));
+                setSubmitErrorMessage(null);
+              }}
+            />
+            {formErrors.body && (
+              <p className={styles.fieldError} role="alert">
+                {formErrors.body}
+              </p>
+            )}
+          </div>
+
+          {submitErrorMessage && (
+            <p className={styles.submitError} role="alert">
+              {submitErrorMessage}
+            </p>
+          )}
 
           <div className={styles.actionRow}>
             <Button
               type="button"
               variant="secondary"
               className={styles.cancelButton}
-              onClick={handleCancel}
+              onClick={() => handleCancel()}
+              disabled={isSubmitting}
             >
               Cancel
             </Button>
@@ -254,7 +396,7 @@ export default function CreatePostModal({
               className={styles.submitButton}
               disabled={!canSubmit}
             >
-              Create Post
+              {isSubmitting ? "Creating..." : "Create Post"}
             </Button>
           </div>
         </form>
