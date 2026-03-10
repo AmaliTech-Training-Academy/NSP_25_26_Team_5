@@ -4,9 +4,11 @@ import com.amalitech.communityboard.dto.*;
 import com.amalitech.communityboard.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+// Authentication Controller: handles user registration and login.
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -14,9 +16,11 @@ public class AuthController {
 
     private final AuthService authService;
 
+    // Register a new user account.
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
-        return ResponseEntity.ok(authService.register(request));
+        AuthResponse response = authService.register(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);  // 201 Created
     }
 
     @PostMapping("/login")
