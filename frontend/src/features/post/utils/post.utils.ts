@@ -1,0 +1,101 @@
+import axios from "axios";
+import { BadgeType } from "../../../components/ui/Button/Button.types";
+import type { ApiErrorPayload, CategoryData } from "../types/post.type";
+
+// Normalizes backend categories into shared badge metadata.
+export function findCategoryData(categoryName: string | null): CategoryData {
+  const normalized = categoryName?.trim().toUpperCase();
+
+  switch (normalized) {
+    case BadgeType.EVENT:
+      return { badgeLabel: "Event", badgeType: BadgeType.EVENT };
+    case BadgeType.DISCUSSION:
+      return { badgeLabel: "Discussion", badgeType: BadgeType.DISCUSSION };
+    case BadgeType.ALERT:
+      return { badgeLabel: "Alert", badgeType: BadgeType.ALERT };
+    case BadgeType.NEWS:
+      return { badgeLabel: "News", badgeType: BadgeType.NEWS };
+    default:
+      return {
+        badgeLabel: "News",
+        badgeType: BadgeType.NEWS,
+      };
+  }
+}
+
+// Formats timestamps into the short relative strings used across post surfaces.
+export function formatRelativeTime(value: string): string {
+  const parsedDate = new Date(value);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return "just now";
+  }
+
+  const elapsedMilliseconds = Date.now() - parsedDate.getTime();
+  const elapsedSeconds = Math.max(0, Math.floor(elapsedMilliseconds / 1000));
+
+  if (elapsedSeconds < 60) {
+    return "just now";
+  }
+
+  const elapsedMinutes = Math.floor(elapsedSeconds / 60);
+  if (elapsedMinutes < 60) {
+    return `${elapsedMinutes} minute${elapsedMinutes === 1 ? "" : "s"} ago`;
+  }
+
+  const elapsedHours = Math.floor(elapsedMinutes / 60);
+  if (elapsedHours < 24) {
+    return `${elapsedHours} hour${elapsedHours === 1 ? "" : "s"} ago`;
+  }
+
+  const elapsedDays = Math.floor(elapsedHours / 24);
+  return `${elapsedDays} day${elapsedDays === 1 ? "" : "s"} ago`;
+}
+
+// Resolves readable backend and network errors for post requests.
+export function findPostRequestErrorMessage(
+  error: unknown,
+  fallbackMessage: string,
+  unauthorizedMessage = fallbackMessage,
+  notFoundMessage = fallbackMessage,
+): string {
+  if (axios.isAxiosError(error)) {
+    const statusCode = error.response?.status;
+    const responseData = error.response?.data;
+
+    if (typeof responseData === "string" && responseData.trim().length > 0) {
+      return responseData;
+    }
+
+    if (responseData && typeof responseData === "object") {
+      const payload = responseData as ApiErrorPayload;
+
+      if (typeof payload.message === "string" && payload.message.trim().length > 0) {
+        return payload.message;
+      }
+
+      if (typeof payload.error === "string" && payload.error.trim().length > 0) {
+        return payload.error;
+      }
+    }
+
+    if (statusCode === 401 || statusCode === 403) {
+      return unauthorizedMessage;
+    }
+
+    if (statusCode === 404) {
+      return notFoundMessage;
+    }
+  }
+
+  return fallbackMessage;
+}
+
+// Resolves readable create-post error text for backend and network failures.
+export function findCreatePostErrorMessage(error: unknown): string {
+  return findPostRequestErrorMessage(
+    error,
+    "Unable to create your post right now. Please try again.",
+    "You are not authorized to create a post. Please sign in again.",
+  );
+}
