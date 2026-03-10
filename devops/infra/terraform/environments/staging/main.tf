@@ -32,36 +32,36 @@ module "alb" {
 
 # --- ECR: backend + frontend ---
 module "ecr" {
-  source           = "../../modules/ecr"
-  project_name     = local.name_prefix
-  repository_name  = local.ecr_backend_repo_name
+  source          = "../../modules/ecr"
+  project_name    = local.name_prefix
+  repository_name = local.ecr_backend_repo_name
 }
 
 module "ecr_frontend" {
-  source           = "../../modules/ecr"
-  project_name     = local.name_prefix
-  repository_name  = local.ecr_frontend_repo_name
+  source          = "../../modules/ecr"
+  project_name    = local.name_prefix
+  repository_name = local.ecr_frontend_repo_name
 }
 
 # --- EC2: Postgres + Backend + Frontend (one instance, one ALB) ---
 module "ec2_app" {
-  source                     = "../../modules/ec2_app"
-  project_name               = local.name_prefix
-  vpc_id                     = module.network.vpc_id
-  private_subnet_ids         = module.network.private_subnet_ids
-  app_sg_id                  = module.security.backend_sg_id
-  backend_target_group_arn   = module.alb.backend_target_group_arn
-  frontend_target_group_arn  = module.alb.frontend_target_group_arn
-  ecr_backend_repo           = module.ecr.repository_url
-  ecr_frontend_repo          = module.ecr_frontend.repository_url
-  backend_image_tag          = var.backend_image_tag
-  frontend_image_tag         = var.frontend_image_tag
-  db_name                    = var.db_name
-  db_username                = var.db_username
-  db_password                = var.db_password
-  jwt_secret                 = var.jwt_secret
-  aws_region                 = var.aws_region
-  instance_type              = var.instance_type
+  source                    = "../../modules/ec2_app"
+  project_name              = local.name_prefix
+  vpc_id                    = module.network.vpc_id
+  private_subnet_ids        = module.network.private_subnet_ids
+  app_sg_id                 = module.security.backend_sg_id
+  backend_target_group_arn  = module.alb.backend_target_group_arn
+  frontend_target_group_arn = module.alb.frontend_target_group_arn
+  ecr_backend_repo          = module.ecr.repository_url
+  ecr_frontend_repo         = module.ecr_frontend.repository_url
+  backend_image_tag         = var.backend_image_tag
+  frontend_image_tag        = var.frontend_image_tag
+  db_name                   = var.db_name
+  db_username               = var.db_username
+  db_password               = var.db_password
+  jwt_secret                = var.jwt_secret
+  aws_region                = var.aws_region
+  instance_type             = var.instance_type
 }
 
 # --- SNS (notifications / alerts) ---

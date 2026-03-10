@@ -56,14 +56,14 @@ variable "db_name" {
 
 # --- EC2 app ---
 variable "backend_image_tag" {
-  type    = string
-  default = "latest"
+  type        = string
+  default     = "latest"
   description = "Backend Docker image tag"
 }
 
 variable "frontend_image_tag" {
-  type    = string
-  default = "latest"
+  type        = string
+  default     = "latest"
   description = "Frontend Docker image tag"
 }
 
@@ -80,8 +80,8 @@ variable "jwt_secret" {
 }
 
 variable "instance_type" {
-  type    = string
-  default = "t3.small"
+  type        = string
+  default     = "t3.small"
   description = "EC2 instance type"
 }
 
