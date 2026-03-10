@@ -76,6 +76,6 @@ resource "aws_amplify_branch" "dev" {
   enable_auto_build = true
 
   environment_variables = {
-    API_URL = var.api_url
+    VITE_API_BASE_URL = var.api_url
   }
 }
