@@ -8,6 +8,12 @@ export interface CreatePostFormValues {
   categoryId: number | null;
 }
 
+export interface CreatePostFormErrors {
+  title?: string;
+  body?: string;
+  category?: string;
+}
+
 export interface CreatePostModalProps {
   className?: string;
   isOpen: boolean;
