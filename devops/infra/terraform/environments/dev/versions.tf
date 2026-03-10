@@ -9,6 +9,6 @@ terraform {
   }
 
   backend "s3" {
-    # bucket, key, region, dynamodb_table passed via -backend-config in CI
+          
   }
 }

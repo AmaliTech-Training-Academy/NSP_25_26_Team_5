@@ -37,16 +37,16 @@ variable "private_subnet_cidrs" {
   default     = ["10.0.10.0/24", "10.0.11.0/24"]
 }
 
-# --- RDS ---
+# --- Database (Postgres on EC2) ---
 variable "db_username" {
   type        = string
-  description = "RDS master username"
+  description = "Postgres username"
 }
 
 variable "db_password" {
   type        = string
   sensitive   = true
-  description = "RDS master password"
+  description = "Postgres password"
 }
 
 variable "db_name" {
@@ -54,29 +54,23 @@ variable "db_name" {
   default = "communityboard"
 }
 
-variable "db_instance_class" {
-  type        = string
-  description = "RDS instance class"
-  default     = "db.t3.micro"
-}
-
-# --- ECS backend ---
-variable "backend_image" {
-  type        = string
-  default     = null
-  description = "Full ECR image URI (optional). If unset, uses ECR repo + backend_image_tag."
-}
-
+# --- EC2 app ---
 variable "backend_image_tag" {
-  type        = string
-  default     = "latest"
-  description = "Image tag when backend_image is not set"
+  type    = string
+  default = "latest"
+  description = "Backend Docker image tag"
+}
+
+variable "frontend_image_tag" {
+  type    = string
+  default = "latest"
+  description = "Frontend Docker image tag"
 }
 
 variable "ecr_repository_name" {
   type        = string
-  default     = "communityboard-backend"
-  description = "ECR repository base name; becomes <this>-<environment>."
+  default     = "communityboard"
+  description = "ECR repo base name; backend = <this>-<env>, frontend = <this>-frontend-<env>"
 }
 
 variable "jwt_secret" {
@@ -85,17 +79,10 @@ variable "jwt_secret" {
   description = "JWT signing secret for backend"
 }
 
-# --- Amplify frontend ---
-variable "repo_url" {
-  type        = string
-  description = "GitHub repo URL for Amplify"
-}
-
-variable "github_token" {
-  type        = string
-  sensitive   = true
-  default     = ""
-  description = "GitHub token for Amplify (optional if public repo)"
+variable "instance_type" {
+  type    = string
+  default = "t3.small"
+  description = "EC2 instance type"
 }
 
 # --- SNS ---

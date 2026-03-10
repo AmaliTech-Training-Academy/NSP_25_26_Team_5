@@ -27,14 +27,21 @@ resource "aws_security_group" "alb_sg" {
   tags = { Name = "${var.project_name}-alb-sg" }
 }
 
-# Backend: allow 8080 only from ALB
+# App (EC2): allow 80 (frontend) and 8080 (backend) from ALB only
 resource "aws_security_group" "backend_sg" {
   vpc_id      = var.vpc_id
-  name        = "${var.project_name}-backend-sg"
-  description = "Backend ECS: allow 8080 from ALB"
+  name        = "${var.project_name}-app-sg"
+  description = "EC2 app: allow 80 and 8080 from ALB"
 
   ingress {
-    description     = "HTTP from ALB"
+    description     = "Frontend from ALB"
+    from_port       = 80
+    to_port         = 80
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb_sg.id]
+  }
+  ingress {
+    description     = "Backend from ALB"
     from_port       = 8080
     to_port         = 8080
     protocol        = "tcp"
@@ -46,27 +53,5 @@ resource "aws_security_group" "backend_sg" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
-  tags = { Name = "${var.project_name}-backend-sg" }
-}
-
-# RDS: allow 5432 only from backend
-resource "aws_security_group" "rds_sg" {
-  vpc_id      = var.vpc_id
-  name        = "${var.project_name}-rds-sg"
-  description = "RDS: allow 5432 from backend"
-
-  ingress {
-    description     = "Postgres from backend"
-    from_port       = 5432
-    to_port         = 5432
-    protocol        = "tcp"
-    security_groups = [aws_security_group.backend_sg.id]
-  }
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  tags = { Name = "${var.project_name}-rds-sg" }
+  tags = { Name = "${var.project_name}-app-sg" }
 }
