@@ -11,7 +11,7 @@ variable "environment" {
 
 variable "project_name" {
   type    = string
-  default = "community-board"
+  default = "community"
 }
 
 variable "vpc_cidr" {
