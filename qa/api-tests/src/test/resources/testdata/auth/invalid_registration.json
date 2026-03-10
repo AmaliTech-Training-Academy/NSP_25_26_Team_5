@@ -1,0 +1,10 @@
+[
+  { "label": "TC-003 Password too short",             "fullName": "Jane", "email": "shortpwd@test.com",    "password": "Ab1!"           },
+  { "label": "TC-004a Empty name",                    "fullName": "",     "email": "empty@test.com",        "password": "Secure@123"     },
+  { "label": "TC-004b Empty email",                   "fullName": "Jane", "email": "",                      "password": "Secure@123"     },
+  { "label": "TC-004c Empty password",                "fullName": "Jane", "email": "nopwd@test.com",        "password": ""               },
+  { "label": "TC-005a Email missing @ symbol",        "fullName": "Jane", "email": "janegmail.com",         "password": "Secure@123"     },
+  { "label": "TC-005b Email only special characters", "fullName": "Jane", "email": "@@@###",                "password": "Secure@123"     },
+  { "label": "TC-005c Email missing domain",          "fullName": "Jane", "email": "jane@",                 "password": "Secure@123"     },
+  { "label": "TC-005d Email contains spaces",         "fullName": "Jane", "email": "jane doe@gmail.com",    "password": "Secure@123"     }
+]
