@@ -1,0 +1,73 @@
+.filterBar {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.label {
+  display: none;
+  margin: 0;
+  color: #08283b;
+  font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.filterButton {
+  border: 1px solid #395362;
+  border-radius: 6px;
+  background: #fdfdfd;
+  color: #08283b;
+  padding: 2px 12px;
+  white-space: nowrap;
+  font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.filterButtonActive {
+  background: #b2bcc2;
+}
+
+.filterButton:focus-visible {
+  outline: 2px solid #0f4f75;
+  outline-offset: 2px;
+}
+
+@media (min-width: 768px) {
+  .filterBar {
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .label {
+    display: block;
+    white-space: nowrap;
+  }
+
+  .filters {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .filters::-webkit-scrollbar {
+    display: none;
+  }
+}

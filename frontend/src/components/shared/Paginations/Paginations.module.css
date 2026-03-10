@@ -1,0 +1,19 @@
+.pagination {
+  width: fit-content;
+  height: 33px;
+  display: inline-flex;
+  align-items: stretch;
+  justify-content: flex-start;
+  border: 1px solid #e6eaeb;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #fdfdfd;
+}
+
+.pageButton {
+  border-left: 1px solid #e6eaeb;
+}
+
+.firstButton {
+  border-left: 0;
+}
