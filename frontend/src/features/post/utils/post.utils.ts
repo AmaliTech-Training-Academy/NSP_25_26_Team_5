@@ -57,6 +57,7 @@ export function findPostRequestErrorMessage(
   error: unknown,
   fallbackMessage: string,
   unauthorizedMessage = fallbackMessage,
+  notFoundMessage = fallbackMessage,
 ): string {
   if (axios.isAxiosError(error)) {
     const statusCode = error.response?.status;
@@ -80,6 +81,10 @@ export function findPostRequestErrorMessage(
 
     if (statusCode === 401 || statusCode === 403) {
       return unauthorizedMessage;
+    }
+
+    if (statusCode === 404) {
+      return notFoundMessage;
     }
   }
 

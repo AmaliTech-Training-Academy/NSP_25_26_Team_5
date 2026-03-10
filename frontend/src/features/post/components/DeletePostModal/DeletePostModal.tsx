@@ -7,10 +7,13 @@ import type { DeletePostModalProps } from "./DeletePostModal.types";
 // Renders a confirmation popup before permanently deleting a post.
 export default function DeletePostModal({
   className,
+  confirmLabel = "Delete",
+  description = "Are you sure you want to delete this post?",
   isOpen,
   isDeleting = false,
   onClose,
   onConfirm,
+  title = "Delete Post",
 }: DeletePostModalProps) {
   const overlayClassName = [styles.overlay, className].filter(Boolean).join(" ");
 
@@ -78,10 +81,10 @@ export default function DeletePostModal({
       >
         <div className={styles.content}>
           <h2 id="delete-post-title" className={styles.title}>
-            Delete Post
+            {title}
           </h2>
           <p id="delete-post-description" className={styles.description}>
-            Are you sure you want to delete this post?
+            {description}
           </p>
         </div>
 
@@ -106,7 +109,7 @@ export default function DeletePostModal({
           >
             <span className={styles.deleteButtonContent}>
               <Trash2Icon className={styles.deleteIcon} />
-              <span>{isDeleting ? "Deleting..." : "Delete"}</span>
+              <span>{isDeleting ? "Deleting..." : confirmLabel}</span>
             </span>
           </Button>
         </div>

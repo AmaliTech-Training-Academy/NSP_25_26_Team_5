@@ -3,9 +3,12 @@ import { useNavigate, useParams } from "react-router";
 import HouseIcon from "../../../../assets/Icons/HouseIcon";
 import ClockIcon from "../../../../assets/Icons/ClockIcon";
 import EmptyPostsIcon from "../../../../assets/Icons/EmptyPostsIcon";
+import Trash2Icon from "../../../../assets/Icons/Trash2Icon";
 import Breadcrumbs from "../../../../components/shared/Breadcrumbs/Breadcrumbs";
+import { useAuth } from "../../../../context/AuthContext/AuthContext";
 import Button from "../../../../components/ui/Button/Button";
 import { postAPI } from "../../api/api.post";
+import DeletePostModal from "../../components/DeletePostModal";
 import type { Post, PostComment } from "../../types/post.type";
 import {
   findCategoryData,
@@ -18,9 +21,11 @@ import styles from "./PostDetail.module.css";
 export default function PostDetail() {
   const navigate = useNavigate();
   const { postId } = useParams();
+  const { user } = useAuth();
   const commentInputId = useId();
   const [post, setPost] = useState<Post | null>(null);
   const [comments, setComments] = useState<PostComment[]>([]);
+  const [commentBeingDeleted, setCommentBeingDeleted] = useState<PostComment | null>(null);
   const [isLoadingPost, setIsLoadingPost] = useState(true);
   const [isLoadingComments, setIsLoadingComments] = useState(true);
   const [postErrorMessage, setPostErrorMessage] = useState<string | null>(null);
@@ -28,6 +33,7 @@ export default function PostDetail() {
   const [commentDraft, setCommentDraft] = useState("");
   const [commentFeedbackMessage, setCommentFeedbackMessage] = useState<string | null>(null);
   const [isCommentFeedbackError, setIsCommentFeedbackError] = useState(false);
+  const [isDeletingComment, setIsDeletingComment] = useState(false);
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
 
   useEffect(() => {
@@ -37,6 +43,8 @@ export default function PostDetail() {
     setCommentDraft("");
     setCommentFeedbackMessage(null);
     setIsCommentFeedbackError(false);
+    setCommentBeingDeleted(null);
+    setIsDeletingComment(false);
     setIsSubmittingComment(false);
 
     if (!postId || Number.isNaN(parsedPostId) || parsedPostId <= 0) {
@@ -103,6 +111,8 @@ export default function PostDetail() {
     () => findCategoryData(post?.categoryName ?? null),
     [post?.categoryName],
   );
+  const normalizedRole = user?.role?.toUpperCase();
+  const isAdminUser = normalizedRole === "ADMIN" || normalizedRole === "ROLE_ADMIN";
   const commentsCount = !isLoadingComments ? comments.length : post?.commentCount ?? 0;
   const breadcrumbItems = [
     {
@@ -117,11 +127,36 @@ export default function PostDetail() {
     },
   ];
 
+  // Falls back to author-name matching until the comment API exposes a stable author id or email.
+  function canManageComment(comment: PostComment): boolean {
+    if (isAdminUser) {
+      return true;
+    }
+
+    return user?.name.trim().toLowerCase() === comment.authorName.trim().toLowerCase();
+  }
+
   // Keeps the comment composer in sync and clears temporary notice text.
   function handleCommentDraftChange(nextValue: string) {
     setCommentDraft(nextValue);
     setCommentFeedbackMessage(null);
     setIsCommentFeedbackError(false);
+  }
+
+  // Opens the confirmation modal for the selected comment.
+  function handleOpenDeleteCommentModal(comment: PostComment) {
+    setCommentFeedbackMessage(null);
+    setIsCommentFeedbackError(false);
+    setCommentBeingDeleted(comment);
+  }
+
+  // Closes the comment delete modal when there is no in-flight delete request.
+  function handleCloseDeleteCommentModal() {
+    if (isDeletingComment) {
+      return;
+    }
+
+    setCommentBeingDeleted(null);
   }
 
   // Submits a new comment and appends it to the current comment list on success.
@@ -159,6 +194,42 @@ export default function PostDetail() {
       );
     } finally {
       setIsSubmittingComment(false);
+    }
+  }
+
+  // Removes the selected comment from the detail page when the delete API succeeds.
+  async function handleDeleteCommentConfirm() {
+    const parsedPostId = Number(postId);
+
+    if (!commentBeingDeleted || Number.isNaN(parsedPostId) || parsedPostId <= 0) {
+      setCommentBeingDeleted(null);
+      return;
+    }
+
+    setCommentFeedbackMessage(null);
+    setIsCommentFeedbackError(false);
+    setIsDeletingComment(true);
+
+    try {
+      await postAPI.deleteComment(parsedPostId, commentBeingDeleted.id);
+      setComments((previousComments) =>
+        previousComments.filter((comment) => comment.id !== commentBeingDeleted.id),
+      );
+      setCommentsErrorMessage(null);
+      setCommentBeingDeleted(null);
+      setCommentFeedbackMessage("Comment deleted.");
+    } catch (error) {
+      setIsCommentFeedbackError(true);
+      setCommentFeedbackMessage(
+        findPostRequestErrorMessage(
+          error,
+          "Unable to delete this comment right now. Please try again.",
+          "You are not authorized to delete this comment. Please sign in again.",
+          "Comment deletion is unavailable until the backend exposes the delete endpoint.",
+        ),
+      );
+    } finally {
+      setIsDeletingComment(false);
     }
   }
 
@@ -271,13 +342,26 @@ export default function PostDetail() {
                     {comments.map((comment) => (
                       <li key={comment.id} className={styles.commentItem}>
                         <div className={styles.commentMetaRow}>
-                          <p className={styles.commentAuthor}>{comment.authorName}</p>
-                          <div className={styles.commentTimeGroup}>
-                            <ClockIcon className={styles.commentClockIcon} />
-                            <p className={styles.commentTime}>
-                              {formatRelativeTime(comment.createdAt)}
-                            </p>
+                          <div className={styles.commentMetaLeft}>
+                            <p className={styles.commentAuthor}>{comment.authorName}</p>
+                            <div className={styles.commentTimeGroup}>
+                              <ClockIcon className={styles.commentClockIcon} />
+                              <p className={styles.commentTime}>
+                                {formatRelativeTime(comment.createdAt)}
+                              </p>
+                            </div>
                           </div>
+                          {canManageComment(comment) && (
+                            <button
+                              type="button"
+                              className={styles.commentDeleteButton}
+                              aria-label={`Delete comment by ${comment.authorName}`}
+                              onClick={() => handleOpenDeleteCommentModal(comment)}
+                              disabled={isDeletingComment}
+                            >
+                              <Trash2Icon className={styles.commentDeleteIcon} />
+                            </button>
+                          )}
                         </div>
                         <p className={styles.commentBody}>{comment.content}</p>
                       </li>
@@ -289,6 +373,16 @@ export default function PostDetail() {
           </article>
         )}
       </section>
+
+      <DeletePostModal
+        isOpen={commentBeingDeleted !== null}
+        isDeleting={isDeletingComment}
+        title="Delete Comment"
+        description="Are you sure you want to delete this comment?"
+        confirmLabel="Delete"
+        onClose={handleCloseDeleteCommentModal}
+        onConfirm={handleDeleteCommentConfirm}
+      />
     </main>
   );
 }

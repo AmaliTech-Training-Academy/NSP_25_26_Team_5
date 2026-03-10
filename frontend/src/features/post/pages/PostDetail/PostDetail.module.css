@@ -254,8 +254,17 @@
 .commentMetaRow {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
+}
+
+.commentMetaLeft {
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  min-width: 0;
 }
 
 .commentBody {
@@ -265,6 +274,39 @@
   font-size: 16px;
   line-height: 1.6;
   white-space: pre-wrap;
+}
+
+.commentDeleteButton {
+  border: none;
+  background: transparent;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #c81e1e;
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.commentDeleteButton:focus-visible {
+  outline: 2px solid #0f4f75;
+  outline-offset: 2px;
+}
+
+.commentDeleteIcon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.commentItem:hover .commentDeleteButton,
+.commentItem:focus-within .commentDeleteButton {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
 }
 
 .srOnly {
@@ -295,5 +337,13 @@
 
   .emptyComments {
     min-height: 320px;
+  }
+}
+
+@media (hover: none) {
+  .commentDeleteButton {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
   }
 }

@@ -32,6 +32,10 @@ export const postAPI = {
     return apiClient.post<PostComment>(`/posts/${postId}/comments`, data);
   },
 
+  deleteComment(postId: number, commentId: number) {
+    return apiClient.delete<void>(`/posts/${postId}/comments/${commentId}`);
+  },
+
   create(data: PostPayload) {
     return apiClient.post<Post>("/posts", data);
   },
