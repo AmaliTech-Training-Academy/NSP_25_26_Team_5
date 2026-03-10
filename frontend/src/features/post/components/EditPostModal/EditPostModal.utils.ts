@@ -8,10 +8,10 @@ export interface EditPostCategoryOption {
 }
 
 export const EDIT_POST_CATEGORIES: EditPostCategoryOption[] = [
-  { label: "Events", value: BadgeType.EVENT, categoryId: 2 },
-  { label: "Lost & Found", value: BadgeType.ALERT, categoryId: 4 },
-  { label: "Recommendations", value: BadgeType.DISCUSSION, categoryId: 3 },
-  { label: "Help Request", value: BadgeType.NEWS, categoryId: 1 },
+  { label: "News", value: BadgeType.NEWS, categoryId: 1 },
+  { label: "Event", value: BadgeType.EVENT, categoryId: 2 },
+  { label: "Discussion", value: BadgeType.DISCUSSION, categoryId: 3 },
+  { label: "Alert", value: BadgeType.ALERT, categoryId: 4 },
 ];
 
 export function findEditPostCategoryLabel(category: BadgeType): string {

@@ -11,10 +11,10 @@ export interface CreatePostCategoryOption {
 }
 
 export const CREATE_POST_CATEGORIES: CreatePostCategoryOption[] = [
-  { label: "NEWS", value: BadgeType.NEWS, categoryId: 1 },
-  { label: "EVENT", value: BadgeType.EVENT, categoryId: 2 },
-  { label: "DISCUSSION", value: BadgeType.DISCUSSION, categoryId: 3 },
-  { label: "ALERT", value: BadgeType.ALERT, categoryId: 4 },
+  { label: "News", value: BadgeType.NEWS, categoryId: 1 },
+  { label: "Event", value: BadgeType.EVENT, categoryId: 2 },
+  { label: "Discussion", value: BadgeType.DISCUSSION, categoryId: 3 },
+  { label: "Alert", value: BadgeType.ALERT, categoryId: 4 },
 ];
 
 export function findCreatePostCategoryLabel(category: BadgeType): string {

@@ -8,16 +8,16 @@ export function findCategoryData(categoryName: string | null): CategoryData {
 
   switch (normalized) {
     case BadgeType.EVENT:
-      return { badgeLabel: "Events", badgeType: BadgeType.EVENT };
+      return { badgeLabel: "Event", badgeType: BadgeType.EVENT };
     case BadgeType.DISCUSSION:
-      return { badgeLabel: "Recommendations", badgeType: BadgeType.DISCUSSION };
+      return { badgeLabel: "Discussion", badgeType: BadgeType.DISCUSSION };
     case BadgeType.ALERT:
-      return { badgeLabel: "Lost & Found", badgeType: BadgeType.ALERT };
+      return { badgeLabel: "Alert", badgeType: BadgeType.ALERT };
     case BadgeType.NEWS:
-      return { badgeLabel: "Help Requests", badgeType: BadgeType.NEWS };
+      return { badgeLabel: "News", badgeType: BadgeType.NEWS };
     default:
       return {
-        badgeLabel: "Help Requests",
+        badgeLabel: "News",
         badgeType: BadgeType.NEWS,
       };
   }

@@ -3,10 +3,10 @@ import type { FilterOption } from "./FilterBar.types";
 
 export const FILTER_OPTIONS: FilterOption[] = [
   { label: "All", value: "ALL" },
-  { label: "Events", value: BadgeType.EVENT },
-  { label: "Lost & Found", value: BadgeType.ALERT },
-  { label: "Recommendations", value: BadgeType.DISCUSSION },
-  { label: "Help Requests", value: BadgeType.NEWS },
+  { label: "Event", value: BadgeType.EVENT },
+  { label: "Alert", value: BadgeType.ALERT },
+  { label: "Discussion", value: BadgeType.DISCUSSION },
+  { label: "News", value: BadgeType.NEWS },
 ];
 
 export function joinFilterBarClassName(

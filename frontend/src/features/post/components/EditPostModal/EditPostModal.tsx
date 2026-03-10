@@ -9,6 +9,8 @@ import {
 import CloseIcon from "../../../../assets/Icons/CloseIcon";
 import ChevronDownIcon from "../../../../assets/Icons/ChevronDownIcon";
 import ChevronUpIcon from "../../../../assets/Icons/ChevronUpIcon";
+import HouseIcon from "../../../../assets/Icons/HouseIcon";
+import Breadcrumbs from "../../../../components/shared/Breadcrumbs/Breadcrumbs";
 import Button from "../../../../components/ui/Button/Button";
 import { BadgeType } from "../../../../components/ui/Button/Button.types";
 import Input from "../../../../components/ui/Input/Input";
@@ -193,6 +195,19 @@ export default function EditPostModal({
     return null;
   }
 
+  const breadcrumbItems = [
+    {
+      id: "home",
+      label: "Home",
+      icon: <HouseIcon />,
+      onClick: handleCancel,
+    },
+    {
+      id: "edit-post",
+      label: "Edit Post",
+    },
+  ];
+
   return (
     <div className={overlayClassName} role="presentation" onMouseDown={handleBackdropMouseDown}>
       <section className={styles.modal} role="dialog" aria-modal="true" aria-labelledby="edit-post-title">
@@ -207,6 +222,8 @@ export default function EditPostModal({
             <CloseIcon className={styles.closeIcon} />
           </button>
         </div>
+
+        <Breadcrumbs className={styles.mobileBreadcrumbs} items={breadcrumbItems} />
 
         <form className={styles.form} onSubmit={handleEditPostSubmit}>
           <h2 id="edit-post-title" className={styles.title}>
