@@ -1,4 +1,4 @@
-import { BadgeType } from "../Button/Button.types";
+import { BadgeType } from "../../../../components/ui/Button/Button.types";
 
 export interface CreatePostCategoryOption {
   label: string;

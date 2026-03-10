@@ -1,4 +1,4 @@
-import { BadgeType } from "../Button/Button.types";
+import { BadgeType } from "../../ui/Button/Button.types";
 import type { FilterOption } from "./FilterBar.types";
 
 export const FILTER_OPTIONS: FilterOption[] = [

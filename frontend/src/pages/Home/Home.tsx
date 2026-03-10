@@ -1,0 +1,185 @@
+import { useEffect, useMemo, useState } from "react";
+import type { FilterCategory } from "../../components/shared/FilterBar";
+import FilterBar from "../../components/shared/FilterBar";
+import Paginations from "../../components/shared/Paginations";
+import SearchBar from "../../components/shared/SearchBar";
+import Button from "../../components/ui/Button/Button";
+import { postAPI } from "../../features/post/api/api.post";
+import CreatePostModal from "../../features/post/components/CreatePostModal";
+import type { CreatePostFormValues } from "../../features/post/components/CreatePostModal";
+import PostFeed from "../../features/post/components/PostFeed/PostFeed";
+import type { PostCardData } from "../../features/post/components/PostCard/PostCard.types";
+import styles from "./Home.module.css";
+import { mapPostToCardData } from "./Home.utils";
+
+const PAGE_SIZE = 10;
+
+// Renders the home feed with search and category controls for mobile and desktop.
+export default function HomePage() {
+  const [homePosts, setHomePosts] = useState<PostCardData[]>([]);
+  const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeCategory, setActiveCategory] = useState<FilterCategory>("ALL");
+  const [isLoadingPosts, setIsLoadingPosts] = useState(true);
+  const [postsErrorMessage, setPostsErrorMessage] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  // Fetches one page of posts for the current pagination state.
+  useEffect(() => {
+    let isUnmounted = false;
+
+    async function loadPosts() {
+      setIsLoadingPosts(true);
+      setPostsErrorMessage(null);
+
+      try {
+        const response = await postAPI.getAll(currentPage - 1, PAGE_SIZE);
+
+        if (isUnmounted) {
+          return;
+        }
+
+        setHomePosts(response.data.content.map(mapPostToCardData));
+        setTotalPages(Math.max(response.data.totalPages, 1));
+      } catch {
+        if (isUnmounted) {
+          return;
+        }
+
+        setHomePosts([]);
+        setTotalPages(1);
+        setPostsErrorMessage("Unable to load posts right now. Please try again.");
+      } finally {
+        if (!isUnmounted) {
+          setIsLoadingPosts(false);
+        }
+      }
+    }
+
+    void loadPosts();
+
+    return () => {
+      isUnmounted = true;
+    };
+  }, [currentPage]);
+
+  // Applies search and category filters on the currently loaded posts page.
+  const filteredPosts = useMemo(() => {
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+
+    return homePosts.filter((post) => {
+      const matchesQuery =
+        normalizedQuery.length === 0 ||
+        post.title.toLowerCase().includes(normalizedQuery);
+
+      const matchesCategory =
+        activeCategory === "ALL" || post.badgeType === activeCategory;
+
+      return matchesQuery && matchesCategory;
+    });
+  }, [activeCategory, homePosts, searchQuery]);
+
+  // Keeps query state in sync with the search input field.
+  function handleSearchValueChange(nextValue: string) {
+    setSearchInput(nextValue);
+
+    if (nextValue.trim().length === 0) {
+      setSearchQuery("");
+    }
+  }
+
+  // Triggers a search using the submitted input value.
+  function handleSearch(query: string) {
+    setSearchQuery(query.trim());
+  }
+
+  // Opens the create-post modal from the top action button.
+  function handleOpenCreatePostModal() {
+    setIsCreatePostOpen(true);
+  }
+
+  // Closes the create-post modal and keeps the current feed state.
+  function handleCloseCreatePostModal() {
+    setIsCreatePostOpen(false);
+  }
+
+  // Adds a newly created post to the top of the feed.
+  function handleCreatePost(values: CreatePostFormValues) {
+    const nextPost: PostCardData = {
+      id: `post-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      title: values.title,
+      content: values.details,
+      writerName: "John Doe",
+      time: "just now",
+      commentsCount: 0,
+      badgeLabel: values.categoryLabel,
+      badgeType: values.category,
+    };
+
+    setHomePosts((previousPosts) => [nextPost, ...previousPosts]);
+  }
+
+  return (
+    <main className={styles.homePage}>
+      <section className={styles.controlsSection} aria-label="Post controls">
+        <div className={styles.searchActionsRow}>
+          <SearchBar
+            className={styles.searchBar}
+            value={searchInput}
+            onValueChange={handleSearchValueChange}
+            onSearch={handleSearch}
+          />
+
+          <Button
+            variant="primary"
+            className={styles.createPostButton}
+            aria-label="Create post"
+            onClick={handleOpenCreatePostModal}
+          >
+            <span className={styles.createPostIcon} aria-hidden="true">
+              +
+            </span>
+            <span>Create post</span>
+          </Button>
+        </div>
+
+        <FilterBar
+          className={styles.filterBar}
+          activeCategory={activeCategory}
+          onCategoryChange={setActiveCategory}
+        />
+      </section>
+
+      {isLoadingPosts && (
+        <p className={styles.statusMessage} role="status" aria-live="polite">
+          Loading posts...
+        </p>
+      )}
+
+      {!isLoadingPosts && postsErrorMessage && (
+        <p className={styles.errorMessage} role="alert">
+          {postsErrorMessage}
+        </p>
+      )}
+
+      {!isLoadingPosts && !postsErrorMessage && <PostFeed posts={filteredPosts} />}
+
+      {!isLoadingPosts && !postsErrorMessage && totalPages > 1 && (
+        <Paginations
+          className={styles.pagination}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
+      )}
+
+      <CreatePostModal
+        isOpen={isCreatePostOpen}
+        onClose={handleCloseCreatePostModal}
+        onCreatePost={handleCreatePost}
+      />
+    </main>
+  );
+}

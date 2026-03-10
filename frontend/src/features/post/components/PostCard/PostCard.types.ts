@@ -1,4 +1,4 @@
-import type { BadgeType } from "../Button/Button.types";
+import type { BadgeType } from "../../../../components/ui/Button/Button.types";
 
 export interface PostCardData {
   id: string;

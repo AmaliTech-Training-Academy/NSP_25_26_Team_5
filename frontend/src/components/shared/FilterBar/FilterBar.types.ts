@@ -1,4 +1,4 @@
-import type { BadgeType } from "../Button/Button.types";
+import type { BadgeType } from "../../ui/Button/Button.types";
 
 export type FilterCategory = "ALL" | BadgeType;
 
