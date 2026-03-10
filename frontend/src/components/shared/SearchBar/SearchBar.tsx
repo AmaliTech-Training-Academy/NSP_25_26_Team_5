@@ -1,9 +1,9 @@
 import type { FormEvent } from "react";
-import CloseIcon from "../Icons/CloseIcon";
-import SearchIcon from "../Icons/SearchIcon";
 import styles from "./SearchBar.module.css";
 import type { SearchBarProps } from "./SearchBar.types";
 import { joinSearchBarClassName } from "./SearchBar.utils";
+import SearchIcon from "../../../assets/Icons/SearchIcon";
+import CloseIcon from "../../../assets/Icons/CloseIcon";
 
 // Renders a controlled search form with clear and submit interactions.
 export default function SearchBar({
@@ -13,7 +13,10 @@ export default function SearchBar({
   onValueChange,
   onSearch,
 }: SearchBarProps) {
-  const searchBarClassName = joinSearchBarClassName(styles.searchBar, className);
+  const searchBarClassName = joinSearchBarClassName(
+    styles.searchBar,
+    className,
+  );
   const hasValue = value.length > 0;
 
   // Handles search submit without causing a page refresh.
@@ -47,7 +50,11 @@ export default function SearchBar({
         </div>
       </div>
 
-      <button type="submit" className={styles.searchButton} aria-label="Search posts">
+      <button
+        type="submit"
+        className={styles.searchButton}
+        aria-label="Search posts"
+      >
         <SearchIcon className={styles.searchButtonIcon} />
       </button>
     </form>
