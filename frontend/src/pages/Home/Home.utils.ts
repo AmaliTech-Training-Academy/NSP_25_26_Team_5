@@ -2,31 +2,22 @@ import { BadgeType } from "../../components/ui/Button/Button.types";
 import type { PostCardData } from "../../features/post/components/PostCard/PostCard.types";
 import type { CategoryData, Post } from "../../features/post/types/post.type";
 
-// Normalizes backend category strings into UI badge metadata.
+// Normalizes backend categories into home-feed badge metadata.
 export function findCategoryData(categoryName: string | null): CategoryData {
   const normalized = categoryName?.trim().toUpperCase();
 
   switch (normalized) {
     case BadgeType.EVENT:
-    case "EVENTS":
-      return { badgeLabel: "EVENT", badgeType: BadgeType.EVENT };
-    case "TECH":
-    case "RECOMMENDATIONS":
+      return { badgeLabel: "Events", badgeType: BadgeType.EVENT };
     case BadgeType.DISCUSSION:
-      return { badgeLabel: "DISCUSSION", badgeType: BadgeType.DISCUSSION };
-    case "HELP":
-    case "HELP REQUEST":
-    case "HELP REQUESTS":
-    case "LOST & FOUND":
-    case "LOST AND FOUND":
+      return { badgeLabel: "Recommendations", badgeType: BadgeType.DISCUSSION };
     case BadgeType.ALERT:
-      return { badgeLabel: "ALERT", badgeType: BadgeType.ALERT };
+      return { badgeLabel: "Lost & Found", badgeType: BadgeType.ALERT };
     case BadgeType.NEWS:
-    case "GENERAL":
-      return { badgeLabel: "NEWS", badgeType: BadgeType.NEWS };
+      return { badgeLabel: "Help Requests", badgeType: BadgeType.NEWS };
     default:
       return {
-        badgeLabel: "NEWS",
+        badgeLabel: "Help Requests",
         badgeType: BadgeType.NEWS,
       };
   }

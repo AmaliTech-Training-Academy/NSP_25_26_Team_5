@@ -1,20 +1,21 @@
 .searchBar {
   width: 100%;
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: 12px;
 }
 
 .inputField {
-  flex: 1;
+  flex: 1 1 auto;
   min-width: 0;
 }
 
 .inputWrapper {
   width: 100%;
+  min-height: 48px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 0;
   padding: 12px 16px;
   border: 1px solid #b2bcc2;
   border-radius: 8px;
@@ -51,6 +52,7 @@
   border: none;
   background: transparent;
   padding: 0;
+  margin-left: 10px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -69,9 +71,10 @@
 
 .searchButton {
   align-self: stretch;
+  width: 40px;
   border: 1px solid #08283b;
   border-radius: 8px;
-  padding: 10px 12px;
+  padding: 0;
   background: #08283b;
   color: #fdfdfd;
   display: inline-flex;
@@ -89,6 +92,14 @@
 .searchButton:hover {
   background: #0c344d;
   border-color: #0c344d;
+}
+
+.inputWrapper:focus-within {
+  border-color: #607684;
+}
+
+.clearButton:disabled {
+  opacity: 0.65;
 }
 
 .searchButton:focus-visible,

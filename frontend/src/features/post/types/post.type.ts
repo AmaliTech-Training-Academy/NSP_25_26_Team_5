@@ -19,7 +19,15 @@ export interface PostPayload {
   categoryId: number | string | null;
 }
 
-export type CategoryLabel = "NEWS" | "EVENT" | "DISCUSSION" | "ALERT";
+export type CategoryLabel =
+  | "NEWS"
+  | "EVENT"
+  | "DISCUSSION"
+  | "ALERT"
+  | "Events"
+  | "Lost & Found"
+  | "Recommendations"
+  | "Help Requests";
 
 export interface CategoryData {
   badgeLabel: CategoryLabel;

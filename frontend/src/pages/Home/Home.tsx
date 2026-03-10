@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router";
 import type { FilterCategory } from "../../components/shared/FilterBar";
 import FilterBar from "../../components/shared/FilterBar";
@@ -11,7 +10,6 @@ import { postAPI } from "../../features/post/api/api.post";
 import CreatePostModal from "../../features/post/components/CreatePostModal";
 import type { CreatePostFormValues } from "../../features/post/components/CreatePostModal";
 import PostFeed from "../../features/post/components/PostFeed/PostFeed";
-import type { PostCardData } from "../../features/post/components/PostCard/PostCard.types";
 import { usePaginatedPosts } from "../../hooks";
 import styles from "./Home.module.css";
 import { mapPostToCardData } from "./Home.utils";
@@ -91,13 +89,7 @@ export default function HomePage() {
       });
 
       const createdPost = mapPostToCardData(response.data);
-      const nextPost: PostCardData = {
-        ...createdPost,
-        badgeLabel: values.categoryLabel,
-        badgeType: values.category,
-      };
-
-      setHomePosts((previousPosts) => [nextPost, ...previousPosts]);
+      setHomePosts((previousPosts) => [createdPost, ...previousPosts]);
       navigate(`/posts/${response.data.id}`);
     } catch (error) {
       throw new Error(findCreatePostErrorMessage(error));

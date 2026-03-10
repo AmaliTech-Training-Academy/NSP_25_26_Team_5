@@ -7,7 +7,6 @@ import MenuIcon from "../../../assets/Icons/MenuIcon";
 import ChartColumnIcon from "../../../assets/Icons/ChartColumnIcon";
 import LogOutIcon from "../../../assets/Icons/LogOutIcon";
 import CloseIcon from "../../../assets/Icons/CloseIcon";
-import { Outlet } from "react-router";
 
 export default function NavBar({
   className,
