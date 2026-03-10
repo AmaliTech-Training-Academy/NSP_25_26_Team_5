@@ -19,10 +19,6 @@ export interface PostPayload {
   categoryId: number | string | null;
 }
 
-export interface CommentPayload {
-  content: string;
-}
-
 export type CategoryLabel =
   | "News"
   | "Event"
@@ -45,13 +41,6 @@ export interface Post {
   createdAt: string;
   updatedAt: string;
   commentCount: number;
-}
-
-export interface PostComment {
-  id: number;
-  content: string;
-  authorName: string;
-  createdAt: string;
 }
 
 export interface ApiErrorPayload {
