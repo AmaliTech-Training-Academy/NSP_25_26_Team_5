@@ -22,17 +22,18 @@ public class AnalyticsService {
     public AnalyticsResponse getDashboardAnalytics() {
         List<Post> allPosts = postRepository.findAll();
 
-        // 1. Posts Per Category (group by category string)
+        // 1. Posts Per Category
         Map<String, Long> postsCountByCategory = allPosts.stream()
                 .filter(post -> post.getCategory() != null && !post.getCategory().isBlank())
                 .collect(Collectors.groupingBy(Post::getCategory, Collectors.counting()));
 
         List<AnalyticsCategoryResponse> categoryResponses = postsCountByCategory.entrySet().stream()
                 .map(entry -> new AnalyticsCategoryResponse(entry.getKey(), entry.getValue()))
-                .collect(Collectors.toList());
+                .toList();
 
-        // 2. Most Active Days
+        // 2. Most Active Days (group by day of week)
         Map<String, Long> postsByDay = allPosts.stream()
+                .filter(post -> post.getCreatedAt() != null)
                 .collect(Collectors.groupingBy(
                         post -> post.getCreatedAt().getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.ENGLISH),
                         Collectors.counting()
@@ -41,9 +42,9 @@ public class AnalyticsService {
         List<AnalyticsActiveDayResponse> activeDayResponses = postsByDay.entrySet().stream()
                 .map(entry -> new AnalyticsActiveDayResponse(entry.getKey(), entry.getValue()))
                 .sorted((a, b) -> b.getTotalPosts().compareTo(a.getTotalPosts()))
-                .collect(Collectors.toList());
+                .toList();
 
-        // 3. Top 5 Contributors (group by author fullName)
+        // 3. Top Contributors (group by author fullName)
         Map<String, Long> postsByAuthor = allPosts.stream()
                 .filter(post -> post.getAuthor() != null)
                 .collect(Collectors.groupingBy(
@@ -55,7 +56,7 @@ public class AnalyticsService {
                 .map(entry -> new AnalyticsContributorResponse(entry.getKey(), entry.getValue()))
                 .sorted((a, b) -> b.getTotalPosts().compareTo(a.getTotalPosts()))
                 .limit(5)
-                .collect(Collectors.toList());
+                .toList();
 
         return AnalyticsResponse.builder()
                 .postsPerCategory(categoryResponses)

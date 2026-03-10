@@ -1,6 +1,5 @@
 target/
 node_modules/
-.env
 *.class
 *.jar
 *.log
@@ -11,3 +10,4 @@ build/
 __pycache__/
 *.pyc
 .DS_Store
+.env

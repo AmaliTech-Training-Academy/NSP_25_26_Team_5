@@ -1,12 +1,13 @@
 package com.amalitech.communityboard.dto;
 
-import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 
 @Data
-@AllArgsConstructor
-public class ApiResponse<T> {
-    private int status;
-    private String message;
-    private T data;
+@Builder
+public class AuthUserResponse {
+    private String token;
+    private String email;
+    private String fullName;
+    private String role;
 }

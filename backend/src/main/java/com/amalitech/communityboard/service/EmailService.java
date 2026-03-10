@@ -30,7 +30,6 @@ public class EmailService {
             return; // No category, nothing to notify
         }
 
-        // For Option B schema: no subscribedCategories relationship.
         // Instead, you might notify ALL users, or later filter by preferences if you add them.
         List<User> subscribers = userRepository.findAll();
         if (subscribers.isEmpty()) {
