@@ -1,11 +1,17 @@
 import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import { postAPI } from "../features/post/api/api.post";
-import type { Post } from "../features/post/types/post.type";
+import type { PagedResponse, Post } from "../features/post/types/post.type";
+
+type PostsFetcher = (
+  page: number,
+  size: number,
+) => Promise<{ data: PagedResponse<Post> }>;
 
 interface UsePaginatedPostsParams<T> {
   currentPage: number;
   pageSize: number;
   mapPost: (post: Post) => T;
+  fetchPosts?: PostsFetcher;
 }
 
 interface UsePaginatedPostsResult<T> {
@@ -21,6 +27,7 @@ export function usePaginatedPosts<T>({
   currentPage,
   pageSize,
   mapPost,
+  fetchPosts,
 }: UsePaginatedPostsParams<T>): UsePaginatedPostsResult<T> {
   const [posts, setPosts] = useState<T[]>([]);
   const [isLoadingPosts, setIsLoadingPosts] = useState(true);
@@ -35,7 +42,10 @@ export function usePaginatedPosts<T>({
       setPostsErrorMessage(null);
 
       try {
-        const response = await postAPI.getAll(currentPage - 1, pageSize);
+        const response = await (fetchPosts ?? postAPI.getAll)(
+          currentPage - 1,
+          pageSize,
+        );
 
         if (isUnmounted) {
           return;
@@ -63,7 +73,7 @@ export function usePaginatedPosts<T>({
     return () => {
       isUnmounted = true;
     };
-  }, [currentPage, mapPost, pageSize]);
+  }, [currentPage, fetchPosts, mapPost, pageSize]);
 
   return {
     posts,

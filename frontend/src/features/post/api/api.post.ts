@@ -8,6 +8,12 @@ export const postAPI = {
     });
   },
 
+  getMine(page = 0, size = 10) {
+    return apiClient.get<PagedResponse<Post>>("/posts/me", {
+      params: { page, size },
+    });
+  },
+
   getById(id: number) {
     return apiClient.get<Post>(`/posts/${id}`);
   },

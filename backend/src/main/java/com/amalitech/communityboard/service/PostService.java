@@ -22,6 +22,12 @@ public class PostService {
                 .map(this::toResponse);
     }
 
+    public Page<PostResponse> getPostsByAuthor(Long authorId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return postRepository.findByAuthorIdOrderByCreatedAtDesc(authorId, pageable)
+                .map(this::toResponse);
+    }
+
     public PostResponse getPostById(Long id) {
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Post not found"));

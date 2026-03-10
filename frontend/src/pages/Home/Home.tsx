@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import type { FilterCategory } from "../../components/shared/FilterBar";
 import FilterBar from "../../components/shared/FilterBar";
@@ -16,6 +16,7 @@ import { mapPostToCardData } from "./Home.utils";
 import { findCreatePostErrorMessage } from "../../features/post/utils/post.utils";
 
 const PAGE_SIZE = 10;
+type PostFeedScope = "ALL_POSTS" | "MY_POSTS";
 
 
 // Renders the home feed with search and category controls for mobile and desktop.
@@ -23,10 +24,21 @@ export default function HomePage() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
+  const [postFeedScope, setPostFeedScope] = useState<PostFeedScope>("ALL_POSTS");
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<FilterCategory>("ALL");
   const [currentPage, setCurrentPage] = useState(1);
+
+  // Resolves the posts endpoint based on the active feed scope.
+  const fetchPosts = useCallback(
+    (page: number, size: number) =>
+      postFeedScope === "MY_POSTS"
+        ? postAPI.getMine(page, size)
+        : postAPI.getAll(page, size),
+    [postFeedScope],
+  );
+
   const {
     posts: homePosts,
     setPosts: setHomePosts,
@@ -37,6 +49,7 @@ export default function HomePage() {
     currentPage,
     pageSize: PAGE_SIZE,
     mapPost: mapPostToCardData,
+    fetchPosts,
   });
 
   // Applies search and category filters on the currently loaded posts page.
@@ -69,6 +82,14 @@ export default function HomePage() {
     setSearchQuery(query.trim());
   }
 
+  // Toggles between all posts and authenticated-user posts.
+  function handleToggleYourPosts() {
+    setCurrentPage(1);
+    setPostFeedScope((previousScope) =>
+      previousScope === "MY_POSTS" ? "ALL_POSTS" : "MY_POSTS",
+    );
+  }
+
   // Opens the create-post modal from the top action button.
   function handleOpenCreatePostModal() {
     setIsCreatePostOpen(true);
@@ -96,6 +117,9 @@ export default function HomePage() {
     }
   }
 
+  const isYourPostsActive = postFeedScope === "MY_POSTS";
+  const shouldCenterEmptyFeed = filteredPosts.length === 0;
+
   return (
     <main className={styles.homePage}>
       <section className={styles.controlsSection} aria-label="Post controls">
@@ -122,11 +146,24 @@ export default function HomePage() {
           )}
         </div>
 
-        <FilterBar
-          className={styles.filterBar}
-          activeCategory={activeCategory}
-          onCategoryChange={setActiveCategory}
-        />
+        <div className={styles.filterActionsRow}>
+          <FilterBar
+            className={styles.filterBar}
+            activeCategory={activeCategory}
+            onCategoryChange={setActiveCategory}
+          />
+
+          {isAuthenticated && (
+            <Button
+              variant="badge"
+              className={styles.yourPostsButton}
+              aria-pressed={isYourPostsActive}
+              onClick={handleToggleYourPosts}
+            >
+              Your Posts
+            </Button>
+          )}
+        </div>
       </section>
 
       {isLoadingPosts && (
@@ -141,7 +178,11 @@ export default function HomePage() {
         </p>
       )}
 
-      {!isLoadingPosts && !postsErrorMessage && <PostFeed posts={filteredPosts} />}
+      {!isLoadingPosts && !postsErrorMessage && (
+        <div className={shouldCenterEmptyFeed ? styles.emptyFeed : undefined}>
+          <PostFeed posts={filteredPosts} />
+        </div>
+      )}
 
       {!isLoadingPosts && !postsErrorMessage && totalPages > 1 && (
         <Paginations

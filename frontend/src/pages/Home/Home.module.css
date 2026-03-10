@@ -53,6 +53,31 @@
   width: 100%;
 }
 
+.filterActionsRow {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.yourPostsButton {
+  align-self: flex-start;
+  border: 1px solid #395362;
+  border-radius: 6px;
+  background: #fdfdfd;
+  color: #08283b;
+  padding: 2px 12px;
+  font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.yourPostsButton[aria-pressed="true"] {
+  background: #b2bcc2;
+}
+
 .statusMessage,
 .errorMessage {
   margin: 0;
@@ -69,6 +94,14 @@
 .pagination {
   width: fit-content;
   margin-left: auto;
+}
+
+.emptyFeed {
+  width: 100%;
+  min-height: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 @media (min-width: 768px) {
@@ -92,5 +125,25 @@
   .createPostButton {
     width: auto;
     min-width: 160px;
+  }
+
+  .filterActionsRow {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .filterBar {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .yourPostsButton {
+    margin-left: auto;
+  }
+
+  .emptyFeed {
+    min-height: 420px;
   }
 }
