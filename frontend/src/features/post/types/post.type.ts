@@ -42,6 +42,14 @@ export interface Post {
   updatedAt: string;
   commentCount: number;
 }
+
+export interface PostComment {
+  id: number;
+  content: string;
+  authorName: string;
+  createdAt: string;
+}
+
 export interface ApiErrorPayload {
   message?: string;
   error?: string;
