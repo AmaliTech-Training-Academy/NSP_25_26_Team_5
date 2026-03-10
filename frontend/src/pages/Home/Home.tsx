@@ -9,6 +9,7 @@ import { useAuth } from "../../context/AuthContext/AuthContext";
 import { postAPI } from "../../features/post/api/api.post";
 import CreatePostModal from "../../features/post/components/CreatePostModal";
 import type { CreatePostFormValues } from "../../features/post/components/CreatePostModal";
+import DeletePostModal from "../../features/post/components/DeletePostModal";
 import EditPostModal from "../../features/post/components/EditPostModal";
 import type { EditPostFormValues } from "../../features/post/components/EditPostModal";
 import PostFeed from "../../features/post/components/PostFeed/PostFeed";
@@ -28,7 +29,9 @@ export default function HomePage() {
   const { isAuthenticated, user } = useAuth();
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   const [isEditPostOpen, setIsEditPostOpen] = useState(false);
+  const [isDeletingPost, setIsDeletingPost] = useState(false);
   const [postBeingEdited, setPostBeingEdited] = useState<PostCardData | null>(null);
+  const [postBeingDeleted, setPostBeingDeleted] = useState<PostCardData | null>(null);
   const [postFeedScope, setPostFeedScope] = useState<PostFeedScope>("ALL_POSTS");
   const [postActionErrorMessage, setPostActionErrorMessage] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState("");
@@ -162,33 +165,55 @@ export default function HomePage() {
     }
   }
 
-  // Deletes a post and removes it from the current feed view.
-  async function handleDeletePost(postId: string) {
-    const parsedPostId = Number(postId);
+  // Opens the delete confirmation popup for the selected post.
+  function handleDeletePost(postId: string) {
+    const targetPost = homePosts.find((post) => post.id === postId);
 
-    if (Number.isNaN(parsedPostId)) {
-      return;
-    }
-
-    const hasConfirmedDelete = window.confirm(
-      "Are you sure you want to delete this post?",
-    );
-
-    if (!hasConfirmedDelete) {
+    if (!targetPost) {
       return;
     }
 
     setPostActionErrorMessage(null);
+    setPostBeingDeleted(targetPost);
+  }
+
+  // Closes the delete modal when there is no in-flight delete request.
+  function handleCloseDeletePostModal() {
+    if (isDeletingPost) {
+      return;
+    }
+
+    setPostBeingDeleted(null);
+  }
+
+  // Confirms deletion and removes the post from the currently loaded page.
+  async function handleDeletePostConfirm() {
+    if (!postBeingDeleted) {
+      return;
+    }
+
+    const parsedPostId = Number(postBeingDeleted.id);
+
+    if (Number.isNaN(parsedPostId)) {
+      setPostBeingDeleted(null);
+      return;
+    }
+
+    setPostActionErrorMessage(null);
+    setIsDeletingPost(true);
 
     try {
       await postAPI.delete(parsedPostId);
       setHomePosts((previousPosts) =>
-        previousPosts.filter((post) => post.id !== postId),
+        previousPosts.filter((post) => post.id !== postBeingDeleted.id),
       );
+      setPostBeingDeleted(null);
     } catch {
       setPostActionErrorMessage(
         "Unable to delete this post right now. Please try again.",
       );
+    } finally {
+      setIsDeletingPost(false);
     }
   }
 
@@ -297,6 +322,15 @@ export default function HomePage() {
           post={postBeingEdited}
           onClose={handleCloseEditPostModal}
           onEditPost={handleEditPostSubmit}
+        />
+      )}
+
+      {isAuthenticated && (
+        <DeletePostModal
+          isOpen={postBeingDeleted !== null}
+          isDeleting={isDeletingPost}
+          onClose={handleCloseDeletePostModal}
+          onConfirm={handleDeletePostConfirm}
         />
       )}
     </main>
