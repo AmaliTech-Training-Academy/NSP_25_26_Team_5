@@ -1,4 +1,5 @@
 
+import ChevronRightIcon from "../../../assets/Icons/ChevronRightIcon";
 import styles from "./Breadcrumbs.module.css";
 import type { BreadcrumbsProps } from "./Breadcrumbs.types";
 import { joinBreadcrumbsClassName } from "./Breadcrumbs.utils";

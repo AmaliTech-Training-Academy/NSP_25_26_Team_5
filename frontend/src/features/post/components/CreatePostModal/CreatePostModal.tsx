@@ -22,6 +22,8 @@ import Input from "../../../../components/ui/Input/Input";
 import Button from "../../../../components/ui/Button/Button";
 import ChevronUpIcon from "../../../../assets/Icons/ChevronUpIcon";
 import ChevronDownIcon from "../../../../assets/Icons/ChevronDownIcon";
+import HouseIcon from "../../../../assets/Icons/HouseIcon";
+import Breadcrumbs from "../../../../components/shared/Breadcrumbs/Breadcrumbs";
 
 // Renders the create-post modal and submits a new post payload to the parent.
 export default function CreatePostModal({
