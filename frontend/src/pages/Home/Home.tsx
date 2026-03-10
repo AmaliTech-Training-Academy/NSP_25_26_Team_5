@@ -1,14 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type { FilterCategory } from "../../components/shared/FilterBar";
 import FilterBar from "../../components/shared/FilterBar";
 import Paginations from "../../components/shared/Paginations";
 import SearchBar from "../../components/shared/SearchBar";
 import Button from "../../components/ui/Button/Button";
-import { postAPI } from "../../features/post/api/api.post";
 import CreatePostModal from "../../features/post/components/CreatePostModal";
 import type { CreatePostFormValues } from "../../features/post/components/CreatePostModal";
 import PostFeed from "../../features/post/components/PostFeed/PostFeed";
 import type { PostCardData } from "../../features/post/components/PostCard/PostCard.types";
+import { usePaginatedPosts } from "../../hooks";
 import styles from "./Home.module.css";
 import { mapPostToCardData } from "./Home.utils";
 
@@ -16,54 +16,22 @@ const PAGE_SIZE = 10;
 
 // Renders the home feed with search and category controls for mobile and desktop.
 export default function HomePage() {
-  const [homePosts, setHomePosts] = useState<PostCardData[]>([]);
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<FilterCategory>("ALL");
-  const [isLoadingPosts, setIsLoadingPosts] = useState(true);
-  const [postsErrorMessage, setPostsErrorMessage] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-
-  // Fetches one page of posts for the current pagination state.
-  useEffect(() => {
-    let isUnmounted = false;
-
-    async function loadPosts() {
-      setIsLoadingPosts(true);
-      setPostsErrorMessage(null);
-
-      try {
-        const response = await postAPI.getAll(currentPage - 1, PAGE_SIZE);
-
-        if (isUnmounted) {
-          return;
-        }
-
-        setHomePosts(response.data.content.map(mapPostToCardData));
-        setTotalPages(Math.max(response.data.totalPages, 1));
-      } catch {
-        if (isUnmounted) {
-          return;
-        }
-
-        setHomePosts([]);
-        setTotalPages(1);
-        setPostsErrorMessage("Unable to load posts right now. Please try again.");
-      } finally {
-        if (!isUnmounted) {
-          setIsLoadingPosts(false);
-        }
-      }
-    }
-
-    void loadPosts();
-
-    return () => {
-      isUnmounted = true;
-    };
-  }, [currentPage]);
+  const {
+    posts: homePosts,
+    setPosts: setHomePosts,
+    isLoadingPosts,
+    postsErrorMessage,
+    totalPages,
+  } = usePaginatedPosts({
+    currentPage,
+    pageSize: PAGE_SIZE,
+    mapPost: mapPostToCardData,
+  });
 
   // Applies search and category filters on the currently loaded posts page.
   const filteredPosts = useMemo(() => {
