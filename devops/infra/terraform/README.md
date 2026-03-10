@@ -1,6 +1,10 @@
 # Community Board – Terraform (AWS)
 
-Infrastructure: VPC, ALB, **ECR**, ECS (backend), RDS (Postgres), Amplify (frontend). Backend is private (only ALB is public). **ECR is created by Terraform** so CI can push without manual repo creation; image URL is derived from ECR output + tag.
+Infrastructure: VPC, ALB, **ECR**, ECS (backend), RDS (Postgres), Amplify (frontend), **SNS** (notifications/alerts). Backend is private (only ALB is public). **ECR is created by Terraform** so CI can push without manual repo creation.
+
+## Multi-environment (CD)
+
+**CD uses environment folders**, not the root: `devops/infra/terraform/environments/<env>/`. Branch → env: **dev** → `environments/dev`, **staging** → `environments/staging`, **main** → `environments/production`. Each env has its own state key, ECR repo, and variable defaults (e.g. `db_instance_class`, `vpc_cidr`, `alert_email`). See **[environments/README.md](environments/README.md)**.
 
 ## Prerequisites
 
@@ -40,12 +44,12 @@ Optional/sensitive: `jwt_secret`, `github_token` (for Amplify private repo).
 
 ## CI/CD (GitHub Actions)
 
-- **CI** (`ci.yml`): Builds and pushes backend image to ECR (`communityboard-backend:<sha>`). ECR repo must exist (Terraform creates it).
-- **CD** (`cd.yml`): Terraform validate (every run), then on push to main: plan & apply. Uses **TF_VAR_backend_image_tag** (default `github.sha`) so the deployed image matches the commit; no need for **TF_VAR_BACKEND_IMAGE** secret.
+- **CI** (`ci.yml`): Builds and pushes backend image (per-env ECR repo created by Terraform in each environment folder).
+- **CD** (`cd.yml`): Runs from `environments/<env>` where env = branch (dev/staging) or production (main). Terraform validate → plan → apply ECR only → build & push image to `communityboard-backend-<env>:<sha>` → full apply. Each GitHub Environment (dev, staging, production) can have different secrets.
 
-Required **secrets**: `AWS_ROLE_ARN`, `AWS_REGION`, `TF_VAR_DB_USERNAME`, `TF_VAR_DB_PASSWORD`, `TF_VAR_JWT_SECRET`; optional `TF_VAR_GITHUB_TOKEN`.  
-Required **vars**: `TF_VAR_REPO_URL`, `TF_VAR_API_URL`.  
-Optional **var**: `TF_VAR_BACKEND_IMAGE_TAG` (defaults to `github.sha` in CD).
+Required **secrets** (per env or repo): `AWS_ROLE_ARN`, `AWS_REGION`, `TF_STATE_BUCKET`, `TF_LOCK_TABLE`, `TF_VAR_DB_USERNAME`, `TF_VAR_DB_PASSWORD`, `TF_VAR_JWT_SECRET`; optional `TF_VAR_GITHUB_TOKEN`.  
+Required **vars**: `TF_VAR_REPO_URL`; optional `TF_VAR_API_URL`, `TF_VAR_ALERT_EMAIL` (SNS).  
+State key is derived: `community-board/<env>/terraform.tfstate`.
 
 ## SonarQube / SonarCloud
 

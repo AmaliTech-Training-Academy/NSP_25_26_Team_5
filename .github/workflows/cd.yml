@@ -3,15 +3,17 @@ name: CD (Terraform)
 on:
   workflow_run:
     workflows: ["CI Pipeline"]
-    branches: [main, dev]
+    branches: [main, dev, staging]
     types: [completed]
 
 env:
-  TF_WORKING_DIR: devops/infra/terraform
+  # Branch → environment: main → production, dev → dev, staging → staging
+  ENVIRONMENT: ${{ github.event.workflow_run.head_branch == 'main' && 'production' || github.event.workflow_run.head_branch }}
+  TF_WORKING_DIR: devops/infra/terraform/environments/${{ github.event.workflow_run.head_branch == 'main' && 'production' || github.event.workflow_run.head_branch }}
 
 jobs:
   terraform-validate:
-    name: Terraform validate
+    name: Terraform validate (${{ env.ENVIRONMENT }})
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     permissions:
@@ -37,7 +39,7 @@ jobs:
         run: |
           terraform init \
           -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
-          -backend-config="key=${{ secrets.TF_STATE_KEY }}" \
+          -backend-config="key=community-board/${{ env.ENVIRONMENT }}/terraform.tfstate" \
           -backend-config="region=${{ secrets.AWS_REGION }}" \
           -backend-config="dynamodb_table=${{ secrets.TF_LOCK_TABLE }}"
 
@@ -46,18 +48,18 @@ jobs:
         run: terraform validate -no-color
 
       - name: Terraform fmt check
-        working-directory: ${{ env.TF_WORKING_DIR }}
+        working-directory: devops/infra/terraform
         run: terraform fmt -check -recursive -diff
 
   terraform-deploy:
-    name: Terraform plan & apply
+    name: Terraform plan & apply (${{ env.ENVIRONMENT }})
     runs-on: ubuntu-latest
     needs: [terraform-validate]
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     permissions:
       id-token: write
       contents: read
-    environment: production
+    environment: ${{ env.ENVIRONMENT }}
     steps:
       - uses: actions/checkout@v4
 
@@ -78,7 +80,7 @@ jobs:
         run: |
           terraform init -input=false \
           -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
-          -backend-config="key=${{ secrets.TF_STATE_KEY }}" \
+          -backend-config="key=community-board/${{ env.ENVIRONMENT }}/terraform.tfstate" \
           -backend-config="region=${{ secrets.AWS_REGION }}" \
           -backend-config="dynamodb_table=${{ secrets.TF_LOCK_TABLE }}"
 
@@ -86,25 +88,27 @@ jobs:
         working-directory: ${{ env.TF_WORKING_DIR }}
         run: terraform plan -input=false -no-color -out=tfplan
         env:
+          TF_VAR_environment: ${{ env.ENVIRONMENT }}
           TF_VAR_db_username: ${{ secrets.TF_VAR_DB_USERNAME }}
           TF_VAR_db_password: ${{ secrets.TF_VAR_DB_PASSWORD }}
           TF_VAR_backend_image_tag: ${{ github.event.workflow_run.head_sha }}
           TF_VAR_repo_url: ${{ vars.TF_VAR_REPO_URL }}
-          # TF_VAR_api_url: ${{ vars.TF_VAR_API_URL }}
           TF_VAR_jwt_secret: ${{ secrets.TF_VAR_JWT_SECRET }}
           TF_VAR_github_token: ${{ secrets.TF_VAR_GITHUB_TOKEN }}
+          TF_VAR_alert_email: ${{ vars.TF_VAR_ALERT_EMAIL }}
 
       - name: Terraform apply ECR only
         working-directory: ${{ env.TF_WORKING_DIR }}
         run: terraform apply -input=false -no-color -auto-approve -target=module.ecr
         env:
+          TF_VAR_environment: ${{ env.ENVIRONMENT }}
           TF_VAR_db_username: ${{ secrets.TF_VAR_DB_USERNAME }}
           TF_VAR_db_password: ${{ secrets.TF_VAR_DB_PASSWORD }}
           TF_VAR_backend_image_tag: ${{ github.event.workflow_run.head_sha }}
           TF_VAR_repo_url: ${{ vars.TF_VAR_REPO_URL }}
-          # TF_VAR_api_url: ${{ vars.TF_VAR_API_URL }}
           TF_VAR_jwt_secret: ${{ secrets.TF_VAR_JWT_SECRET }}
           TF_VAR_github_token: ${{ secrets.TF_VAR_GITHUB_TOKEN }}
+          TF_VAR_alert_email: ${{ vars.TF_VAR_ALERT_EMAIL }}
 
       - name: Login to ECR
         id: login-ecr
@@ -112,13 +116,15 @@ jobs:
 
       - name: Build & push image to ECR
         run: |
-          docker build -t ${{ steps.login-ecr.outputs.registry }}/${{ vars.ECR_REPO_NAME }}:${{ github.event.workflow_run.head_sha }} ./backend
-          docker push ${{ steps.login-ecr.outputs.registry }}/${{ vars.ECR_REPO_NAME }}:${{ github.event.workflow_run.head_sha }}
+          ECR_REPO=communityboard-backend-${{ env.ENVIRONMENT }}
+          docker build -t ${{ steps.login-ecr.outputs.registry }}/$ECR_REPO:${{ github.event.workflow_run.head_sha }} ./backend
+          docker push ${{ steps.login-ecr.outputs.registry }}/$ECR_REPO:${{ github.event.workflow_run.head_sha }}
 
       - name: Terraform apply remaining
         working-directory: ${{ env.TF_WORKING_DIR }}
         run: terraform apply -input=false -no-color -auto-approve
         env:
+          TF_VAR_environment: ${{ env.ENVIRONMENT }}
           TF_VAR_db_username: ${{ secrets.TF_VAR_DB_USERNAME }}
           TF_VAR_db_password: ${{ secrets.TF_VAR_DB_PASSWORD }}
           TF_VAR_backend_image_tag: ${{ github.event.workflow_run.head_sha }}
@@ -126,3 +132,4 @@ jobs:
           TF_VAR_api_url: ${{ vars.TF_VAR_API_URL }}
           TF_VAR_jwt_secret: ${{ secrets.TF_VAR_JWT_SECRET }}
           TF_VAR_github_token: ${{ secrets.TF_VAR_GITHUB_TOKEN }}
+          TF_VAR_alert_email: ${{ vars.TF_VAR_ALERT_EMAIL }}

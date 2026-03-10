@@ -1,0 +1,9 @@
+# Example backend config for dev. Copy to backend.hcl and set bucket/table (from backend bootstrap).
+# Use: terraform init -backend-config=backend.hcl
+# Do not commit backend.hcl if it contains account-specific bucket/table names.
+
+bucket         = "YOUR_TF_STATE_BUCKET"
+key            = "community-board/dev/terraform.tfstate"
+region         = "eu-north-1"
+dynamodb_table = "YOUR_TF_LOCK_TABLE"
+encrypt        = true

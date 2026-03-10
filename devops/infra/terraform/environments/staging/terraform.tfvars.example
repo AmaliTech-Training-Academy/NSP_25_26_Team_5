@@ -1,0 +1,19 @@
+# Staging environment – copy to terraform.tfvars and set secrets. Do not commit terraform.tfvars.
+
+environment = "staging"
+aws_region  = "eu-north-1"
+
+# Staging uses different VPC CIDR to avoid overlap with dev (10.0.x) and prod (10.2.x)
+vpc_cidr = "10.1.0.0/16"
+
+db_username       = "postgres"
+# db_password       = "set-me"
+db_name           = "communityboard"
+db_instance_class = "db.t3.small"
+
+# jwt_secret = ""
+repo_url = "https://github.com/your-org/your-repo"
+# github_token = ""
+
+# SNS: set alert email for staging notifications
+alert_email = "staging-alerts@example.com"

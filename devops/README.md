@@ -6,6 +6,7 @@ This folder contains the **CI/CD pipelines** (GitHub Actions) and **AWS infrastr
 
 ## Table of Contents
 
+- [Setup steps](#setup-steps)
 - [Overview](#overview)
 - [Architecture Diagrams](#architecture-diagrams)
 - [Repository Layout](#repository-layout)
@@ -13,8 +14,88 @@ This folder contains the **CI/CD pipelines** (GitHub Actions) and **AWS infrastr
 - [CD Pipeline](#cd-pipeline)
 - [Infrastructure (Terraform)](#infrastructure-terraform)
 - [Local Deployment](#local-deployment)
+- [Backend for all environments](#backend-for-all-environments)
 - [Required Secrets & Variables](#required-secrets--variables)
 - [Runbook](#runbook)
+
+---
+
+## Setup steps
+
+Follow in order to get CI/CD and all environments (dev, staging, production) running.
+
+### 1. AWS: OIDC for GitHub Actions
+
+- In **AWS IAM**, create an OIDC identity provider for GitHub (e.g. `token.actions.githubusercontent.com`).
+- Create an IAM role that:
+  - Trusts the GitHub OIDC provider (with your repo/org in the condition).
+  - Has permissions for: S3 (state bucket), DynamoDB (lock table), ECR, ECS, RDS, Amplify, VPC/ALB, etc. (or use a policy that matches what Terraform needs).
+- Note the role **ARN** → you’ll set it as GitHub secret `AWS_ROLE_ARN`.
+
+### 2. Terraform state backend (once, for all environments)
+
+```bash
+cd devops/infra/terraform/backend
+cp terraform.tfvars.example terraform.tfvars
+# Edit: state_bucket_name (globally unique), lock_table_name, aws_region
+terraform init
+terraform apply
+```
+
+- From the output, note **state_bucket_name** and **lock_table_name** for the next step.
+
+### 3. GitHub: Environments
+
+- Repo **Settings → Environments → New environment**.
+- Create: **dev**, **staging**, **production**.
+- (Optional) On **production**, add required reviewers or a wait timer.
+
+### 4. GitHub: Repository secrets
+
+- Repo **Settings → Secrets and variables → Actions → Secrets → New repository secret**.
+- Add these (shared by CD for all environments; can be overridden per environment if you set the same name under **Environments → [dev|staging|production] → Environment secrets**):
+
+| Secret | Required | Description |
+|--------|----------|-------------|
+| `AWS_ROLE_ARN` | Yes | IAM role ARN for OIDC (GitHub → AWS). |
+| `AWS_REGION` | Yes | AWS region (e.g. `eu-north-1`). |
+| `TF_STATE_BUCKET` | Yes | S3 bucket name (from backend bootstrap output). |
+| `TF_LOCK_TABLE` | Yes | DynamoDB table name (from backend bootstrap output). |
+| `TF_VAR_DB_USERNAME` | Yes | RDS master username (or set per env under Environments). |
+| `TF_VAR_DB_PASSWORD` | Yes | RDS master password (or set per env). |
+| `TF_VAR_JWT_SECRET` | Yes | Backend JWT signing secret (or set per env). |
+| `TF_VAR_GITHUB_TOKEN` | No | For Amplify private repo (or set per env). |
+
+### 5. GitHub: Environment secrets (optional overrides)
+
+- To use **different** DB credentials or JWT per environment: **Settings → Environments → [dev | staging | production] → Environment secrets**.
+- Add the same secret names (e.g. `TF_VAR_DB_USERNAME`, `TF_VAR_DB_PASSWORD`, `TF_VAR_JWT_SECRET`). The deploy job uses `environment: ${{ env.ENVIRONMENT }}`, so it reads that environment’s secrets; environment values override repository secrets.
+
+### 6. GitHub: Repository variables
+
+- **Settings → Secrets and variables → Actions → Variables**.
+- These are **repository-level** (same value for all environments unless you add environment-specific variables):
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `TF_VAR_REPO_URL` | Yes | GitHub repo URL for Amplify (e.g. `https://github.com/org/repo`). |
+| `TF_VAR_API_URL` | No | Backend API URL for frontend; set after first apply (ALB DNS) or leave empty. |
+| `TF_VAR_ALERT_EMAIL` | No | Email for SNS alerts; empty = no subscription. |
+
+### 7. GitHub: Environment variables (optional overrides)
+
+- **Settings → Environments → [dev | staging | production] → Environment variables**.
+- Use when a variable must differ per env (e.g. different `TF_VAR_API_URL` or `TF_VAR_ALERT_EMAIL` per environment). Same names as repository variables; environment value overrides repo.
+
+### 8. CI secrets (repository)
+
+- **Settings → Secrets and variables → Actions → Secrets**.
+- Used by **CI** (build/test): `POSTGRES_USER`, `POSTGRES_PASSWORD`, `SPRING_DATASOURCE_URL`. Optional: `SONAR_TOKEN` (and Sonar vars if you use SonarCloud).
+
+### 9. First deploy
+
+- Push to **dev** / **staging** / **main**. CI runs, then CD runs for that branch’s environment.
+- After first apply, set **TF_VAR_API_URL** (repo or per env) to the ALB URL if the frontend needs it.
 
 ---
 
@@ -229,29 +310,107 @@ This runs `docker-compose down`, `docker-compose build --no-cache`, `docker-comp
 
 ---
 
+## Backend for all environments
+
+Terraform state for **dev**, **staging**, and **production** uses one shared **S3 bucket** and one **DynamoDB** lock table. You create them once; each environment uses a different state **key** in the same bucket.
+
+### 1. Create the backend (one-time)
+
+```bash
+cd devops/infra/terraform/backend
+cp terraform.tfvars.example terraform.tfvars
+# Edit: state_bucket_name (globally unique), lock_table_name, aws_region
+terraform init
+terraform apply
+```
+
+Details: **[infra/terraform/backend/README.md](infra/terraform/backend/README.md)**.
+
+### 2. Set GitHub secrets from backend outputs
+
+After `terraform apply`, use the outputs:
+
+| Secret | Value (from backend apply output) |
+|--------|-----------------------------------|
+| `TF_STATE_BUCKET` | `state_bucket_name` |
+| `TF_LOCK_TABLE`   | `lock_table_name`   |
+
+In GitHub: **Settings → Secrets and variables → Actions → New repository secret** (or set per environment under **Settings → Environments**).
+
+### 3. State keys (no secret needed)
+
+CD derives the state key from the environment:
+
+- **dev** → `community-board/dev/terraform.tfstate`
+- **staging** → `community-board/staging/terraform.tfstate`
+- **production** → `community-board/production/terraform.tfstate`
+
+---
+
 ## Required Secrets & Variables
 
-### GitHub Actions – CD (and Terraform in CI)
+All names used by CI/CD, with **where** to set them (repository vs environment) and **required** vs optional. Environment-level values override repository-level when the deploy job runs with `environment: dev | staging | production`.
 
-| Secret / Var       | Where   | Description |
-|--------------------|--------|-------------|
-| `AWS_ROLE_ARN`     | Secrets | IAM role ARN for OIDC (GitHub → AWS). |
-| `AWS_REGION`       | Secrets | e.g. `eu-north-1`. |
-| `TF_STATE_BUCKET`  | Secrets | S3 bucket for Terraform state. |
-| `TF_STATE_KEY`     | Secrets | State object key (e.g. `community-board/terraform.tfstate`). |
-| `TF_LOCK_TABLE`    | Secrets | DynamoDB table for state lock. |
-| `TF_VAR_DB_USERNAME` | Secrets | RDS master user. |
-| `TF_VAR_DB_PASSWORD` | Secrets | RDS master password. |
-| `TF_VAR_JWT_SECRET`  | Secrets | Backend JWT signing secret. |
-| `TF_VAR_GITHUB_TOKEN` | Secrets | Optional; Amplify private repo. |
-| `TF_VAR_REPO_URL`  | Vars    | GitHub repo URL for Amplify. |
-| `TF_VAR_API_URL`   | Vars    | Backend API URL for frontend (e.g. ALB URL). |
-| `ECR_REPO_NAME`    | Vars    | ECR repository name (e.g. `communityboard-backend`); must match Terraform `ecr_repository_name`. |
+### Repository secrets (shared; used by CD and optionally by CI)
 
-### GitHub Actions – CI
+Set under **Settings → Secrets and variables → Actions → Secrets**.
 
-- `POSTGRES_USER`, `POSTGRES_PASSWORD`, `SPRING_DATASOURCE_URL`, `SONAR_TOKEN`.
-- Optional: `SONAR_HOST_URL`, `SONAR_PROJECT_KEY`, `SONAR_ORGANIZATION`.
+| Secret | Required | Used by | Description |
+|--------|----------|---------|-------------|
+| `AWS_ROLE_ARN` | Yes | CD | IAM role ARN for OIDC (GitHub → AWS). |
+| `AWS_REGION` | Yes | CD | AWS region (e.g. `eu-north-1`). |
+| `TF_STATE_BUCKET` | Yes | CD | S3 bucket for Terraform state (from backend bootstrap). |
+| `TF_LOCK_TABLE` | Yes | CD | DynamoDB table for state lock (from backend bootstrap). |
+| `TF_VAR_DB_USERNAME` | Yes | CD | RDS master username. |
+| `TF_VAR_DB_PASSWORD` | Yes | CD | RDS master password. |
+| `TF_VAR_JWT_SECRET` | Yes | CD | Backend JWT signing secret. |
+| `TF_VAR_GITHUB_TOKEN` | No | CD | For Amplify private repo. |
+| `POSTGRES_USER` | Yes | CI | Postgres user for CI test DB. |
+| `POSTGRES_PASSWORD` | Yes | CI | Postgres password for CI test DB. |
+| `SPRING_DATASOURCE_URL` | Yes | CI | JDBC URL for CI tests (e.g. `jdbc:postgresql://localhost:5432/communityboard`). |
+| `SONAR_TOKEN` | No | CI | Only if using SonarCloud/SonarQube. |
+
+### Environment secrets (per dev / staging / production)
+
+Set under **Settings → Environments → [dev | staging | production] → Environment secrets**.
+
+Use these when a value must **differ per environment** (e.g. different RDS credentials or JWT per env). Same names as in the table above; environment secret overrides repository secret for the deploy job.
+
+| Secret | When to use per env |
+|--------|----------------------|
+| `TF_VAR_DB_USERNAME` | Different DB user per env. |
+| `TF_VAR_DB_PASSWORD` | Different DB password per env. |
+| `TF_VAR_JWT_SECRET` | Different JWT secret per env. |
+| `TF_VAR_GITHUB_TOKEN` | Different token per env (e.g. production only). |
+
+### Repository variables (shared; used by CD)
+
+Set under **Settings → Secrets and variables → Actions → Variables**.
+
+| Variable | Required | Used by | Description |
+|----------|----------|---------|-------------|
+| `TF_VAR_REPO_URL` | Yes | CD | GitHub repo URL for Amplify (e.g. `https://github.com/org/repo`). |
+| `TF_VAR_API_URL` | No | CD | Backend API URL for frontend (e.g. ALB URL); set after first apply. |
+| `TF_VAR_ALERT_EMAIL` | No | CD | Email for SNS alerts; empty = no subscription. |
+
+### Environment variables (per dev / staging / production)
+
+Set under **Settings → Environments → [dev | staging | production] → Environment variables**.
+
+Use when a variable must **differ per environment** (e.g. different API URL or alert email per env). Same names as above; environment variable overrides repository variable.
+
+| Variable | When to use per env |
+|----------|----------------------|
+| `TF_VAR_REPO_URL` | Different Amplify repo per env (rare). |
+| `TF_VAR_API_URL` | Different ALB URL per env (typical: dev/staging/prod each have own ALB). |
+| `TF_VAR_ALERT_EMAIL` | Different alert email per env. |
+
+### Summary
+
+- **Repository** = one value for the whole repo; use for shared config (AWS, state backend, shared DB/JWT, repo URL).
+- **Environment** = one value per GitHub Environment (dev, staging, production); use for env-specific config (different DB, JWT, API URL, alert email). The CD deploy job uses `environment: ${{ env.ENVIRONMENT }}`, so it reads that environment’s secrets and variables.
+- **Secrets** = sensitive (passwords, tokens, JWT). **Variables** = non-sensitive (URLs, emails); can still be overridden per environment.
+- State key is **not** stored as a secret; CD derives it as `community-board/<env>/terraform.tfstate`. ECR repo name is derived as `communityboard-backend-<env>`.
 
 ---
 
