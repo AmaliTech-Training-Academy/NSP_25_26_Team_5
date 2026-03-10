@@ -30,9 +30,10 @@
 }
 
 .editTextarea {
-  min-height: 84px;
+  min-height: 52px;
   padding: 14px 16px;
   font-size: 16px;
+  resize: none;
 }
 
 .commentTextarea::placeholder,
@@ -51,8 +52,7 @@
   border-color: #c81e1e;
 }
 
-.formMeta,
-.editMeta {
+.formMeta {
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -260,11 +260,10 @@
 .editForm {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
 }
 
 .editSaveButton {
-  min-height: 44px;
   padding: 10px 20px;
   align-self: flex-start;
   font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
@@ -287,6 +286,14 @@
 @media (min-width: 768px) {
   .commentTextarea {
     min-height: 218px;
+  }
+
+  .editTextarea {
+    width: 421px;
+    min-height: 42px;
+    padding: 12px;
+    font-size: 14px;
+    line-height: 1.25;
   }
 
   .assistRow {

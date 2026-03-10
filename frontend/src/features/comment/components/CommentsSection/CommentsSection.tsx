@@ -400,20 +400,11 @@ export default function CommentsSection({
                         onChange={(event) => handleEditingDraftChange(event.target.value)}
                         maxLength={MAX_COMMENT_LENGTH}
                       />
-                      <div className={styles.editMeta}>
-                        <div className={styles.assistRow}>
-                          {editingDraftError ? (
-                            <p className={styles.fieldError} role="alert">
-                              {editingDraftError}
-                            </p>
-                          ) : (
-                            <span />
-                          )}
-                          <p className={styles.characterCount}>
-                            {editingDraft.length}/{MAX_COMMENT_LENGTH}
-                          </p>
-                        </div>
-                      </div>
+                      {editingDraftError && (
+                        <p className={styles.fieldError} role="alert">
+                          {editingDraftError}
+                        </p>
+                      )}
                       <Button
                         type="submit"
                         variant="primary"

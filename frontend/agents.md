@@ -32,6 +32,7 @@ This file applies to all code and assets inside `frontend/`, especially `src/` (
 - Shared feed controls: `SearchBar`, `FilterBar`, and `Paginations`.
 - Home feed UI: post feed/list/card and empty state.
 - Post creation UI: responsive `CreatePostModal` with mobile breadcrumbs.
+- Comment feature UI: responsive post-detail comments section with guest gating, inline add/edit/delete states, and dedicated feature-scoped API/types/utils.
 - Core infra: centralized Axios client in `src/lib/axios/client.ts`.
 
 # Setup
@@ -144,6 +145,12 @@ frontend/
           Register/
         types/
         utils/
+      comment/
+        api/
+        components/
+          CommentsSection/
+        types/
+        utils/
       post/
         api/
         components/
@@ -219,3 +226,10 @@ src/
 - Document tradeoffs and known limitations.
 - Do not bundle unrelated refactors with feature changes.
 - Include one commit message suggestion in every handoff.
+
+# Incremental Commit Tracker
+- Step 1 command: `git add frontend/src/App.tsx frontend/src/components/shared/NavBar/NavBar.tsx`
+- Step 1 message: `feat(frontend): expose post detail route for guest comment viewing`
+- Step 2 command: `git add frontend/src/features/comment frontend/src/features/post/pages/PostDetail/PostDetail.tsx frontend/src/features/post/api/api.post.ts frontend/src/features/post/types/post.type.ts`
+- Step 2 message: `feat(frontend): add responsive comment feature for post details`
+
