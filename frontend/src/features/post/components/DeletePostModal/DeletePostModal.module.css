@@ -44,7 +44,7 @@
   margin: 0;
   color: #395362;
   font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  font-size: 16px;
+  font-size: 14px;
   font-style: normal;
   font-weight: 400;
   line-height: 1.5;
@@ -67,8 +67,12 @@
 .cancelButton,
 .deleteButton {
   flex: 0 0 auto;
+  min-width: 128px;
   min-height: 44px;
   padding: 10px 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   font-size: 14px;
   font-style: normal;
@@ -77,7 +81,6 @@
 }
 
 .cancelButton {
-  min-width: 104px;
   border: 1px solid #061c2a;
   background: #fdfdfd;
   color: #061c2a;
@@ -102,7 +105,9 @@
 .deleteButtonContent {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
+  width: 100%;
 }
 
 .deleteIcon {
