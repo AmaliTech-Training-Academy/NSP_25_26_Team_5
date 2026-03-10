@@ -72,6 +72,7 @@ module "amplify" {
   repo_url     = var.repo_url
   api_url      = "http://${module.alb.alb_dns_name}"
   github_token = var.github_token
+  branch_name = var.environment
 }
 
 # --- SNS (notifications / alerts) ---

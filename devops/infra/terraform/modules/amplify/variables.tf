@@ -16,3 +16,7 @@ variable "github_token" {
   sensitive   = true
   description = "GitHub token for Amplify (optional for public repos)"
 }
+
+variable "branch_name"{
+  description=""
+}

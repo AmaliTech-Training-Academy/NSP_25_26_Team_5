@@ -67,6 +67,7 @@ module "ecs" {
 
 # --- Amplify frontend ---
 module "amplify" {
+  branch_name = var.environment
   source       = "../../modules/amplify"
   project_name = local.name_prefix
   repo_url     = var.repo_url
