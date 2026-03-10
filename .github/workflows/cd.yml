@@ -1,6 +1,9 @@
 name: CD (Terraform)
 
 on:
+  push:
+    branches: [main, dev, staging]
+  
   workflow_run:
     workflows: ["CI Pipeline"]
     branches: [main, dev, staging]
