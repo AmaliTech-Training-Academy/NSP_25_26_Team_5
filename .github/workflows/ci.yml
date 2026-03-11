@@ -7,12 +7,9 @@ on:
     branches: [main, dev, staging]
 
 jobs:
-
-
   backend:
     name: Backend Build & Test
     runs-on: ubuntu-latest
-
     services:
       postgres:
         image: postgres:15
@@ -27,54 +24,45 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-
     steps:
       - uses: actions/checkout@v4
-
       - name: Setup JDK
         uses: actions/setup-java@v4
         with:
           java-version: 17
           distribution: temurin
           cache: maven
-
       - name: Build backend
         working-directory: ./backend
         run: mvn clean package -DskipTests
-
       - name: Run tests
         working-directory: ./backend
         run: mvn test
         env:
-          SPRING_DATASOURCE_URL: ${{ secrets.SPRING_DATASOURCE_URL }}
-
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/communityboard  # ← hardcoded, not a secret
           SPRING_DATASOURCE_USERNAME: ${{ secrets.POSTGRES_USER }}
           SPRING_DATASOURCE_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}                                   # ← add if EmailService/JWT needed
+          MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}                             # ← add to prevent mail bean failure
+          MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
 
   frontend:
     name: Frontend Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
-
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-
       - name: Install dependencies
         working-directory: ./frontend
-        run: npm install
-
-
+        run: npm ci                  # ← prefer ci over install in pipelines (faster, strict lockfile)
       - name: Build frontend
         working-directory: ./frontend
         run: npm run build
-
-  
 
   codeql:
     name: CodeQL Analysis
@@ -94,21 +82,11 @@ jobs:
       - name: Analyze
         uses: github/codeql-action/analyze@v3
 
-  docker-build-scan:
+  docker-build-scan:                 # ← removed duplicate job (was defined twice, invalid YAML)
     name: Build & Scan Docker Image
     runs-on: ubuntu-latest
     needs: [backend, frontend, codeql]
     steps:
       - uses: actions/checkout@v4
-
-  docker-build-scan:
-    name: Build & Scan Docker Image
-    runs-on: ubuntu-latest
-    needs: [backend, frontend, codeql]
-    steps:
-      - uses: actions/checkout@v4
-
       - name: Build Docker image
         run: docker build -t communityboard-backend:${{ github.sha }} ./backend
-
-      
