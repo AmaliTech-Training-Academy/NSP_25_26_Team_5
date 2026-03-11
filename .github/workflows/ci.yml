@@ -106,16 +106,10 @@ jobs:
       - name: Start Spring Boot backend
         working-directory: ./backend
         run: |
-          mvn spring-boot:run \
-            --no-transfer-progress \
-            -Dspring-boot.run.arguments="
-              --spring.datasource.url=jdbc:postgresql://localhost:5432/communityboard
-              --spring.datasource.username=${{ secrets.POSTGRES_USER }}
-              --spring.datasource.password=${{ secrets.POSTGRES_PASSWORD }}
-              --spring.jpa.hibernate.ddl-auto=create-drop" &
+          mvn spring-boot:run --no-transfer-progress -Dspring-boot.run.arguments="--spring.datasource.url=jdbc:postgresql://localhost:5432/communityboard --spring.datasource.username=${{ secrets.POSTGRES_USER }} --spring.datasource.password=${{ secrets.POSTGRES_PASSWORD }} --spring.jpa.hibernate.ddl-auto=create-drop" &
           echo "Waiting for backend to be ready..."
           for i in {1..30}; do
-            curl -sf http://localhost:8080/api/auth/login \
+            curl -s http://localhost:8080/api/auth/login \
               -H "Content-Type: application/json" \
               -d '{"email":"x","password":"x"}' \
               -o /dev/null && echo "Backend is up" && break
@@ -159,43 +153,6 @@ jobs:
             || echo "No surefire reports found"
           echo "========================================="
 
-  # sonar:
-  #   name: SonarCloud Scan
-  #   runs-on: ubuntu-latest
-  #   needs: backend
-  #   services:
-  #     postgres:
-  #       image: postgres:15
-  #       env:
-  #         POSTGRES_DB: communityboard
-  #         POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-  #         POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-  #       ports:
-  #         - 5432:5432
-  #       options: >-
-  #         --health-cmd pg_isready
-  #         --health-interval 10s
-  #         --health-timeout 5s
-  #         --health-retries 5
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - name: Setup JDK
-  #       uses: actions/setup-java@v4
-  #       with:
-  #         java-version: 17
-  #         distribution: temurin
-  #     - name: Sonar scan
-  #       working-directory: ./backend
-  #       run: |
-  #         mvn verify sonar:sonar -B \
-  #         -Dsonar.projectKey=${{ vars.SONAR_PROJECT_KEY || 'communityboard' }} \
-  #         -Dsonar.organization=${{ vars.SONAR_ORGANIZATION || 'amalitech' }}
-  #       env:
-  #         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-  #         SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
-  #         SPRING_DATASOURCE_URL: ${{ secrets.SPRING_DATASOURCE_URL }}
-  #         SPRING_DATASOURCE_USERNAME: ${{ secrets.POSTGRES_USER }}
-  #         SPRING_DATASOURCE_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
 
   codeql:
     name: CodeQL Analysis
@@ -214,18 +171,6 @@ jobs:
         uses: github/codeql-action/autobuild@v3
       - name: Analyze
         uses: github/codeql-action/analyze@v3
-
-  # gitleaks:
-  #   name: Secret Scan (Gitleaks)
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #       with:
-  #         fetch-depth: 0
-  #     - name: Run Gitleaks
-  #       uses: gitleaks/gitleaks-action@v2
-  #       env:
-  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   docker-build-scan:
     name: Build & Scan Docker Image
