@@ -1,0 +1,22 @@
+# Dev environment – copy to terraform.tfvars and set secrets. Do not commit terraform.tfvars.
+
+environment = "dev"
+aws_region  = "eu-north-1"
+
+# Optional: override VPC CIDR per env (e.g. dev 10.0.0.0/16, staging 10.1.0.0/16)
+# vpc_cidr = "10.0.0.0/16"
+
+db_username = "postgres"
+# db_password = "set-me"   # or use TF_VAR_db_password
+db_name     = "communityboard"
+
+# Image tags set by CD to commit SHA
+# backend_image_tag  = "latest"
+# frontend_image_tag = "latest"
+
+# ecr_repository_name = "communityboard"
+# jwt_secret = ""   # or TF_VAR_jwt_secret
+# instance_type = "t3.small"
+
+# SNS: optional email for alerts (leave empty to skip subscription)
+alert_email = ""
