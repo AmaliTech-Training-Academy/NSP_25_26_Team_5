@@ -2,20 +2,11 @@ name: CI Pipeline
 
 on:
   push:
-<<<<<<< HEAD
-    branches: [main, dev]
-  pull_request:
-    branches: [dev]
-
-jobs:
-
-=======
-    branches: [main, dev, staging, test]
+    branches: [main, dev, staging]
   pull_request:
     branches: [main, dev, staging]
 
 jobs:
->>>>>>> dev
   backend:
     name: Backend Build & Test
     runs-on: ubuntu-latest
@@ -47,17 +38,13 @@ jobs:
 
       - name: Build backend
         working-directory: ./backend
-        run: mvn clean package -DskipTests
+        run: mvn clean compile -B
 
       - name: Run tests
         working-directory: ./backend
-        run: mvn test
+        run: mvn test -B
         env:
-<<<<<<< HEAD
-          SPRING_DATASOURCE_URL:  ${{ secrets.SPRING_DATASOURCE_URL }}
-=======
           SPRING_DATASOURCE_URL: ${{ secrets.SPRING_DATASOURCE_URL }}
->>>>>>> dev
           SPRING_DATASOURCE_USERNAME: ${{ secrets.POSTGRES_USER }}
           SPRING_DATASOURCE_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
 
@@ -70,27 +57,18 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-<<<<<<< HEAD
-          node-version: 18
-=======
           node-version: 20
->>>>>>> dev
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
         working-directory: ./frontend
-<<<<<<< HEAD
         run: npm ci
-=======
-        run: npm install
->>>>>>> dev
 
       - name: Build frontend
         working-directory: ./frontend
         run: npm run build
 
-<<<<<<< HEAD
   sonar:
     name: SonarCloud Scan
     runs-on: ubuntu-latest
@@ -101,8 +79,8 @@ jobs:
         image: postgres:15
         env:
           POSTGRES_DB: communityboard
-          POSTGRES_USER:  ${{ secrets.POSTGRES_USER }}
-          POSTGRES_PASSWORD:  ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         ports:
           - 5432:5432
         options: >-
@@ -123,19 +101,16 @@ jobs:
       - name: Sonar scan
         working-directory: ./backend
         run: |
-          mvn verify sonar:sonar \
+          mvn verify sonar:sonar -B \
           -Dsonar.projectKey=${{ vars.SONAR_PROJECT_KEY || 'communityboard' }} \
           -Dsonar.organization=${{ vars.SONAR_ORGANIZATION || 'amalitech' }}
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
-          SPRING_DATASOURCE_URL:  ${{ secrets.SPRING_DATASOURCE_URL }}
+          SPRING_DATASOURCE_URL: ${{ secrets.SPRING_DATASOURCE_URL }}
           SPRING_DATASOURCE_USERNAME: ${{ secrets.POSTGRES_USER }}
           SPRING_DATASOURCE_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
 
-=======
-  
->>>>>>> dev
   codeql:
     name: CodeQL Analysis
     runs-on: ubuntu-latest
@@ -154,7 +129,6 @@ jobs:
       - name: Analyze
         uses: github/codeql-action/analyze@v3
 
-<<<<<<< HEAD
   gitleaks:
     name: Secret Scan (Gitleaks)
     runs-on: ubuntu-latest
@@ -167,8 +141,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  
-=======
   docker-build-scan:
     name: Build & Scan Docker Image
     runs-on: ubuntu-latest
@@ -178,19 +150,3 @@ jobs:
 
       - name: Build Docker image
         run: docker build -t communityboard-backend:${{ github.sha }} ./backend
-
-      # - name: Run Trivy image scan
-      #   uses: aquasecurity/trivy-action@master
-      #   with:
-      #     image-ref: communityboard-backend:${{ github.sha }}
-      #     format: sarif
-      #     output: trivy-results.sarif
-      #     severity: CRITICAL,HIGH
-      #     exit-code: 1
-
-      # - name: Upload Trivy results to GitHub Security tab
-      #   if: always()
-      #   uses: github/codeql-action/upload-sarif@v3
-      #   with:
-      #     sarif_file: trivy-results.sarif
->>>>>>> dev
