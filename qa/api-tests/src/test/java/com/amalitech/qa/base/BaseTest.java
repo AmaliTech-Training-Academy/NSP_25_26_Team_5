@@ -22,12 +22,15 @@ public abstract class BaseTest {
 
     protected static final ObjectMapper MAPPER = new ObjectMapper();
 
+    // Shared post/comment IDs reused across test classes to avoid repeated setup
     protected static int sharedPostId;
     protected static int sharedCommentId;
 
+    // Cached tokens — reset each test class run to prevent stale tokens after Docker restart
     private static String adminToken;
     private static String userToken;
 
+    // Dynamic user created once per JVM session — timestamp prevents duplicate email conflicts
     private static final String DYNAMIC_USER_EMAIL    = "testuser." + System.currentTimeMillis() + "@test.com";
     private static final String DYNAMIC_USER_PASSWORD = "Secure@123";
 
@@ -36,28 +39,33 @@ public abstract class BaseTest {
         RestAssured.baseURI = Constants.BASE_URL;
         RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
 
+        // Reset tokens on each test class — prevents stale tokens after Docker restart
+        adminToken = null;
+        userToken  = null;
+
+        // Create shared post once for the whole suite — reused by post/comment tests
         if (sharedPostId == 0) {
             sharedPostId = createPost(
                     "Community Cleanup This Saturday",
                     "Join us at the park at 9am. Bring gloves!",
-                    Constants.CATEGORY_EVENTS
+                    Constants.CATEGORY_EVENT
             );
 
-            // Comments endpoint is TODO in the backend
-            // Catching Throwable because REST Assured throws AssertionError (not Exception) on status mismatch
+            // Comments endpoint may not be implemented yet — skip gracefully if so
             try {
                 sharedCommentId = createComment(sharedPostId, "Initial comment for edit and delete tests");
             } catch (Throwable t) {
                 sharedCommentId = 0;
             }
 
-            // Clean up shared data after all tests finish
+            // Clean up shared post after all tests finish
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 if (sharedPostId != 0) deletePost(sharedPostId);
             }));
         }
     }
 
+    // Lazy admin token — fetched once then cached per test class run
     protected static String adminToken() {
         if (adminToken == null) {
             adminToken = fetchToken(Constants.ADMIN_EMAIL, Constants.ADMIN_PASSWORD);
@@ -65,6 +73,7 @@ public abstract class BaseTest {
         return adminToken;
     }
 
+    // Lazy user token — registers a fresh dynamic user then caches the token
     protected static String userToken() {
         if (userToken == null) {
             given()
@@ -94,6 +103,8 @@ public abstract class BaseTest {
                 .path(Constants.FIELD_TOKEN);
     }
 
+    // --- Request builders ---
+
     protected RequestSpecification asGuest() {
         return given().spec(guestSpec());
     }
@@ -106,6 +117,9 @@ public abstract class BaseTest {
         return given().spec(authSpec(adminToken()));
     }
 
+    // --- Response spec helpers ---
+
+    // Expects success status + JSON content type
     protected ResponseSpecification success(int status) {
         return new ResponseSpecBuilder()
                 .expectStatusCode(status)
@@ -113,16 +127,19 @@ public abstract class BaseTest {
                 .build();
     }
 
+    // Expects error status only — no content type assertion (error bodies vary)
     protected ResponseSpecification error(int status) {
         return new ResponseSpecBuilder()
                 .expectStatusCode(status)
                 .build();
     }
 
-    protected static int createPost(String title, String body, String category) {
+    // --- Shared data helpers ---
+
+    protected static int createPost(String title, String body, int categoryId) {
         return given()
                 .spec(authSpec(adminToken()))
-                .body(Map.of("title", title, "body", body, "category", category))
+                .body(Map.of("title", title, "body", body, "categoryId", categoryId))
                 .when()
                 .post(Constants.POSTS)
                 .then()
@@ -150,6 +167,9 @@ public abstract class BaseTest {
                 .delete(Constants.POST_BY_ID, postId);
     }
 
+    // --- Test data loader ---
+
+    // Reads JSON test data files from src/test/resources
     protected static List<Map<String, Object>> loadTestData(String path) {
         try {
             InputStream stream = BaseTest.class.getClassLoader().getResourceAsStream(path);
@@ -159,6 +179,8 @@ public abstract class BaseTest {
             throw new RuntimeException("Failed to load test data: " + path, e);
         }
     }
+
+    // --- Spec builders (private) ---
 
     private static RequestSpecification guestSpec() {
         return new RequestSpecBuilder()

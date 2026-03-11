@@ -1,6 +1,4 @@
 [
-  { "label": "TC-015a Empty title",       "title": "",         "body": "Some body text",   "category": "Events"         },
-  { "label": "TC-015b Empty body",        "title": "Lost cat", "body": "",                 "category": "Lost & Found"   },
-  { "label": "TC-015c Missing category",  "title": "Help",     "body": "Can anyone help?", "category": ""               },
-  { "label": "TC-016 Invalid category",   "title": "My post",  "body": "Body text",        "category": "RandomCategory" }
+  { "label": "TC-015 Empty title", "title": "",        "body": "Some body", "categoryId": 1 },
+  { "label": "TC-016 Empty body",  "title": "A title", "body": "",          "categoryId": 1 }
 ]

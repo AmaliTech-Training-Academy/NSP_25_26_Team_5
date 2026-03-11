@@ -1,4 +1,4 @@
 [
-  { "label": "TC-008 Wrong password",      "email": "admin@amalitech.com", "password": "WrongPassword99" },
-  { "label": "TC-009 Non-existent email",  "email": "ghost@nowhere.com",   "password": "Secure@123"      }
+  { "label": "TC-008 Wrong password",     "email": "admin@amalitech.com", "password": "WrongPassword99" },
+  { "label": "TC-009 Non-existent email", "email": "ghost@nowhere.com",   "password": "Secure@123"     }
 ]

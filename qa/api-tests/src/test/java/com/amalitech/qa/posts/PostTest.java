@@ -21,7 +21,7 @@ class PostTest extends BaseTest {
     @DisplayName("TC-013 Valid post creation returns post with author and id")
     void validPostCreation_returnsPostWithAuthorAndId() {
         asAdmin()
-                .body(PostPayload.create("New Event Post", "Details here", Constants.CATEGORY_EVENTS))
+                .body(PostPayload.create("New Event Post", "Details here", Constants.CATEGORY_EVENT))
                 .when()
                 .post(PostEndpoint.POSTS)
                 .then()
@@ -40,9 +40,9 @@ class PostTest extends BaseTest {
     @Severity(SeverityLevel.NORMAL)
     @DisplayName("TC-015/016 Invalid post input returns 400")
     @MethodSource("com.amalitech.qa.posts.PostDataProvider#invalidPostCreationInputs")
-    void invalidPostInput_returns400(String label, String title, String body, String category) {
+    void invalidPostInput_returns400(String label, String title, String body, int categoryId) {
         asAdmin()
-                .body(PostPayload.create(title, body, category))
+                .body(PostPayload.create(title, body, categoryId))
                 .when()
                 .post(PostEndpoint.POSTS)
                 .then()
@@ -53,10 +53,10 @@ class PostTest extends BaseTest {
     @Order(3)
     @Story("Create Post")
     @Severity(SeverityLevel.CRITICAL)
-    @DisplayName("TC-017 Guest cannot create a post")
+    @DisplayName("TC-017 Guest cannot create a post — returns 401")
     void guest_creatingPost_returns401() {
         asGuest()
-                .body(PostPayload.create("Unauthorized", "body", Constants.CATEGORY_EVENTS))
+                .body(PostPayload.create("Unauthorized", "body", Constants.CATEGORY_EVENT))
                 .when()
                 .post(PostEndpoint.POSTS)
                 .then()
@@ -117,10 +117,10 @@ class PostTest extends BaseTest {
     @Severity(SeverityLevel.CRITICAL)
     @DisplayName("TC-023 Author can edit own post")
     void authorEditsOwnPost_returnsUpdatedPost() {
-        int postId = createPost("Original title", "Original body", Constants.CATEGORY_EVENTS);
+        int postId = createPost("Original title", "Original body", Constants.CATEGORY_EVENT);
 
         asAdmin()
-                .body(PostPayload.create("Updated title", "Updated body", Constants.CATEGORY_EVENTS))
+                .body(PostPayload.create("Updated title", "Updated body", Constants.CATEGORY_EVENT))
                 .when()
                 .put(PostEndpoint.POST_BY_ID, postId)
                 .then()
@@ -138,7 +138,7 @@ class PostTest extends BaseTest {
     @DisplayName("TC-024 Non-author editing a post returns 403")
     void nonAuthorEditing_returns403() {
         asUser()
-                .body(PostPayload.create("Hijacked title", "Should fail", Constants.CATEGORY_EVENTS))
+                .body(PostPayload.create("Hijacked title", "Should fail", Constants.CATEGORY_EVENT))
                 .when()
                 .put(PostEndpoint.POST_BY_ID, sharedPostId)
                 .then()
@@ -152,7 +152,7 @@ class PostTest extends BaseTest {
     @DisplayName("TC-027 Admin editing another user's post returns 403")
     void adminEditingOthersPost_returns403() {
         int userPostId = asUser()
-                .body(PostPayload.create("User owned post", "Belongs to user", Constants.CATEGORY_RECOMMENDATIONS))
+                .body(PostPayload.create("User owned post", "Belongs to user", Constants.CATEGORY_DISCUSSION))
                 .when()
                 .post(PostEndpoint.POSTS)
                 .then()
@@ -160,7 +160,7 @@ class PostTest extends BaseTest {
                 .extract().path(Constants.FIELD_POST_ID);
 
         asAdmin()
-                .body(PostPayload.create("Admin hijack", "Should fail", Constants.CATEGORY_EVENTS))
+                .body(PostPayload.create("Admin hijack", "Should fail", Constants.CATEGORY_EVENT))
                 .when()
                 .put(PostEndpoint.POST_BY_ID, userPostId)
                 .then()
@@ -176,7 +176,7 @@ class PostTest extends BaseTest {
     @DisplayName("TC-026 Admin can delete any post")
     void adminDeletesAnyPost_succeeds() {
         int postId = asUser()
-                .body(PostPayload.create("To be deleted by admin", "body", Constants.CATEGORY_EVENTS))
+                .body(PostPayload.create("To be deleted by admin", "body", Constants.CATEGORY_EVENT))
                 .when()
                 .post(PostEndpoint.POSTS)
                 .then()
@@ -196,7 +196,7 @@ class PostTest extends BaseTest {
     @Severity(SeverityLevel.CRITICAL)
     @DisplayName("TC-025 Author deletes own post, post returns 404 after")
     void authorDeletesOwnPost_postIsGone() {
-        int postId = createPost("Temp post", "Will be deleted", Constants.CATEGORY_EVENTS);
+        int postId = createPost("Temp post", "Will be deleted", Constants.CATEGORY_EVENT);
 
         asAdmin()
                 .when()

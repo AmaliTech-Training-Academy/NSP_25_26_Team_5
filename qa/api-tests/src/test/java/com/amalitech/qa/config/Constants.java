@@ -4,7 +4,8 @@ public final class Constants {
 
     private Constants() {}
 
-    public static final String BASE_URL = "http://localhost:8080";
+    // Base URL — overridable via env var for CI
+    public static final String BASE_URL = System.getenv().getOrDefault("BASE_URL", "http://localhost:8080");
 
     // Auth endpoints
     public static final String REGISTER = "/api/auth/register";
@@ -20,22 +21,25 @@ public final class Constants {
     public static final String COMMENT_BY_ID = "/api/posts/{postId}/comments/{commentId}";
 
     // Admin endpoints
-    public static final String ADMIN_USERS = "/api/admin/users";
+    public static final String ADMIN_USERS      = "/api/admin/users";
+    public static final String ADMIN_USER_BY_ID = "/api/admin/users/{id}";
+    public static final String ADMIN_USER_ROLE  = "/api/admin/users/{id}/role";
+
+    // User endpoints
+    public static final String USERS_ME = "/api/users/me";
 
     // Analytics endpoint
-    public static final String ANALYTICS = "/api/analytics";
+    public static final String ANALYTICS_DASHBOARD = "/api/analytics/dashboard";
 
-    // Seeded credentials
-    public static final String ADMIN_EMAIL    = "admin@test.com";
-    public static final String ADMIN_PASSWORD = "Admin@1234";
-//    public static final String USER_EMAIL     = "user@amalitech.com";
-//    public static final String USER_PASSWORD  = "password123";
+    // Seeded credentials — must match data.sql
+    public static final String ADMIN_EMAIL    = "admin@amalitech.com";
+    public static final String ADMIN_PASSWORD = "password123";
 
-    // Categories
-    public static final String CATEGORY_EVENTS          = "Events";
-    public static final String CATEGORY_LOST_AND_FOUND  = "Lost & Found";
-    public static final String CATEGORY_RECOMMENDATIONS = "Recommendations";
-    public static final String CATEGORY_HELP_REQUESTS   = "Help Requests";
+    // Category IDs — must match data.sql seed (News=1, Event=2, Discussion=3, Alert=4)
+    public static final int CATEGORY_NEWS       = 1;
+    public static final int CATEGORY_EVENT      = 2;
+    public static final int CATEGORY_DISCUSSION = 3;
+    public static final int CATEGORY_ALERT      = 4;
 
     // Auth response fields
     public static final String FIELD_TOKEN     = "token";

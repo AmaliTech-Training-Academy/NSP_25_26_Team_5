@@ -6,7 +6,8 @@ public final class PostPayload {
 
     private PostPayload() {}
 
-    public static Map<String, String> create(String title, String body, String category) {
-        return Map.of("title", title, "body", body, "category", category);
+    // categoryId must be the integer ID from the categories table
+    public static Map<String, Object> create(String title, String body, int categoryId) {
+        return Map.of("title", title, "body", body, "categoryId", categoryId);
     }
 }

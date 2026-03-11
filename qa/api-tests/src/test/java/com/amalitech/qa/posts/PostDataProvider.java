@@ -16,7 +16,8 @@ public final class PostDataProvider extends BaseTest {
                         row.get("label"),
                         row.get("title"),
                         row.get("body"),
-                        row.get("category")
+                        // categoryId stored as int in JSON
+                        row.get("categoryId") != null ? ((Number) row.get("categoryId")).intValue() : 0
                 ));
     }
 
