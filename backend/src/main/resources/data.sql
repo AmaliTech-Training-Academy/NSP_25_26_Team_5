@@ -7,13 +7,13 @@ INSERT INTO categories (id, name, description) VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- Seed admin and test users
--- Password: "password123" (BCrypt encoded)
+-- Password: "password123" (BCrypt encoded, verified via Spring)
 INSERT INTO users (id, email, name, password, role, created_at) VALUES
   (1, 'admin@amalitech.com', 'Admin User',
-      '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+      '$2a$10$SX1DpH4/X4ArxYC6xvbHBOhO19VFRndFpULZrbBe6sjTrcOU7AM3i',
       'ADMIN', NOW()),
   (2, 'user@amalitech.com', 'Test User',
-      '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+      '$2a$10$SX1DpH4/X4ArxYC6xvbHBOhO19VFRndFpULZrbBe6sjTrcOU7AM3i',
       'USER', NOW())
 ON CONFLICT (id) DO NOTHING;
 
@@ -26,3 +26,8 @@ INSERT INTO posts (id, title, content, category_id, author_id, created_at, updat
       'I found a set of keys near the central park entrance. Please PM me to describe them.',
       2, 2, NOW(), NOW())
 ON CONFLICT (id) DO NOTHING;
+
+-- Reset sequences to avoid PK collisions on new inserts
+SELECT setval('categories_id_seq', (SELECT MAX(id) FROM categories));
+SELECT setval('users_id_seq', (SELECT MAX(id) FROM users));
+SELECT setval('posts_id_seq', (SELECT MAX(id) FROM posts));
