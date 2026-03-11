@@ -149,8 +149,10 @@ jobs:
           echo "========================================="
           echo "           API TEST RESULTS SUMMARY     "
           echo "========================================="
-          grep -h "Tests run:" target/surefire-reports/*.txt 2>/dev/null || echo "No surefire reports found"
+          grep -h "Tests run:" target/surefire-reports/*.txt 2>/dev/null \
+            || echo "No surefire reports found"
           echo "========================================="
+
 
   codeql:
     name: CodeQL Analysis
