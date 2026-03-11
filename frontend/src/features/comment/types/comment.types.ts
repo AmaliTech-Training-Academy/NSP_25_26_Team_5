@@ -1,10 +1,10 @@
 export interface CommentPayload {
-  content: string;
+  body: string;
 }
 
 export interface Comment {
   id: number;
-  content: string;
+  body: string;
   authorName: string;
   authorEmail?: string | null;
   createdAt: string;

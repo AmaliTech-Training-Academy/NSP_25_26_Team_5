@@ -22,7 +22,6 @@ import type {
 } from "./EditPostModal.types";
 import {
   EDIT_POST_CATEGORIES,
-  findEditPostCategoryId,
   findEditPostCategoryLabel,
   findEditPostErrorMessage,
   joinEditPostModalClassName,
@@ -175,7 +174,6 @@ export default function EditPostModal({
       title: title.trim(),
       body: body.trim(),
       category: selectedCategory,
-      categoryId: findEditPostCategoryId(selectedCategory),
     };
 
     setSubmitErrorMessage(null);

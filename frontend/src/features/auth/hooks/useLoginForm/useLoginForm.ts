@@ -60,7 +60,7 @@ export function useLoginForm() {
       });
       login(
         {
-          name: res.data.name,
+          name: res.data.fullName,
           email: res.data.email,
           role: res.data.role,
         },

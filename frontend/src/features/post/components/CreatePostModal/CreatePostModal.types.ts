@@ -4,8 +4,6 @@ export interface CreatePostFormValues {
   title: string;
   body: string;
   category: BadgeType;
-  categoryLabel: string;
-  categoryId: number | null;
 }
 
 export interface CreatePostFormErrors {

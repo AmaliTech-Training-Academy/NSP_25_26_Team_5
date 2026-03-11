@@ -16,7 +16,6 @@ import type {
 import {
   CREATE_POST_CATEGORIES,
   findCreatePostErrorMessage,
-  findCreatePostCategoryId,
   findCreatePostCategoryLabel,
   joinCreatePostModalClassName,
   TITLE_MAX_LENGTH,
@@ -167,8 +166,6 @@ export default function CreatePostModal({
       title: title.trim(),
       body: body.trim(),
       category: selectedCategory,
-      categoryLabel: findCreatePostCategoryLabel(selectedCategory),
-      categoryId: findCreatePostCategoryId(selectedCategory),
     };
 
     setSubmitErrorMessage(null);

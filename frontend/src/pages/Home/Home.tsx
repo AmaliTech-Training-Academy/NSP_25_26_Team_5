@@ -6,6 +6,7 @@ import Paginations from "../../components/shared/Paginations";
 import SearchBar from "../../components/shared/SearchBar";
 import Button from "../../components/ui/Button/Button";
 import { useAuth } from "../../context/AuthContext/AuthContext";
+import { commentAPI } from "../../features/comment/api/comment.api";
 import { postAPI } from "../../features/post/api/api.post";
 import CreatePostModal from "../../features/post/components/CreatePostModal";
 import type { CreatePostFormValues } from "../../features/post/components/CreatePostModal";
@@ -17,7 +18,10 @@ import type { PostCardData } from "../../features/post/components/PostCard/PostC
 import { usePaginatedPosts } from "../../hooks";
 import styles from "./Home.module.css";
 import { mapPostToCardData } from "./Home.utils";
-import { findCreatePostErrorMessage } from "../../features/post/utils/post.utils";
+import {
+  findCreatePostErrorMessage,
+  findPostRequestErrorMessage,
+} from "../../features/post/utils/post.utils";
 
 const PAGE_SIZE = 10;
 type PostFeedScope = "ALL_POSTS" | "MY_POSTS";
@@ -115,8 +119,8 @@ export default function HomePage() {
     try {
       const response = await postAPI.create({
         title: values.title,
-        content: values.body,
-        categoryId: values.categoryId,
+        body: values.body,
+        category: values.category,
       });
 
       const createdPost = mapPostToCardData(response.data);
@@ -151,8 +155,8 @@ export default function HomePage() {
     try {
       const response = await postAPI.update(Number(values.postId), {
         title: values.title,
-        content: values.body,
-        categoryId: values.categoryId,
+        body: values.body,
+        category: values.category,
       });
 
       const updatedPost = mapPostToCardData(response.data);
@@ -203,14 +207,25 @@ export default function HomePage() {
     setIsDeletingPost(true);
 
     try {
+      const commentsResponse = await commentAPI.getByPostId(parsedPostId);
+
+      for (const comment of commentsResponse.data) {
+        await commentAPI.delete(parsedPostId, comment.id);
+      }
+
       await postAPI.delete(parsedPostId);
       setHomePosts((previousPosts) =>
         previousPosts.filter((post) => post.id !== postBeingDeleted.id),
       );
       setPostBeingDeleted(null);
-    } catch {
+    } catch (error) {
       setPostActionErrorMessage(
-        "Unable to delete this post right now. Please try again.",
+        findPostRequestErrorMessage(
+          error,
+          "Unable to delete this post while it still has comments. Remove the comments first or use an admin account.",
+          "You are not authorized to delete this post or one of its comments.",
+          "This post could not be found anymore.",
+        ),
       );
     } finally {
       setIsDeletingPost(false);

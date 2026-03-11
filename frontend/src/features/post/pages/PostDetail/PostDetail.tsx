@@ -122,7 +122,7 @@ export default function PostDetail() {
                   </Button>
                 </div>
 
-                <p className={styles.body}>{post.content}</p>
+                <p className={styles.body}>{post.body}</p>
 
                 <div className={styles.metaRow}>
                   <p className={styles.author}>{post.authorName}</p>

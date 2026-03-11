@@ -117,7 +117,7 @@ export default function CommentsSection({
 
     try {
       const response = await commentAPI.create(postId, {
-        content: commentDraft.trim(),
+        body: commentDraft.trim(),
       });
 
       setComments((previousComments) =>
@@ -140,7 +140,7 @@ export default function CommentsSection({
   // Starts inline editing for a single comment at a time.
   function handleStartEditingComment(comment: Comment) {
     setEditingCommentId(comment.id);
-    setEditingDraft(comment.content);
+    setEditingDraft(comment.body);
     setEditingDraftError(null);
     setCommentRequestError(null);
   }
@@ -172,7 +172,7 @@ export default function CommentsSection({
 
     try {
       const response = await commentAPI.update(postId, commentId, {
-        content: editingDraft.trim(),
+        body: editingDraft.trim(),
       });
 
       setComments((previousComments) =>
@@ -415,7 +415,7 @@ export default function CommentsSection({
                       </Button>
                     </form>
                   ) : (
-                    <p className={styles.commentBody}>{comment.content}</p>
+                    <p className={styles.commentBody}>{comment.body}</p>
                   )}
                 </li>
               );

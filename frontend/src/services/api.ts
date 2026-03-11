@@ -6,22 +6,21 @@ export interface AuthRequest {
 }
 
 export interface RegisterRequest extends AuthRequest {
-  name: string;
+  fullName: string;
 }
 
 export interface AuthResponse {
   token: string;
   email: string;
-  name: string;
+  fullName: string;
   role: string;
 }
 
 export interface Post {
   id: number;
   title: string;
-  content: string;
+  body: string;
   categoryName: string | null;
-  categoryId: number | null;
   authorName: string;
   authorEmail: string;
   createdAt: string;
@@ -49,8 +48,8 @@ export interface PagedResponse<T> {
 
 export interface PostPayload {
   title: string;
-  content: string;
-  categoryId: number | string | null;
+  body: string;
+  category: string;
 }
 
 const API = axios.create({ baseURL: "/api" });

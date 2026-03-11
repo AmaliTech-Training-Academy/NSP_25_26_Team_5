@@ -4,13 +4,13 @@ export interface AuthRequest {
 }
 
 export interface RegisterRequest extends AuthRequest {
-  name: string;
+  fullName: string;
 }
 
 export interface AuthResponse {
   token: string;
   email: string;
-  name: string;
+  fullName: string;
   role: string;
 }
 

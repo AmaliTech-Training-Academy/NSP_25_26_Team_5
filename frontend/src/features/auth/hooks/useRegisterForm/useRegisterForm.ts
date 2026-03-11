@@ -66,8 +66,8 @@ export function useRegisterForm() {
         : "";
     const nextPasswordError = !trimmedPassword
       ? "Password field can't be empty"
-      : trimmedPassword.length < 6
-        ? "Password must be at least 6 characters"
+      : trimmedPassword.length < 8
+        ? "Password must be at least 8 characters"
         : "";
     const nextConfirmPasswordError = !trimmedConfirmPassword
       ? "Confirm password can't be empty"
@@ -93,7 +93,7 @@ export function useRegisterForm() {
 
     try {
       await register({
-        name: trimmedName,
+        fullName: trimmedName,
         email: trimmedEmail,
         password: trimmedPassword,
       });

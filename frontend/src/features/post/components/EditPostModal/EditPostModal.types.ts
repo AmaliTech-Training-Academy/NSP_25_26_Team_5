@@ -6,7 +6,6 @@ export interface EditPostFormValues {
   title: string;
   body: string;
   category: BadgeType;
-  categoryId: number;
 }
 
 export interface EditPostFormErrors {

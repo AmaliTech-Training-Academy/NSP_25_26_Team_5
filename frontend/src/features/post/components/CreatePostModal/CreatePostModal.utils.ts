@@ -7,26 +7,18 @@ export const TITLE_WARNING_THRESHOLD = 90;
 export interface CreatePostCategoryOption {
   label: string;
   value: BadgeType;
-  categoryId: number;
 }
 
 export const CREATE_POST_CATEGORIES: CreatePostCategoryOption[] = [
-  { label: "News", value: BadgeType.NEWS, categoryId: 1 },
-  { label: "Event", value: BadgeType.EVENT, categoryId: 2 },
-  { label: "Discussion", value: BadgeType.DISCUSSION, categoryId: 3 },
-  { label: "Alert", value: BadgeType.ALERT, categoryId: 4 },
+  { label: "News", value: BadgeType.NEWS },
+  { label: "Event", value: BadgeType.EVENT },
+  { label: "Discussion", value: BadgeType.DISCUSSION },
+  { label: "Alert", value: BadgeType.ALERT },
 ];
 
 export function findCreatePostCategoryLabel(category: BadgeType): string {
   return (
     CREATE_POST_CATEGORIES.find((option) => option.value === category)?.label ?? ""
-  );
-}
-
-export function findCreatePostCategoryId(category: BadgeType): number | null {
-  return (
-    CREATE_POST_CATEGORIES.find((option) => option.value === category)?.categoryId ??
-    null
   );
 }
 

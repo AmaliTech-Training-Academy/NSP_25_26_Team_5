@@ -4,26 +4,18 @@ import type { EditPostFormErrors } from "./EditPostModal.types";
 export interface EditPostCategoryOption {
   label: string;
   value: BadgeType;
-  categoryId: number;
 }
 
 export const EDIT_POST_CATEGORIES: EditPostCategoryOption[] = [
-  { label: "News", value: BadgeType.NEWS, categoryId: 1 },
-  { label: "Event", value: BadgeType.EVENT, categoryId: 2 },
-  { label: "Discussion", value: BadgeType.DISCUSSION, categoryId: 3 },
-  { label: "Alert", value: BadgeType.ALERT, categoryId: 4 },
+  { label: "News", value: BadgeType.NEWS },
+  { label: "Event", value: BadgeType.EVENT },
+  { label: "Discussion", value: BadgeType.DISCUSSION },
+  { label: "Alert", value: BadgeType.ALERT },
 ];
 
 export function findEditPostCategoryLabel(category: BadgeType): string {
   return (
     EDIT_POST_CATEGORIES.find((option) => option.value === category)?.label ?? ""
-  );
-}
-
-export function findEditPostCategoryId(category: BadgeType): number {
-  return (
-    EDIT_POST_CATEGORIES.find((option) => option.value === category)?.categoryId ??
-    1
   );
 }
 

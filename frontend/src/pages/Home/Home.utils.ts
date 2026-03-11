@@ -9,7 +9,7 @@ export function mapPostToCardData(post: Post): PostCardData {
   return {
     id: String(post.id),
     title: post.title,
-    content: post.content,
+    content: post.body,
     writerName: post.authorName,
     time: formatRelativeTime(post.createdAt),
     commentsCount: post.commentCount,
