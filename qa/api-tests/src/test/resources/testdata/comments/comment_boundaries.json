@@ -1,5 +1,5 @@
 [
-  { "label": "TC-029a 499 chars - just below limit", "length": 499, "expectedStatus": 200 },
-  { "label": "TC-029b 500 chars - exactly at limit", "length": 500, "expectedStatus": 200 },
+  { "label": "TC-029a 499 chars - just below limit", "length": 499, "expectedStatus": 201 },
+  { "label": "TC-029b 500 chars - exactly at limit", "length": 500, "expectedStatus": 201 },
   { "label": "TC-029c 501 chars - just above limit", "length": 501, "expectedStatus": 400 }
 ]
