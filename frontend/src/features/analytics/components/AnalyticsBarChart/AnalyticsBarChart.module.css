@@ -1,0 +1,17 @@
+.chartFrame {
+  width: 100%;
+  min-height: 186px;
+  height: 186px;
+}
+
+.chartFrame canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+@media (min-width: 768px) {
+  .chartFrame {
+    min-height: 198px;
+    height: 198px;
+  }
+}

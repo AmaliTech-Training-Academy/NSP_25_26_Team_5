@@ -1,0 +1,264 @@
+.analyticsPage {
+  width: 100%;
+}
+
+.content {
+  width: 100%;
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 16px 12px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.screenReaderOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.breadcrumbs {
+  align-self: flex-start;
+}
+
+.statusMessage,
+.errorMessage {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #395362;
+}
+
+.errorMessage {
+  color: #9b1c1c;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.statCard,
+.sectionCard,
+.tableCard {
+  border: 1px solid #e6eaeb;
+  border-radius: 8px;
+  background: #fdfdfd;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.1),
+    0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.statCard {
+  min-height: 102px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.statCardTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.statLabel {
+  margin: 0;
+  color: #395362;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.statValue {
+  margin: 0;
+  color: #08283b;
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.statIconWrapper {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: #d4e9fb;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #08283b;
+  flex-shrink: 0;
+}
+
+.statIcon {
+  width: 16px;
+  height: 16px;
+}
+
+.emptyHint {
+  margin: 0;
+  color: #395362;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.visualGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+}
+
+.sectionCard {
+  padding: 16px 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sectionTitle,
+.tableTitle {
+  margin: 0;
+  color: #08283b;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.contributorsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tableCard {
+  overflow: hidden;
+}
+
+.tableOverflow {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.rankColumn {
+  width: 72px;
+}
+
+.postsColumn {
+  width: 72px;
+}
+
+.table thead {
+  background: #e6eaeb;
+}
+
+.table th,
+.table td {
+  padding: 11px 10px;
+  text-align: left;
+  border-bottom: 1px solid #e6eaeb;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #08283b;
+}
+
+.table th {
+  color: #395362;
+  font-weight: 600;
+}
+
+.contributorLink {
+  border: none;
+  padding: 0;
+  background: transparent;
+  color: #08283b;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.contributorLink:hover {
+  color: #0c4a6e;
+}
+
+.contributorLink:focus-visible {
+  outline: 2px solid #0f4f75;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.placeholderContributor {
+  color: #5a6f7c;
+}
+
+.emptyTableCell {
+  color: #395362;
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .content {
+    padding: 32px 72px 56px;
+    gap: 20px;
+  }
+
+  .statsGrid {
+    grid-template-columns: repeat(2, minmax(0, 240px));
+    gap: 20px;
+  }
+
+  .statCard {
+    min-height: 103px;
+    padding: 18px 16px 20px;
+  }
+
+  .statLabel {
+    font-size: 18px;
+  }
+
+  .statValue {
+    font-size: 46px;
+  }
+
+  .visualGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 30px;
+  }
+
+  .sectionCard {
+    padding: 16px 10px 12px;
+    gap: 18px;
+  }
+
+  .table th,
+  .table td {
+    padding: 16px;
+    font-size: 16px;
+  }
+
+  .contributorLink {
+    font-size: 16px;
+  }
+
+  .rankColumn {
+    width: 82px;
+  }
+
+  .postsColumn {
+    width: 88px;
+  }
+}

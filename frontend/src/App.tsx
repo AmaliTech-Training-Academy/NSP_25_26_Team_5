@@ -4,6 +4,7 @@ import Login from "./features/auth/pages/Login/Login";
 import Register from "./features/auth/pages/Register/Register";
 import ProtectedRoute from "./app/router/ProtectedRoute";
 import MainLayout from "./components/shared/MainLayout/MainLayout";
+import AnalyticsDashboard from "./features/analytics/pages/AnalyticsDashboard";
 import PostDetail from "./features/post/pages/PostDetail/PostDetail";
 import Home from "./pages/Home/Home";
 
@@ -23,6 +24,7 @@ const App = () => {
       <Route element={<ProtectedRoute />}>
         <Route element={<MainLayout />}>
           <Route index element={<Home />} />
+          <Route path="analytics" element={<AnalyticsDashboard />} />
         </Route>
       </Route>
     </Routes>

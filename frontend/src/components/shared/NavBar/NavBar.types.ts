@@ -7,6 +7,7 @@ export interface NavBarUser {
 export interface NavBarProps {
   className?: string;
   user?: NavBarUser;
+  variant?: "default" | "analytics";
   onMenuClick?: () => void;
   onAnalyticsClick?: () => void;
   onLogoutClick?: () => void;

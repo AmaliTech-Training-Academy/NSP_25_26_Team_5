@@ -60,6 +60,48 @@
   gap: 12px;
 }
 
+.authorFilterNotice {
+  width: 100%;
+  border: 1px solid #d4e2ec;
+  border-radius: 8px;
+  background: #f0f7fb;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.authorFilterText {
+  margin: 0;
+  color: #08283b;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.authorFilterText span {
+  font-weight: 600;
+}
+
+.clearAuthorFilterButton {
+  align-self: flex-start;
+  border: none;
+  padding: 0;
+  background: transparent;
+  color: #0c4a6e;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.clearAuthorFilterButton:focus-visible {
+  outline: 2px solid #0f4f75;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
 .yourPostsButton {
   align-self: flex-start;
   border: 1px solid #395362;
@@ -132,6 +174,12 @@
     align-items: center;
     justify-content: space-between;
     gap: 16px;
+  }
+
+  .authorFilterNotice {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
   }
 
   .filterBar {

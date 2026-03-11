@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import type { FilterCategory } from "../../components/shared/FilterBar";
 import FilterBar from "../../components/shared/FilterBar";
 import Paginations from "../../components/shared/Paginations";
@@ -34,7 +34,7 @@ import type {
 } from "../../features/post/types/post.type";
 
 const PAGE_SIZE = 5;
-const MY_POSTS_CLIENT_FETCH_LIMIT = 1000;
+const CLIENT_FILTER_FETCH_LIMIT = 1000;
 type PostFeedScope = "ALL_POSTS" | "MY_POSTS";
 
 // Builds a client-side paginated view for filtered posts when no dedicated endpoint exists.
@@ -75,8 +75,10 @@ function doesPostMatchFilters(
   post: Post,
   searchQuery: string,
   activeCategory: FilterCategory,
+  authorFilter: string,
 ): boolean {
   const normalizedQuery = searchQuery.trim().toLowerCase();
+  const normalizedAuthorFilter = authorFilter.trim().toLowerCase();
   const matchesQuery =
     normalizedQuery.length === 0 ||
     post.title.toLowerCase().includes(normalizedQuery) ||
@@ -84,14 +86,19 @@ function doesPostMatchFilters(
   const matchesCategory =
     activeCategory === "ALL" ||
     findCategoryData(post.categoryName).badgeType === activeCategory;
+  const matchesAuthor =
+    normalizedAuthorFilter.length === 0 ||
+    post.authorName.toLowerCase().includes(normalizedAuthorFilter) ||
+    isSameUserEmail(post.authorEmail, normalizedAuthorFilter);
 
-  return matchesQuery && matchesCategory;
+  return matchesQuery && matchesCategory && matchesAuthor;
 }
 
 
 // Renders the home feed with search and category controls for mobile and desktop.
 export default function HomePage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { isAuthenticated, user } = useAuth();
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   const [isEditPostOpen, setIsEditPostOpen] = useState(false);
@@ -111,6 +118,9 @@ export default function HomePage() {
   );
   const [postsReloadKey, setPostsReloadKey] = useState(0);
   const normalizedSearchQuery = searchQuery.trim();
+  const authorFilter = searchParams.get("author")?.trim() ?? "";
+  const authorFilterLabel =
+    searchParams.get("authorName")?.trim() || authorFilter;
   const selectedCategoryLabel =
     activeCategory === "ALL"
       ? undefined
@@ -164,16 +174,22 @@ export default function HomePage() {
   // Resolves the posts endpoint based on the active feed scope.
   const fetchPosts = useCallback(
     async (page: number, size: number) => {
-      if (postFeedScope === "MY_POSTS") {
-        const response = await postAPI.getAll(0, MY_POSTS_CLIENT_FETCH_LIMIT);
-        const myPosts = response.data.content.filter(
+      if (postFeedScope === "MY_POSTS" || authorFilter.length > 0) {
+        const response = await postAPI.getAll(0, CLIENT_FILTER_FETCH_LIMIT);
+        const filteredPosts = response.data.content.filter(
           (post) =>
-            isSameUserEmail(post.authorEmail, user?.email) &&
-            doesPostMatchFilters(post, normalizedSearchQuery, activeCategory),
+            (postFeedScope !== "MY_POSTS" ||
+              isSameUserEmail(post.authorEmail, user?.email)) &&
+            doesPostMatchFilters(
+              post,
+              normalizedSearchQuery,
+              activeCategory,
+              authorFilter,
+            ),
         );
 
         return {
-          data: buildClientPaginatedPosts(myPosts, page, size),
+          data: buildClientPaginatedPosts(filteredPosts, page, size),
         };
       }
 
@@ -188,7 +204,14 @@ export default function HomePage() {
 
       return postAPI.getAll(page, size);
     },
-    [activeCategory, normalizedSearchQuery, postFeedScope, selectedCategoryLabel, user?.email],
+    [
+      activeCategory,
+      authorFilter,
+      normalizedSearchQuery,
+      postFeedScope,
+      selectedCategoryLabel,
+      user?.email,
+    ],
   );
 
   const {
@@ -218,7 +241,7 @@ export default function HomePage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [activeCategory, normalizedSearchQuery]);
+  }, [activeCategory, authorFilter, normalizedSearchQuery]);
 
   useEffect(() => {
     if (currentPage > totalPages) {
@@ -239,6 +262,15 @@ export default function HomePage() {
   function handleSearch(query: string) {
     setCurrentPage(1);
     setSearchQuery(query.trim());
+  }
+
+  // Clears an author filter applied from analytics contributor links.
+  function handleClearAuthorFilter() {
+    const nextSearchParams = new URLSearchParams(searchParams);
+    nextSearchParams.delete("author");
+    nextSearchParams.delete("authorName");
+    setCurrentPage(1);
+    setSearchParams(nextSearchParams, { replace: true });
   }
 
   // Toggles between all posts and authenticated-user posts.
@@ -439,6 +471,22 @@ export default function HomePage() {
             </Button>
           )}
         </div>
+
+        {authorFilterLabel && (
+          <div className={styles.authorFilterNotice}>
+            <p className={styles.authorFilterText}>
+              Showing posts by <span>{authorFilterLabel}</span>.
+            </p>
+
+            <button
+              type="button"
+              className={styles.clearAuthorFilterButton}
+              onClick={handleClearAuthorFilter}
+            >
+              Clear
+            </button>
+          </div>
+        )}
       </section>
 
       {isLoadingPosts && (

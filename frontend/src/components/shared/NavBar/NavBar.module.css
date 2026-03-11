@@ -169,6 +169,34 @@
   background: #f0f3f4;
 }
 
+.mobileActionButton:disabled,
+.desktopActionButton:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
+.mobileActionButton:disabled:hover,
+.desktopActionButton:disabled:hover {
+  background: transparent;
+}
+
+.analyticsActionButton {
+  background: #08283b;
+}
+
+.analyticsActionButton:hover {
+  background: #0c344d;
+}
+
+.analyticsActionButton:disabled,
+.analyticsActionButton:disabled:hover {
+  background: #08283b;
+}
+
+.logoutActionButton:hover {
+  background: #fff1f1;
+}
+
 .actionIcon {
   width: 20px;
   height: 20px;
@@ -186,6 +214,14 @@
   font-weight: 500;
   line-height: 1.5;
   white-space: nowrap;
+}
+
+.analyticsPageAnalyticsIcon {
+  color: #fdfdfd;
+}
+
+.analyticsPageAnalyticsText {
+  color: #fdfdfd;
 }
 
 .logoutText {
@@ -214,6 +250,10 @@
 
   .navBar {
     padding: 10px 80px;
+  }
+
+  .analyticsPageNavBar {
+    padding: 10px clamp(24px, 8.34vw, 120px);
   }
 
   .desktopContent {

@@ -11,11 +11,17 @@ import CloseIcon from "../../../assets/Icons/CloseIcon";
 export default function NavBar({
   className,
   user,
+  variant = "default",
   onMenuClick,
   onAnalyticsClick,
   onLogoutClick,
 }: NavBarProps) {
-  const navBarClassName = joinNavBarClassName(styles.navBar, className);
+  const isAnalyticsVariant = variant === "analytics";
+  const navBarClassName = joinNavBarClassName(
+    styles.navBar,
+    isAnalyticsVariant ? styles.analyticsPageNavBar : undefined,
+    className,
+  );
   const initials = user ? user.initials ?? getUserInitials(user.name) : "";
   const mobileMenuToggleId = useId();
 
@@ -53,16 +59,32 @@ export default function NavBar({
             <div className={styles.desktopActions}>
               <button
                 type="button"
-                className={styles.desktopActionButton}
+                className={joinNavBarClassName(
+                  styles.desktopActionButton,
+                  isAnalyticsVariant ? styles.analyticsActionButton : undefined,
+                )}
                 onClick={onAnalyticsClick}
+                disabled={isAnalyticsVariant}
+                aria-current={isAnalyticsVariant ? "page" : undefined}
               >
                 <ChartColumnIcon
                   className={joinNavBarClassName(
                     styles.actionIcon,
-                    styles.analyticsIcon,
+                    isAnalyticsVariant
+                      ? styles.analyticsPageAnalyticsIcon
+                      : styles.analyticsIcon,
                   )}
                 />
-                <span className={styles.analyticsText}>Analytics</span>
+                <span
+                  className={joinNavBarClassName(
+                    styles.analyticsText,
+                    isAnalyticsVariant
+                      ? styles.analyticsPageAnalyticsText
+                      : undefined,
+                  )}
+                >
+                  Analytics
+                </span>
               </button>
 
               <div className={styles.userInfo}>
@@ -75,7 +97,10 @@ export default function NavBar({
 
               <button
                 type="button"
-                className={styles.desktopActionButton}
+                className={joinNavBarClassName(
+                  styles.desktopActionButton,
+                  styles.logoutActionButton,
+                )}
                 onClick={onLogoutClick}
               >
                 <LogOutIcon className={styles.actionIcon} />
@@ -111,6 +136,8 @@ export default function NavBar({
               type="button"
               className={styles.mobileActionButton}
               onClick={onAnalyticsClick}
+              disabled={isAnalyticsVariant}
+              aria-current={isAnalyticsVariant ? "page" : undefined}
             >
               <ChartColumnIcon
                 className={joinNavBarClassName(
