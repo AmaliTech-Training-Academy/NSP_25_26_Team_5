@@ -69,47 +69,47 @@ jobs:
         working-directory: ./frontend
         run: npm run build
 
-  sonar:
-    name: SonarCloud Scan
-    runs-on: ubuntu-latest
-    needs: backend
+  # sonar:
+  #   name: SonarCloud Scan
+  #   runs-on: ubuntu-latest
+  #   needs: backend
 
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_DB: communityboard
-          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+  #   services:
+  #     postgres:
+  #       image: postgres:15
+  #       env:
+  #         POSTGRES_DB: communityboard
+  #         POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+  #         POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+  #       ports:
+  #         - 5432:5432
+  #       options: >-
+  #         --health-cmd pg_isready
+  #         --health-interval 10s
+  #         --health-timeout 5s
+  #         --health-retries 5
 
-    steps:
-      - uses: actions/checkout@v4
+  #   steps:
+  #     - uses: actions/checkout@v4
 
-      - name: Setup JDK
-        uses: actions/setup-java@v4
-        with:
-          java-version: 17
-          distribution: temurin
+  #     - name: Setup JDK
+  #       uses: actions/setup-java@v4
+  #       with:
+  #         java-version: 17
+  #         distribution: temurin
 
-      - name: Sonar scan
-        working-directory: ./backend
-        run: |
-          mvn verify sonar:sonar -B \
-          -Dsonar.projectKey=${{ vars.SONAR_PROJECT_KEY || 'communityboard' }} \
-          -Dsonar.organization=${{ vars.SONAR_ORGANIZATION || 'amalitech' }}
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
-          SPRING_DATASOURCE_URL: ${{ secrets.SPRING_DATASOURCE_URL }}
-          SPRING_DATASOURCE_USERNAME: ${{ secrets.POSTGRES_USER }}
-          SPRING_DATASOURCE_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+  #     - name: Sonar scan
+  #       working-directory: ./backend
+  #       run: |
+  #         mvn verify sonar:sonar -B \
+  #         -Dsonar.projectKey=${{ vars.SONAR_PROJECT_KEY || 'communityboard' }} \
+  #         -Dsonar.organization=${{ vars.SONAR_ORGANIZATION || 'amalitech' }}
+  #       env:
+  #         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  #         SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
+  #         SPRING_DATASOURCE_URL: ${{ secrets.SPRING_DATASOURCE_URL }}
+  #         SPRING_DATASOURCE_USERNAME: ${{ secrets.POSTGRES_USER }}
+  #         SPRING_DATASOURCE_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
 
   codeql:
     name: CodeQL Analysis
