@@ -49,7 +49,7 @@ export interface PagedResponse<T> {
 
 export interface PostPayload {
   title: string;
-  content: string;
+  body: string;
   categoryId: number | string | null;
 }
 

@@ -5,13 +5,16 @@ import com.amalitech.communityboard.exception.ResourceNotFoundException;
 import com.amalitech.communityboard.exception.UnauthorizedException;
 import com.amalitech.communityboard.model.*;
 import com.amalitech.communityboard.model.enums.Role;
-import com.amalitech.communityboard.repository.*;
+import com.amalitech.communityboard.repository.CategoryRepository;
+import com.amalitech.communityboard.repository.CommentRepository;
+import com.amalitech.communityboard.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 
 import java.time.LocalDateTime;
@@ -25,6 +28,7 @@ public class PostService {
     private static final Logger log = LoggerFactory.getLogger(PostService.class);
 
     private final PostRepository postRepository;
+    private final CategoryRepository categoryRepository;
     private final CommentRepository commentRepository;
     private final EmailService emailService;
 
@@ -55,10 +59,12 @@ public class PostService {
     }
 
     public PostResponse createPost(PostRequest request, User author) {
+        Category category = categoryRepository.findById(request.getCategoryId())
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found with id: " + request.getCategoryId()));
         Post post = Post.builder()
                 .title(request.getTitle())
                 .body(request.getBody())
-                .category(request.getCategory()) // category is now a string
+                .category(category)
                 .author(author)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
@@ -82,9 +88,11 @@ public class PostService {
             throw new UnauthorizedException("You are not authorized to update this post");
         }
 
+        Category category = categoryRepository.findById(request.getCategoryId())
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found with id: " + request.getCategoryId()));
         post.setTitle(request.getTitle());
         post.setBody(request.getBody());
-        post.setCategory(request.getCategory());
+        post.setCategory(category);
         post.setUpdatedAt(LocalDateTime.now());
 
         Post savedPost = postRepository.save(post);
@@ -123,9 +131,9 @@ public class PostService {
                 predicates.add(cb.or(titleMatch, bodyMatch));
             }
 
-            // Filter by category
+            // Filter by category (by category name)
             if (category != null && !category.trim().isEmpty()) {
-                predicates.add(cb.equal(root.get("category"), category));
+                predicates.add(cb.equal(root.join("category", JoinType.LEFT).get("name"), category.trim()));
             }
 
             // Filter by Date Range (start to end)
@@ -149,7 +157,7 @@ public class PostService {
                 .id(post.getId())
                 .title(post.getTitle())
                 .body(post.getBody())
-                .categoryName(post.getCategory())
+                .categoryName(post.getCategory() != null ? post.getCategory().getName() : null)
                 .authorName(post.getAuthor().getFullName())
                 .authorEmail(post.getAuthor().getEmail())
                 .createdAt(post.getCreatedAt())
