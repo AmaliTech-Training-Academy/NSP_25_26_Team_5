@@ -1,0 +1,1 @@
+export { usePaginatedPosts } from "./usePaginatedPosts";
