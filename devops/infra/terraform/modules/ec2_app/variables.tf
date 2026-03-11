@@ -6,7 +6,13 @@ variable "vpc_id" {
 }
 variable "private_subnet_ids" {
   type        = list(string)
-  description = "Private subnets; first one used for the app instance"
+  description = "Private subnets (legacy); use public_subnet_ids for a public EC2"
+  default     = []
+}
+variable "public_subnet_ids" {
+  type        = list(string)
+  description = "Public subnets; first one used for the app instance (instance gets public IP)"
+  default     = []
 }
 variable "app_sg_id" {
   type = string

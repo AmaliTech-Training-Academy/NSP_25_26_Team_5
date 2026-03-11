@@ -23,6 +23,11 @@ output "ec2_instance_id" {
   description = "EC2 app instance ID"
 }
 
+output "ec2_public_ip" {
+  value       = module.ec2_app.public_ip
+  description = "EC2 app instance public IP (when in public subnet)"
+}
+
 output "ecr_backend_url" {
   value       = module.ecr.repository_url
   description = "ECR backend repository URL (no tag)"

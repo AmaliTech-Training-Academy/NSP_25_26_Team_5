@@ -4,3 +4,7 @@ output "instance_id" {
 output "private_ip" {
   value = aws_instance.app.private_ip
 }
+output "public_ip" {
+  value       = aws_instance.app.public_ip
+  description = "Public IP of the app instance (when in a public subnet)"
+}

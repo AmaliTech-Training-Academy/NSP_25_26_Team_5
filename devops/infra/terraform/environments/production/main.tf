@@ -48,6 +48,7 @@ module "ec2_app" {
   source                    = "../../modules/ec2_app"
   project_name              = local.name_prefix
   vpc_id                    = module.network.vpc_id
+  public_subnet_ids         = module.network.public_subnet_ids
   private_subnet_ids        = module.network.private_subnet_ids
   app_sg_id                 = module.security.backend_sg_id
   backend_target_group_arn  = module.alb.backend_target_group_arn
