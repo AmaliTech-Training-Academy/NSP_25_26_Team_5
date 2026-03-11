@@ -1,9 +1,9 @@
 -- Seed categories
 INSERT INTO categories (id, name, description) VALUES
-  (1, 'Events', 'Upcoming community events'),
-  (2, 'Lost & Found', 'Report lost or found items'),
-  (3, 'Recommendations', 'Community recommendations and endorsements'),
-  (4, 'Help Requests', 'Ask the community for help')
+    (1, 'News', 'Community news and announcements'),
+    (2, 'Event', 'Upcoming community events'),
+    (3, 'Discussion', 'Community discussions and recommendations'),
+    (4, 'Alert', 'Urgent community alerts')
 ON CONFLICT (id) DO NOTHING;
 
 -- Seed admin and test users

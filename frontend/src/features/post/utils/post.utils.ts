@@ -10,29 +10,29 @@ import type {
 interface PostCategoryConfig {
   label: PostCategoryOption["label"];
   badgeType: BadgeType;
-  backendNames: string[];
+  backendName: string;
 }
 
 const POST_CATEGORY_CONFIG: PostCategoryConfig[] = [
   {
     label: "Event",
     badgeType: BadgeType.EVENT,
-    backendNames: ["EVENT", "EVENTS"],
+    backendName: "EVENT",
   },
   {
     label: "Alert",
     badgeType: BadgeType.ALERT,
-    backendNames: ["ALERT", "LOST & FOUND", "LOST AND FOUND"],
+    backendName: "ALERT",
   },
   {
     label: "Discussion",
     badgeType: BadgeType.DISCUSSION,
-    backendNames: ["DISCUSSION", "HELP REQUESTS", "HELP REQUEST"],
+    backendName: "DISCUSSION",
   },
   {
     label: "News",
     badgeType: BadgeType.NEWS,
-    backendNames: ["NEWS", "RECOMMENDATIONS"],
+    backendName: "NEWS",
   },
 ];
 
@@ -46,7 +46,7 @@ function normalizeCategoryName(value: string | null | undefined): string {
 export function findCategoryData(categoryName: string | null): CategoryData {
   const normalizedCategoryName = normalizeCategoryName(categoryName);
   const matchedCategory = POST_CATEGORY_CONFIG.find((category) =>
-    category.backendNames.includes(normalizedCategoryName),
+    category.backendName === normalizedCategoryName,
   );
 
   return matchedCategory
@@ -66,7 +66,7 @@ export function findPostCategoryOptions(
 ): PostCategoryOption[] {
   return POST_CATEGORY_CONFIG.flatMap((categoryConfig) => {
     const matchedCategory = categories.find((category) =>
-      categoryConfig.backendNames.includes(normalizeCategoryName(category.name)),
+      categoryConfig.backendName === normalizeCategoryName(category.name),
     );
 
     return matchedCategory
