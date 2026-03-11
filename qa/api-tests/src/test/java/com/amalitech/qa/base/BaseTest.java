@@ -27,11 +27,11 @@ public abstract class BaseTest {
     protected static int sharedPostId;
     protected static int sharedCommentId;
 
-    // Cached tokens — login happens once per session
+    // Cached tokens — reset on every test class init to prevent stale tokens after restart
     private static String adminToken;
     private static String userToken;
 
-    // Self-provisioned user credentials — created once per session
+    // Self-provisioned user — fresh email per JVM session
     private static final String DYNAMIC_USER_EMAIL    = "testuser." + System.currentTimeMillis() + "@test.com";
     private static final String DYNAMIC_USER_PASSWORD = "Secure@123";
 
@@ -39,6 +39,9 @@ public abstract class BaseTest {
     static void init() {
         RestAssured.baseURI = Constants.BASE_URL;
         RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
+        // Reset cached tokens on each test class init — prevents stale tokens after Docker restart
+        adminToken = null;
+        userToken  = null;
     }
 
     // Token management — lazy login, cached after first call
@@ -51,7 +54,7 @@ public abstract class BaseTest {
 
     protected static String userToken() {
         if (userToken == null) {
-            // Register a fresh user, then immediately login
+            // Register a fresh dynamic user, then login
             given()
                     .spec(guestSpec())
                     .body(Map.of(

@@ -26,8 +26,8 @@ public final class Constants {
     public static final String ANALYTICS = "/api/analytics";
 
     // Seeded credentials
-    public static final String ADMIN_EMAIL    = "peace@gmail.com";
-    public static final String ADMIN_PASSWORD = "password123";
+    public static final String ADMIN_EMAIL    = "admin@test.com";
+    public static final String ADMIN_PASSWORD = "Admin@1234";
 //    public static final String USER_EMAIL     = "user@amalitech.com";
 //    public static final String USER_PASSWORD  = "password123";
 
