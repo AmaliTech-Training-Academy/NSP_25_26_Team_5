@@ -109,11 +109,11 @@ jobs:
           mvn spring-boot:run --no-transfer-progress -Dspring-boot.run.arguments="--spring.datasource.url=jdbc:postgresql://localhost:5432/communityboard --spring.datasource.username=${{ secrets.POSTGRES_USER }} --spring.datasource.password=${{ secrets.POSTGRES_PASSWORD }} --spring.jpa.hibernate.ddl-auto=create-drop" &
           echo "Waiting for backend to be ready..."
           for i in {1..30}; do
-            curl -sf http://localhost:8080/api/auth/login \
+            curl -s http://localhost:8080/api/auth/login \
               -H "Content-Type: application/json" \
               -d '{"email":"x","password":"x"}' \
               -o /dev/null && echo "Backend is up" && break
-            echo "Attempt $i — retrying in 5s..."
+            echo "Attempt $i - retrying in 5s..."
             sleep 5
           done
 
@@ -124,7 +124,7 @@ jobs:
       - name: Generate Allure Report
         if: always()
         working-directory: qa/api-tests
-        run: mvn allure:report --no-transfer-progress
+        run: mvn io.qameta.allure:allure-maven:report --no-transfer-progress
 
       - name: Upload Allure Report
         if: always()
@@ -178,4 +178,4 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build Docker image
-        run: docker build -t communityboard-backend:${{ github.sha }} ./backen
+        run: docker build -t communityboard-backend:${{ github.sha }} ./backend
