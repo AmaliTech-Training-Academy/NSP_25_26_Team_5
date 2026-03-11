@@ -138,7 +138,7 @@ public abstract class BaseTest {
                 .when()
                 .post(Constants.COMMENTS, postId)
                 .then()
-                .statusCode(200)
+                .statusCode(201)
                 .extract()
                 .path(Constants.FIELD_COMMENT_ID);
     }
