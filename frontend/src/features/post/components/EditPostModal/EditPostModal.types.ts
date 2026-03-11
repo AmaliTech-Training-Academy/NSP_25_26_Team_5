@@ -1,11 +1,11 @@
-import type { BadgeType } from "../../../../components/ui/Button/Button.types";
 import type { PostCardData } from "../PostCard/PostCard.types";
+import type { PostCategoryOption } from "../../types/post.type";
 
 export interface EditPostFormValues {
   postId: string;
   title: string;
   body: string;
-  category: BadgeType;
+  categoryId: number;
 }
 
 export interface EditPostFormErrors {
@@ -16,6 +16,9 @@ export interface EditPostFormErrors {
 
 export interface EditPostModalProps {
   className?: string;
+  categoryOptions: PostCategoryOption[];
+  isLoadingCategories?: boolean;
+  categoriesErrorMessage?: string | null;
   isOpen: boolean;
   post: PostCardData | null;
   onClose: () => void;

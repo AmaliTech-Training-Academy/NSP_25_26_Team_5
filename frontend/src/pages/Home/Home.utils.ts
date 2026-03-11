@@ -11,6 +11,8 @@ export function mapPostToCardData(post: Post): PostCardData {
     title: post.title,
     content: post.body,
     writerName: post.authorName,
+    authorEmail: post.authorEmail,
+    categoryName: post.categoryName,
     time: formatRelativeTime(post.createdAt),
     commentsCount: post.commentCount,
     badgeLabel: categoryData.badgeLabel,

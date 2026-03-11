@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import type { FilterCategory } from "../../components/shared/FilterBar";
 import FilterBar from "../../components/shared/FilterBar";
@@ -7,6 +7,7 @@ import SearchBar from "../../components/shared/SearchBar";
 import Button from "../../components/ui/Button/Button";
 import { useAuth } from "../../context/AuthContext/AuthContext";
 import { commentAPI } from "../../features/comment/api/comment.api";
+import { categoryAPI } from "../../features/post/api/category.api";
 import { postAPI } from "../../features/post/api/api.post";
 import CreatePostModal from "../../features/post/components/CreatePostModal";
 import type { CreatePostFormValues } from "../../features/post/components/CreatePostModal";
@@ -19,12 +20,53 @@ import { usePaginatedPosts } from "../../hooks";
 import styles from "./Home.module.css";
 import { mapPostToCardData } from "./Home.utils";
 import {
+  EXPECTED_POST_CATEGORY_COUNT,
+  findPostCategoryOptions,
   findCreatePostErrorMessage,
   findPostRequestErrorMessage,
 } from "../../features/post/utils/post.utils";
+import type {
+  Category,
+  PagedResponse,
+  Post,
+} from "../../features/post/types/post.type";
 
 const PAGE_SIZE = 10;
+const MY_POSTS_CLIENT_FETCH_LIMIT = 1000;
 type PostFeedScope = "ALL_POSTS" | "MY_POSTS";
+
+// Builds a client-side paginated view for filtered posts when no dedicated endpoint exists.
+function buildClientPaginatedPosts(
+  posts: Post[],
+  page: number,
+  size: number,
+): PagedResponse<Post> {
+  const boundedSize = Math.max(size, 1);
+  const safePage = Math.max(page, 0);
+  const startIndex = safePage * boundedSize;
+  const pagedPosts = posts.slice(startIndex, startIndex + boundedSize);
+  const totalPages = Math.max(Math.ceil(posts.length / boundedSize), 1);
+
+  return {
+    content: pagedPosts,
+    totalElements: posts.length,
+    totalPages,
+    size: boundedSize,
+    number: safePage,
+    first: safePage === 0,
+    last: safePage >= totalPages - 1,
+    numberOfElements: pagedPosts.length,
+    empty: pagedPosts.length === 0,
+  };
+}
+
+// Compares email addresses in a case-insensitive way.
+function isSameUserEmail(leftEmail?: string | null, rightEmail?: string | null): boolean {
+  return (
+    Boolean(leftEmail && rightEmail) &&
+    leftEmail?.trim().toLowerCase() === rightEmail?.trim().toLowerCase()
+  );
+}
 
 
 // Renders the home feed with search and category controls for mobile and desktop.
@@ -42,14 +84,74 @@ export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<FilterCategory>("ALL");
   const [currentPage, setCurrentPage] = useState(1);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(false);
+  const [categoriesErrorMessage, setCategoriesErrorMessage] = useState<string | null>(
+    null,
+  );
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setCategories([]);
+      setIsLoadingCategories(false);
+      setCategoriesErrorMessage(null);
+      return;
+    }
+
+    let isUnmounted = false;
+
+    async function loadCategories() {
+      setIsLoadingCategories(true);
+      setCategoriesErrorMessage(null);
+
+      try {
+        const response = await categoryAPI.getAll();
+
+        if (isUnmounted) {
+          return;
+        }
+
+        setCategories(response.data);
+      } catch {
+        if (isUnmounted) {
+          return;
+        }
+
+        setCategories([]);
+        setCategoriesErrorMessage(
+          "Unable to load categories right now. Please try again.",
+        );
+      } finally {
+        if (!isUnmounted) {
+          setIsLoadingCategories(false);
+        }
+      }
+    }
+
+    void loadCategories();
+
+    return () => {
+      isUnmounted = true;
+    };
+  }, [isAuthenticated]);
 
   // Resolves the posts endpoint based on the active feed scope.
   const fetchPosts = useCallback(
-    (page: number, size: number) =>
-      postFeedScope === "MY_POSTS"
-        ? postAPI.getMine(page, size)
-        : postAPI.getAll(page, size),
-    [postFeedScope],
+    async (page: number, size: number) => {
+      if (postFeedScope !== "MY_POSTS") {
+        return postAPI.getAll(page, size);
+      }
+
+      const response = await postAPI.getAll(0, MY_POSTS_CLIENT_FETCH_LIMIT);
+      const myPosts = response.data.content.filter((post) =>
+        isSameUserEmail(post.authorEmail, user?.email),
+      );
+
+      return {
+        data: buildClientPaginatedPosts(myPosts, page, size),
+      };
+    },
+    [postFeedScope, user?.email],
   );
 
   const {
@@ -80,6 +182,16 @@ export default function HomePage() {
       return matchesQuery && matchesCategory;
     });
   }, [activeCategory, homePosts, searchQuery]);
+
+  const categoryOptions = useMemo(
+    () => findPostCategoryOptions(categories),
+    [categories],
+  );
+  const resolvedCategoriesErrorMessage =
+    categoriesErrorMessage ??
+    (!isLoadingCategories && categoryOptions.length < EXPECTED_POST_CATEGORY_COUNT
+      ? "Some post categories are unavailable right now. Please try again."
+      : null);
 
   // Keeps query state in sync with the search input field.
   function handleSearchValueChange(nextValue: string) {
@@ -120,7 +232,7 @@ export default function HomePage() {
       const response = await postAPI.create({
         title: values.title,
         body: values.body,
-        category: values.category,
+        categoryId: values.categoryId,
       });
 
       const createdPost = mapPostToCardData(response.data);
@@ -156,7 +268,7 @@ export default function HomePage() {
       const response = await postAPI.update(Number(values.postId), {
         title: values.title,
         body: values.body,
-        category: values.category,
+        categoryId: values.categoryId,
       });
 
       const updatedPost = mapPostToCardData(response.data);
@@ -164,8 +276,15 @@ export default function HomePage() {
         previousPosts.map((post) => (post.id === updatedPost.id ? updatedPost : post)),
       );
       setPostActionErrorMessage(null);
-    } catch {
-      throw new Error("Unable to update this post right now. Please try again.");
+    } catch (error) {
+      throw new Error(
+        findPostRequestErrorMessage(
+          error,
+          "Unable to update this post right now. Please try again.",
+          "You are not authorized to update this post.",
+          "This post could not be found anymore.",
+        ),
+      );
     }
   }
 
@@ -236,8 +355,11 @@ export default function HomePage() {
   const isAdminUser =
     normalizedRole === "ADMIN" || normalizedRole === "ROLE_ADMIN";
   const isYourPostsActive = postFeedScope === "MY_POSTS";
-  const canManageVisiblePosts = isAdminUser || isYourPostsActive;
-  const shouldCenterEmptyFeed = filteredPosts.length === 0;
+  const visiblePosts = filteredPosts.map((post) => ({
+    ...post,
+    canManage: isAdminUser || isSameUserEmail(post.authorEmail, user?.email),
+  }));
+  const shouldCenterEmptyFeed = visiblePosts.length === 0;
 
   return (
     <main className={styles.homePage}>
@@ -306,8 +428,8 @@ export default function HomePage() {
       {!isLoadingPosts && !postsErrorMessage && (
         <div className={shouldCenterEmptyFeed ? styles.emptyFeed : undefined}>
           <PostFeed
-            posts={filteredPosts}
-            showPostActions={canManageVisiblePosts}
+            posts={visiblePosts}
+            showPostActions={isAdminUser}
             onEditPost={handleEditPost}
             onDeletePost={handleDeletePost}
           />
@@ -325,6 +447,9 @@ export default function HomePage() {
 
       {isAuthenticated && (
         <CreatePostModal
+          categoryOptions={categoryOptions}
+          isLoadingCategories={isLoadingCategories}
+          categoriesErrorMessage={resolvedCategoriesErrorMessage}
           isOpen={isCreatePostOpen}
           onClose={handleCloseCreatePostModal}
           onCreatePost={handleCreatePost}
@@ -333,6 +458,9 @@ export default function HomePage() {
 
       {isAuthenticated && (
         <EditPostModal
+          categoryOptions={categoryOptions}
+          isLoadingCategories={isLoadingCategories}
+          categoriesErrorMessage={resolvedCategoriesErrorMessage}
           isOpen={isEditPostOpen}
           post={postBeingEdited}
           onClose={handleCloseEditPostModal}

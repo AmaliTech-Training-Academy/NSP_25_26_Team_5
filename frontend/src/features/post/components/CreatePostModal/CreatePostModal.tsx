@@ -14,7 +14,6 @@ import type {
   CreatePostModalProps,
 } from "./CreatePostModal.types";
 import {
-  CREATE_POST_CATEGORIES,
   findCreatePostErrorMessage,
   findCreatePostCategoryLabel,
   joinCreatePostModalClassName,
@@ -22,7 +21,6 @@ import {
   TITLE_WARNING_THRESHOLD,
   validateCreatePostForm,
 } from "./CreatePostModal.utils";
-import { BadgeType } from "../../../../components/ui/Button/Button.types";
 import CloseIcon from "../../../../assets/Icons/CloseIcon";
 import Input from "../../../../components/ui/Input/Input";
 import Button from "../../../../components/ui/Button/Button";
@@ -34,13 +32,16 @@ import Breadcrumbs from "../../../../components/shared/Breadcrumbs/Breadcrumbs";
 // Renders the create-post modal and submits a new post payload to the parent.
 export default function CreatePostModal({
   className,
+  categoryOptions,
+  isLoadingCategories = false,
+  categoriesErrorMessage = null,
   isOpen,
   onClose,
   onCreatePost,
 }: CreatePostModalProps) {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<BadgeType | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false);
   const [formErrors, setFormErrors] = useState<CreatePostFormErrors>({});
   const [submitErrorMessage, setSubmitErrorMessage] = useState<string | null>(null);
@@ -49,15 +50,20 @@ export default function CreatePostModal({
   const bodyInputId = useId();
 
   const overlayClassName = joinCreatePostModalClassName(styles.overlay, className);
-  const selectedCategoryLabel = selectedCategory ? findCreatePostCategoryLabel(selectedCategory) : "";
+  const selectedCategoryLabel =
+    selectedCategoryId === null
+      ? ""
+      : findCreatePostCategoryLabel(categoryOptions, selectedCategoryId);
   const titleLength = title.length;
   const isTitleNearLimit = titleLength >= TITLE_WARNING_THRESHOLD;
   const canSubmit =
     !isSubmitting &&
+    !isLoadingCategories &&
+    !categoriesErrorMessage &&
     title.trim().length > 0 &&
     title.trim().length <= TITLE_MAX_LENGTH &&
     body.trim().length > 0 &&
-    selectedCategory !== null;
+    selectedCategoryId !== null;
 
   // Locks body scrolling while the modal is active.
   useEffect(() => {
@@ -119,7 +125,7 @@ export default function CreatePostModal({
   function resetFormState() {
     setTitle("");
     setBody("");
-    setSelectedCategory(null);
+    setSelectedCategoryId(null);
     setIsCategoryMenuOpen(false);
     setFormErrors({});
     setSubmitErrorMessage(null);
@@ -134,8 +140,8 @@ export default function CreatePostModal({
   }
 
   // Applies the selected category option to the form and closes the dropdown.
-  function handleCategorySelect(category: BadgeType) {
-    setSelectedCategory(category);
+  function handleCategorySelect(categoryId: number) {
+    setSelectedCategoryId(categoryId);
     setIsCategoryMenuOpen(false);
     setFormErrors((previousErrors) => ({ ...previousErrors, category: undefined }));
     setSubmitErrorMessage(null);
@@ -155,17 +161,21 @@ export default function CreatePostModal({
   async function handleCreatePostSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const nextErrors = validateCreatePostForm(title, body, selectedCategory);
+    const nextErrors = validateCreatePostForm(title, body, selectedCategoryId);
     setFormErrors(nextErrors);
 
-    if (Object.keys(nextErrors).length > 0 || !selectedCategory || !onCreatePost) {
+    if (
+      Object.keys(nextErrors).length > 0 ||
+      selectedCategoryId === null ||
+      !onCreatePost
+    ) {
       return;
     }
 
     const payload: CreatePostFormValues = {
       title: title.trim(),
       body: body.trim(),
-      category: selectedCategory,
+      categoryId: selectedCategoryId,
     };
 
     setSubmitErrorMessage(null);
@@ -258,9 +268,15 @@ export default function CreatePostModal({
               placeholder="Select"
               value={selectedCategoryLabel}
               readOnly
+              disabled={isLoadingCategories || Boolean(categoriesErrorMessage)}
               hasError={Boolean(formErrors.category)}
               onInputContainerClick={() => {
-                if (isSubmitting) {
+                if (
+                  isSubmitting ||
+                  isLoadingCategories ||
+                  Boolean(categoriesErrorMessage) ||
+                  categoryOptions.length === 0
+                ) {
                   return;
                 }
 
@@ -278,23 +294,28 @@ export default function CreatePostModal({
 
             {isCategoryMenuOpen && (
               <div className={styles.categoryMenu} role="listbox" aria-label="Post category options">
-                {CREATE_POST_CATEGORIES.map((option) => (
+                {categoryOptions.map((categoryOption) => (
                   <button
-                    key={option.value}
+                    key={categoryOption.categoryId}
                     type="button"
                     className={joinCreatePostModalClassName(
                       styles.categoryOption,
-                      selectedCategory === option.value
+                      selectedCategoryId === categoryOption.categoryId
                         ? styles.categoryOptionActive
                         : undefined,
                     )}
-                    onClick={() => handleCategorySelect(option.value)}
+                    onClick={() => handleCategorySelect(categoryOption.categoryId)}
                     disabled={isSubmitting}
                   >
-                    {option.label}
+                    {categoryOption.label}
                   </button>
                 ))}
               </div>
+            )}
+            {categoriesErrorMessage && (
+              <p className={styles.fieldError} role="alert">
+                {categoriesErrorMessage}
+              </p>
             )}
             {formErrors.category && (
               <p className={styles.fieldError} role="alert">

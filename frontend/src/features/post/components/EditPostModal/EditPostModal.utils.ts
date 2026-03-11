@@ -1,21 +1,12 @@
-import { BadgeType } from "../../../../components/ui/Button/Button.types";
+import type { PostCategoryOption } from "../../types/post.type";
 import type { EditPostFormErrors } from "./EditPostModal.types";
 
-export interface EditPostCategoryOption {
-  label: string;
-  value: BadgeType;
-}
-
-export const EDIT_POST_CATEGORIES: EditPostCategoryOption[] = [
-  { label: "News", value: BadgeType.NEWS },
-  { label: "Event", value: BadgeType.EVENT },
-  { label: "Discussion", value: BadgeType.DISCUSSION },
-  { label: "Alert", value: BadgeType.ALERT },
-];
-
-export function findEditPostCategoryLabel(category: BadgeType): string {
+export function findEditPostCategoryLabel(
+  categoryOptions: PostCategoryOption[],
+  categoryId: number,
+): string {
   return (
-    EDIT_POST_CATEGORIES.find((option) => option.value === category)?.label ?? ""
+    categoryOptions.find((category) => category.categoryId === categoryId)?.label ?? ""
   );
 }
 
@@ -23,7 +14,7 @@ export function findEditPostCategoryLabel(category: BadgeType): string {
 export function validateEditPostForm(
   title: string,
   body: string,
-  selectedCategory: BadgeType | null,
+  selectedCategoryId: number | null,
 ): EditPostFormErrors {
   const errors: EditPostFormErrors = {};
 
@@ -35,7 +26,7 @@ export function validateEditPostForm(
     errors.body = "Body is required.";
   }
 
-  if (!selectedCategory) {
+  if (selectedCategoryId === null) {
     errors.category = "Please select a category.";
   }
 

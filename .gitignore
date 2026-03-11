@@ -20,3 +20,6 @@ devops/infra/terraform/backend/
 .terraform.lock.hcl  
 *.tfvars   
 
+# Local Codex agent notes
+frontend/agents.md
+frontend/agent-migration.md

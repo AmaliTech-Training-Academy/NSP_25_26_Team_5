@@ -17,7 +17,20 @@ export interface PagedResponse<T> {
 export interface PostPayload {
   title: string;
   body: string;
-  category: string;
+  categoryId: number;
+}
+
+export interface Category {
+  id: number;
+  name: string;
+  description?: string | null;
+}
+
+export interface PostCategoryOption {
+  categoryId: number;
+  label: CategoryLabel;
+  badgeType: BadgeType;
+  backendName: string;
 }
 
 export type CategoryLabel =

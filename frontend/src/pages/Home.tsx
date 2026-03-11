@@ -27,7 +27,7 @@ const Home = () => {
               by {post.authorName} • {new Date(post.createdAt).toLocaleDateString()}
               {post.categoryName && ` • ${post.categoryName}`}
             </p>
-            <p style={{ marginTop: 10 }}>{post.content}</p>
+            <p style={{ marginTop: 10 }}>{post.body}</p>
             <p style={{ marginTop: 8, color: "#0984e3", fontSize: 13 }}>
               {post.commentCount} comments
             </p>

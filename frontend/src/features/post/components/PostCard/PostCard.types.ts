@@ -5,10 +5,13 @@ export interface PostCardData {
   title: string;
   content: string;
   writerName: string;
-  time: string;  // depend of how the data is structured from the Database
+  authorEmail: string;
+  categoryName: string | null;
+  time: string;
   commentsCount: number;
   badgeLabel: string;
   badgeType?: BadgeType;
+  canManage?: boolean;
 }
 
 export interface PostCardProps {

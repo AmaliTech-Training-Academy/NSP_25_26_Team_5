@@ -12,7 +12,6 @@ import ChevronUpIcon from "../../../../assets/Icons/ChevronUpIcon";
 import HouseIcon from "../../../../assets/Icons/HouseIcon";
 import Breadcrumbs from "../../../../components/shared/Breadcrumbs/Breadcrumbs";
 import Button from "../../../../components/ui/Button/Button";
-import { BadgeType } from "../../../../components/ui/Button/Button.types";
 import Input from "../../../../components/ui/Input/Input";
 import styles from "./EditPostModal.module.css";
 import type {
@@ -21,7 +20,6 @@ import type {
   EditPostModalProps,
 } from "./EditPostModal.types";
 import {
-  EDIT_POST_CATEGORIES,
   findEditPostCategoryLabel,
   findEditPostErrorMessage,
   joinEditPostModalClassName,
@@ -31,6 +29,9 @@ import {
 // Renders an edit-post modal prefilled from the selected post.
 export default function EditPostModal({
   className,
+  categoryOptions,
+  isLoadingCategories = false,
+  categoriesErrorMessage = null,
   isOpen,
   post,
   onClose,
@@ -38,7 +39,7 @@ export default function EditPostModal({
 }: EditPostModalProps) {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<BadgeType | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false);
   const [formErrors, setFormErrors] = useState<EditPostFormErrors>({});
   const [submitErrorMessage, setSubmitErrorMessage] = useState<string | null>(null);
@@ -47,28 +48,35 @@ export default function EditPostModal({
   const bodyInputId = useId();
 
   const overlayClassName = joinEditPostModalClassName(styles.overlay, className);
-  const selectedCategoryLabel = selectedCategory
-    ? findEditPostCategoryLabel(selectedCategory)
-    : "";
+  const selectedCategoryLabel =
+    selectedCategoryId === null
+      ? post?.badgeLabel ?? ""
+      : findEditPostCategoryLabel(categoryOptions, selectedCategoryId);
   const canSubmit =
     !isSubmitting &&
+    !isLoadingCategories &&
+    !categoriesErrorMessage &&
     title.trim().length > 0 &&
     body.trim().length > 0 &&
-    selectedCategory !== null;
+    selectedCategoryId !== null;
 
   useEffect(() => {
     if (!isOpen || !post) {
       return;
     }
 
+    const matchedCategory = categoryOptions.find(
+      (categoryOption) => categoryOption.backendName === post.categoryName,
+    );
+
     setTitle(post.title);
     setBody(post.content);
-    setSelectedCategory(post.badgeType ?? null);
+    setSelectedCategoryId(matchedCategory?.categoryId ?? null);
     setIsCategoryMenuOpen(false);
     setFormErrors({});
     setSubmitErrorMessage(null);
     setIsSubmitting(false);
-  }, [isOpen, post]);
+  }, [categoryOptions, isOpen, post]);
 
   // Locks body scrolling while the modal is active.
   useEffect(() => {
@@ -134,8 +142,8 @@ export default function EditPostModal({
   }
 
   // Applies selected category option and closes dropdown.
-  function handleCategorySelect(category: BadgeType) {
-    setSelectedCategory(category);
+  function handleCategorySelect(categoryId: number) {
+    setSelectedCategoryId(categoryId);
     setIsCategoryMenuOpen(false);
     setFormErrors((previousErrors) => ({ ...previousErrors, category: undefined }));
     setSubmitErrorMessage(null);
@@ -162,10 +170,10 @@ export default function EditPostModal({
       return;
     }
 
-    const nextErrors = validateEditPostForm(title, body, selectedCategory);
+    const nextErrors = validateEditPostForm(title, body, selectedCategoryId);
     setFormErrors(nextErrors);
 
-    if (Object.keys(nextErrors).length > 0 || !selectedCategory) {
+    if (Object.keys(nextErrors).length > 0 || selectedCategoryId === null) {
       return;
     }
 
@@ -173,7 +181,7 @@ export default function EditPostModal({
       postId: post.id,
       title: title.trim(),
       body: body.trim(),
-      category: selectedCategory,
+      categoryId: selectedCategoryId,
     };
 
     setSubmitErrorMessage(null);
@@ -256,9 +264,15 @@ export default function EditPostModal({
               placeholder="Select"
               value={selectedCategoryLabel}
               readOnly
+              disabled={isLoadingCategories || Boolean(categoriesErrorMessage)}
               hasError={Boolean(formErrors.category)}
               onInputContainerClick={() => {
-                if (isSubmitting) {
+                if (
+                  isSubmitting ||
+                  isLoadingCategories ||
+                  Boolean(categoriesErrorMessage) ||
+                  categoryOptions.length === 0
+                ) {
                   return;
                 }
 
@@ -276,23 +290,28 @@ export default function EditPostModal({
 
             {isCategoryMenuOpen && (
               <div className={styles.categoryMenu} role="listbox" aria-label="Post category options">
-                {EDIT_POST_CATEGORIES.map((option) => (
+                {categoryOptions.map((categoryOption) => (
                   <button
-                    key={option.value}
+                    key={categoryOption.categoryId}
                     type="button"
                     className={joinEditPostModalClassName(
                       styles.categoryOption,
-                      selectedCategory === option.value
+                      selectedCategoryId === categoryOption.categoryId
                         ? styles.categoryOptionActive
                         : undefined,
                     )}
-                    onClick={() => handleCategorySelect(option.value)}
+                    onClick={() => handleCategorySelect(categoryOption.categoryId)}
                     disabled={isSubmitting}
                   >
-                    {option.label}
+                    {categoryOption.label}
                   </button>
                 ))}
               </div>
+            )}
+            {categoriesErrorMessage && (
+              <p className={styles.fieldError} role="alert">
+                {categoriesErrorMessage}
+              </p>
             )}
             {formErrors.category && (
               <p className={styles.fieldError} role="alert">

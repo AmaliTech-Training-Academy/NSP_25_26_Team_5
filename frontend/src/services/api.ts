@@ -49,7 +49,7 @@ export interface PagedResponse<T> {
 export interface PostPayload {
   title: string;
   body: string;
-  category: string;
+  categoryId: number | null;
 }
 
 const API = axios.create({ baseURL: "/api" });

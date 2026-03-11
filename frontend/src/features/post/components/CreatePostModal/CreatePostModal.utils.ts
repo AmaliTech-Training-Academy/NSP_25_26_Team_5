@@ -1,24 +1,15 @@
-import { BadgeType } from "../../../../components/ui/Button/Button.types";
+import type { PostCategoryOption } from "../../types/post.type";
 import type { CreatePostFormErrors } from "./CreatePostModal.types";
 
 export const TITLE_MAX_LENGTH = 100;
 export const TITLE_WARNING_THRESHOLD = 90;
 
-export interface CreatePostCategoryOption {
-  label: string;
-  value: BadgeType;
-}
-
-export const CREATE_POST_CATEGORIES: CreatePostCategoryOption[] = [
-  { label: "News", value: BadgeType.NEWS },
-  { label: "Event", value: BadgeType.EVENT },
-  { label: "Discussion", value: BadgeType.DISCUSSION },
-  { label: "Alert", value: BadgeType.ALERT },
-];
-
-export function findCreatePostCategoryLabel(category: BadgeType): string {
+export function findCreatePostCategoryLabel(
+  categoryOptions: PostCategoryOption[],
+  categoryId: number,
+): string {
   return (
-    CREATE_POST_CATEGORIES.find((option) => option.value === category)?.label ?? ""
+    categoryOptions.find((category) => category.categoryId === categoryId)?.label ?? ""
   );
 }
 
@@ -26,7 +17,7 @@ export function findCreatePostCategoryLabel(category: BadgeType): string {
 export function validateCreatePostForm(
   title: string,
   body: string,
-  selectedCategory: BadgeType | null,
+  selectedCategoryId: number | null,
 ): CreatePostFormErrors {
   const errors: CreatePostFormErrors = {};
 
@@ -40,7 +31,7 @@ export function validateCreatePostForm(
     errors.body = "Body is required.";
   }
 
-  if (!selectedCategory) {
+  if (selectedCategoryId === null) {
     errors.category = "Please select a category.";
   }
 

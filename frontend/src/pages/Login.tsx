@@ -14,7 +14,14 @@ const Login = () => {
     e.preventDefault();
     try {
       const res = await authAPI.login({ email, password });
-      login({ name: res.data.name, email: res.data.email, role: res.data.role }, res.data.token);
+      login(
+        {
+          name: res.data.fullName,
+          email: res.data.email,
+          role: res.data.role,
+        },
+        res.data.token,
+      );
       navigate("/");
     } catch {
       setError("Invalid email or password");

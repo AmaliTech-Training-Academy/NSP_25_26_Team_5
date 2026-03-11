@@ -5,7 +5,7 @@ import Register from "./features/auth/pages/Register/Register";
 import ProtectedRoute from "./app/router/ProtectedRoute";
 import MainLayout from "./components/shared/MainLayout/MainLayout";
 import PostDetail from "./features/post/pages/PostDetail/PostDetail";
-import Home from "./pages/Home";
+import Home from "./pages/Home/Home";
 
 
 const App = () => {

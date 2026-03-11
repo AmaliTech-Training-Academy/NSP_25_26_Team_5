@@ -1,9 +1,9 @@
-import type { BadgeType } from "../../../../components/ui/Button/Button.types";
+import type { PostCategoryOption } from "../../types/post.type";
 
 export interface CreatePostFormValues {
   title: string;
   body: string;
-  category: BadgeType;
+  categoryId: number;
 }
 
 export interface CreatePostFormErrors {
@@ -14,6 +14,9 @@ export interface CreatePostFormErrors {
 
 export interface CreatePostModalProps {
   className?: string;
+  categoryOptions: PostCategoryOption[];
+  isLoadingCategories?: boolean;
+  categoriesErrorMessage?: string | null;
   isOpen: boolean;
   onClose: () => void;
   onCreatePost?: (values: CreatePostFormValues) => Promise<void> | void;

@@ -21,7 +21,7 @@ export default function PostList({
           <PostCard
             post={post}
             className={styles.postListItem}
-            canManage={showPostActions}
+            canManage={showPostActions || Boolean(post.canManage)}
             onEdit={onEditPost}
             onDelete={onDeletePost}
           />
