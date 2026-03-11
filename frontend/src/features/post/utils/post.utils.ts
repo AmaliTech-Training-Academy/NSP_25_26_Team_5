@@ -82,6 +82,13 @@ export function findPostCategoryOptions(
   });
 }
 
+// Resolves the category label used by the backend search endpoint.
+export function findCategoryLabelByBadgeType(
+  badgeType: BadgeType,
+): PostCategoryOption["label"] | undefined {
+  return POST_CATEGORY_CONFIG.find((category) => category.badgeType === badgeType)?.label;
+}
+
 // Formats timestamps into the short relative strings used across post surfaces.
 export function formatRelativeTime(value: string): string {
   const parsedDate = new Date(value);

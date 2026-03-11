@@ -35,7 +35,7 @@ export default function SearchBar({
             value={value}
             placeholder={placeholder}
             className={styles.input}
-            aria-label="Search by post title"
+            aria-label="Search posts"
             onChange={(event) => onValueChange?.(event.target.value)}
           />
           <button

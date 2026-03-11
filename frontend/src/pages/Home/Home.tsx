@@ -21,6 +21,8 @@ import styles from "./Home.module.css";
 import { mapPostToCardData } from "./Home.utils";
 import {
   EXPECTED_POST_CATEGORY_COUNT,
+  findCategoryData,
+  findCategoryLabelByBadgeType,
   findPostCategoryOptions,
   findCreatePostErrorMessage,
   findPostRequestErrorMessage,
@@ -31,7 +33,7 @@ import type {
   Post,
 } from "../../features/post/types/post.type";
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 5;
 const MY_POSTS_CLIENT_FETCH_LIMIT = 1000;
 type PostFeedScope = "ALL_POSTS" | "MY_POSTS";
 
@@ -68,6 +70,24 @@ function isSameUserEmail(leftEmail?: string | null, rightEmail?: string | null):
   );
 }
 
+// Applies the active search and category filters to a backend post record.
+function doesPostMatchFilters(
+  post: Post,
+  searchQuery: string,
+  activeCategory: FilterCategory,
+): boolean {
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const matchesQuery =
+    normalizedQuery.length === 0 ||
+    post.title.toLowerCase().includes(normalizedQuery) ||
+    post.body.toLowerCase().includes(normalizedQuery);
+  const matchesCategory =
+    activeCategory === "ALL" ||
+    findCategoryData(post.categoryName).badgeType === activeCategory;
+
+  return matchesQuery && matchesCategory;
+}
+
 
 // Renders the home feed with search and category controls for mobile and desktop.
 export default function HomePage() {
@@ -89,6 +109,12 @@ export default function HomePage() {
   const [categoriesErrorMessage, setCategoriesErrorMessage] = useState<string | null>(
     null,
   );
+  const [postsReloadKey, setPostsReloadKey] = useState(0);
+  const normalizedSearchQuery = searchQuery.trim();
+  const selectedCategoryLabel =
+    activeCategory === "ALL"
+      ? undefined
+      : findCategoryLabelByBadgeType(activeCategory);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -138,20 +164,31 @@ export default function HomePage() {
   // Resolves the posts endpoint based on the active feed scope.
   const fetchPosts = useCallback(
     async (page: number, size: number) => {
-      if (postFeedScope !== "MY_POSTS") {
-        return postAPI.getAll(page, size);
+      if (postFeedScope === "MY_POSTS") {
+        const response = await postAPI.getAll(0, MY_POSTS_CLIENT_FETCH_LIMIT);
+        const myPosts = response.data.content.filter(
+          (post) =>
+            isSameUserEmail(post.authorEmail, user?.email) &&
+            doesPostMatchFilters(post, normalizedSearchQuery, activeCategory),
+        );
+
+        return {
+          data: buildClientPaginatedPosts(myPosts, page, size),
+        };
       }
 
-      const response = await postAPI.getAll(0, MY_POSTS_CLIENT_FETCH_LIMIT);
-      const myPosts = response.data.content.filter((post) =>
-        isSameUserEmail(post.authorEmail, user?.email),
-      );
+      if (normalizedSearchQuery.length > 0 || selectedCategoryLabel) {
+        return postAPI.search({
+          keyword: normalizedSearchQuery || undefined,
+          category: selectedCategoryLabel,
+          page,
+          size,
+        });
+      }
 
-      return {
-        data: buildClientPaginatedPosts(myPosts, page, size),
-      };
+      return postAPI.getAll(page, size);
     },
-    [postFeedScope, user?.email],
+    [activeCategory, normalizedSearchQuery, postFeedScope, selectedCategoryLabel, user?.email],
   );
 
   const {
@@ -160,28 +197,14 @@ export default function HomePage() {
     isLoadingPosts,
     postsErrorMessage,
     totalPages,
+    totalElements,
   } = usePaginatedPosts({
     currentPage,
     pageSize: PAGE_SIZE,
     mapPost: mapPostToCardData,
     fetchPosts,
+    reloadKey: postsReloadKey,
   });
-
-  // Applies search and category filters on the currently loaded posts page.
-  const filteredPosts = useMemo(() => {
-    const normalizedQuery = searchQuery.trim().toLowerCase();
-
-    return homePosts.filter((post) => {
-      const matchesQuery =
-        normalizedQuery.length === 0 ||
-        post.title.toLowerCase().includes(normalizedQuery);
-
-      const matchesCategory =
-        activeCategory === "ALL" || post.badgeType === activeCategory;
-
-      return matchesQuery && matchesCategory;
-    });
-  }, [activeCategory, homePosts, searchQuery]);
 
   const categoryOptions = useMemo(
     () => findPostCategoryOptions(categories),
@@ -192,6 +215,16 @@ export default function HomePage() {
     (!isLoadingCategories && categoryOptions.length < EXPECTED_POST_CATEGORY_COUNT
       ? "Some post categories are unavailable right now. Please try again."
       : null);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeCategory, normalizedSearchQuery]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   // Keeps query state in sync with the search input field.
   function handleSearchValueChange(nextValue: string) {
@@ -204,6 +237,7 @@ export default function HomePage() {
 
   // Triggers a search using the submitted input value.
   function handleSearch(query: string) {
+    setCurrentPage(1);
     setSearchQuery(query.trim());
   }
 
@@ -265,17 +299,14 @@ export default function HomePage() {
   // Submits post update payload and refreshes the edited card in the feed.
   async function handleEditPostSubmit(values: EditPostFormValues): Promise<void> {
     try {
-      const response = await postAPI.update(Number(values.postId), {
+      await postAPI.update(Number(values.postId), {
         title: values.title,
         body: values.body,
         categoryId: values.categoryId,
       });
 
-      const updatedPost = mapPostToCardData(response.data);
-      setHomePosts((previousPosts) =>
-        previousPosts.map((post) => (post.id === updatedPost.id ? updatedPost : post)),
-      );
       setPostActionErrorMessage(null);
+      setPostsReloadKey((previousKey) => previousKey + 1);
     } catch (error) {
       throw new Error(
         findPostRequestErrorMessage(
@@ -333,10 +364,13 @@ export default function HomePage() {
       }
 
       await postAPI.delete(parsedPostId);
-      setHomePosts((previousPosts) =>
-        previousPosts.filter((post) => post.id !== postBeingDeleted.id),
-      );
       setPostBeingDeleted(null);
+
+      if (homePosts.length === 1 && currentPage > 1) {
+        setCurrentPage((previousPage) => previousPage - 1);
+      } else {
+        setPostsReloadKey((previousKey) => previousKey + 1);
+      }
     } catch (error) {
       setPostActionErrorMessage(
         findPostRequestErrorMessage(
@@ -355,7 +389,7 @@ export default function HomePage() {
   const isAdminUser =
     normalizedRole === "ADMIN" || normalizedRole === "ROLE_ADMIN";
   const isYourPostsActive = postFeedScope === "MY_POSTS";
-  const visiblePosts = filteredPosts.map((post) => ({
+  const visiblePosts = homePosts.map((post) => ({
     ...post,
     canManage: isAdminUser || isSameUserEmail(post.authorEmail, user?.email),
   }));
@@ -436,7 +470,7 @@ export default function HomePage() {
         </div>
       )}
 
-      {!isLoadingPosts && !postsErrorMessage && totalPages > 1 && (
+      {!isLoadingPosts && !postsErrorMessage && totalElements > PAGE_SIZE && (
         <Paginations
           className={styles.pagination}
           currentPage={currentPage}

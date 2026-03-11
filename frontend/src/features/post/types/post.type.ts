@@ -20,6 +20,15 @@ export interface PostPayload {
   categoryId: number;
 }
 
+export interface PostSearchParams {
+  keyword?: string;
+  category?: string;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  size?: number;
+}
+
 export interface Category {
   id: number;
   name: string;

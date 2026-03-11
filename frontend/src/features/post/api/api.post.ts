@@ -3,6 +3,7 @@ import type {
   PagedResponse,
   Post,
   PostPayload,
+  PostSearchParams,
 } from "../types/post.type";
 
 export const postAPI = {
@@ -20,6 +21,12 @@ export const postAPI = {
 
   getById(id: number) {
     return apiClient.get<Post>(`/posts/${id}`);
+  },
+
+  search(params: PostSearchParams) {
+    return apiClient.get<PagedResponse<Post>>("/posts/search", {
+      params,
+    });
   },
 
   create(data: PostPayload) {
