@@ -1,0 +1,8 @@
+# Example backend config for production. Copy to backend.hcl and set bucket/table (from backend bootstrap).
+# Use: terraform init -backend-config=backend.hcl
+
+bucket         = "YOUR_TF_STATE_BUCKET"
+key            = "community-board/production/terraform.tfstate"
+region         = "eu-north-1"
+dynamodb_table = "YOUR_TF_LOCK_TABLE"
+encrypt        = true

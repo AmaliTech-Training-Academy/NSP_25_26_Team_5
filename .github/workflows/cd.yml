@@ -1,0 +1,166 @@
+name: CD (Terraform)
+
+on:
+  push:
+    branches: [main, dev, staging]
+  
+  workflow_run:
+    workflows: ["CI Pipeline"]
+    branches: [main, dev, staging]
+    types: [completed]
+
+jobs:
+  setup:
+    name: Set environment variables
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success'
+    outputs:
+      environment: ${{ steps.set-env.outputs.environment }}
+      tf_working_dir: ${{ steps.set-env.outputs.tf_working_dir }}
+      head_sha: ${{ github.event.workflow_run.head_sha }}
+    steps:
+      - name: Set environment and working dir
+        id: set-env
+        run: |
+          BRANCH="${{ github.event.workflow_run.head_branch }}"
+          if [[ "$BRANCH" == "main" ]]; then
+            ENV="production"
+          else
+            ENV="$BRANCH"
+          fi
+          echo "environment=$ENV" >> $GITHUB_OUTPUT
+          echo "tf_working_dir=devops/infra/terraform/environments/$ENV" >> $GITHUB_OUTPUT
+
+  terraform-validate:
+    name: Terraform validate (${{ needs.setup.outputs.environment }})
+    runs-on: ubuntu-latest
+    needs: [setup]
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.setup.outputs.head_sha }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.5.0
+          terraform_wrapper: false
+
+      - name: Configure AWS (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Terraform init
+        working-directory: ${{ needs.setup.outputs.tf_working_dir }}
+        run: |
+          terraform init \
+          -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
+          -backend-config="key=community-board/${{ needs.setup.outputs.environment }}/terraform.tfstate" \
+          -backend-config="region=${{ secrets.AWS_REGION }}" \
+          -backend-config="dynamodb_table=${{ secrets.TF_LOCK_TABLE }}"
+
+      - name: Terraform validate
+        working-directory: ${{ needs.setup.outputs.tf_working_dir }}
+        run: terraform validate -no-color
+
+      - name: Terraform fmt check
+        working-directory: devops/infra/terraform
+        run: terraform fmt -check -recursive -diff
+
+  terraform-deploy:
+    name: Terraform plan & apply (${{ needs.setup.outputs.environment }})
+    runs-on: ubuntu-latest
+    needs: [setup, terraform-validate]
+    permissions:
+      id-token: write
+      contents: read
+    environment: ${{ needs.setup.outputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.setup.outputs.head_sha }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.5.0
+          terraform_wrapper: false
+
+      - name: Configure AWS (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Terraform init
+        working-directory: ${{ needs.setup.outputs.tf_working_dir }}
+        run: |
+          terraform init -input=false \
+          -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
+          -backend-config="key=community-board/${{ needs.setup.outputs.environment }}/terraform.tfstate" \
+          -backend-config="region=${{ secrets.AWS_REGION }}" \
+          -backend-config="dynamodb_table=${{ secrets.TF_LOCK_TABLE }}"
+
+      - name: Ensure head SHA is set
+        run: |
+          if [ -z "${{ needs.setup.outputs.head_sha }}" ]; then
+            echo "::error::head_sha is empty; cannot tag images"
+            exit 1
+          fi
+
+      - name: Terraform plan
+        working-directory: ${{ needs.setup.outputs.tf_working_dir }}
+        run: terraform plan -input=false -no-color -out=tfplan
+        env:
+          TF_VAR_environment: ${{ needs.setup.outputs.environment }}
+          TF_VAR_db_username: ${{ secrets.TF_VAR_DB_USERNAME }}
+          TF_VAR_db_password: ${{ secrets.TF_VAR_DB_PASSWORD }}
+          TF_VAR_backend_image_tag: ${{ needs.setup.outputs.head_sha }}
+          TF_VAR_frontend_image_tag: ${{ needs.setup.outputs.head_sha }}
+          TF_VAR_jwt_secret: ${{ secrets.TF_VAR_JWT_SECRET }}
+          TF_VAR_alert_email: ${{ vars.TF_VAR_ALERT_EMAIL }}
+
+      - name: Terraform apply ECR only (backend + frontend repos)
+        working-directory: ${{ needs.setup.outputs.tf_working_dir }}
+        run: terraform apply -input=false -no-color -auto-approve -target=module.ecr -target=module.ecr_frontend
+        env:
+          TF_VAR_environment: ${{ needs.setup.outputs.environment }}
+          TF_VAR_db_username: ${{ secrets.TF_VAR_DB_USERNAME }}
+          TF_VAR_db_password: ${{ secrets.TF_VAR_DB_PASSWORD }}
+          TF_VAR_backend_image_tag: ${{ needs.setup.outputs.head_sha }}
+          TF_VAR_frontend_image_tag: ${{ needs.setup.outputs.head_sha }}
+          TF_VAR_jwt_secret: ${{ secrets.TF_VAR_JWT_SECRET }}
+          TF_VAR_alert_email: ${{ vars.TF_VAR_ALERT_EMAIL }}
+
+      - name: Login to ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build & push backend image
+        run: |
+          ECR_BACKEND=communityboard-${{ needs.setup.outputs.environment }}
+          docker build -t ${{ steps.login-ecr.outputs.registry }}/$ECR_BACKEND:${{ needs.setup.outputs.head_sha }} ./backend
+          docker push ${{ steps.login-ecr.outputs.registry }}/$ECR_BACKEND:${{ needs.setup.outputs.head_sha }}
+
+      - name: Build & push frontend image
+        run: |
+          ECR_FRONTEND=communityboard-frontend-${{ needs.setup.outputs.environment }}
+          docker build -t ${{ steps.login-ecr.outputs.registry }}/$ECR_FRONTEND:${{ needs.setup.outputs.head_sha }} ./frontend
+          docker push ${{ steps.login-ecr.outputs.registry }}/$ECR_FRONTEND:${{ needs.setup.outputs.head_sha }}
+
+      - name: Terraform apply remaining
+        working-directory: ${{ needs.setup.outputs.tf_working_dir }}
+        run: terraform apply -input=false -no-color -auto-approve
+        env:
+          TF_VAR_environment: ${{ needs.setup.outputs.environment }}
+          TF_VAR_db_username: ${{ secrets.TF_VAR_DB_USERNAME }}
+          TF_VAR_db_password: ${{ secrets.TF_VAR_DB_PASSWORD }}
+          TF_VAR_backend_image_tag: ${{ needs.setup.outputs.head_sha }}
+          TF_VAR_frontend_image_tag: ${{ needs.setup.outputs.head_sha }}
+          TF_VAR_jwt_secret: ${{ secrets.TF_VAR_JWT_SECRET }}
+          TF_VAR_alert_email: ${{ vars.TF_VAR_ALERT_EMAIL }}
