@@ -1,6 +1,7 @@
 package com.amalitech.qa.base;
 
 import com.amalitech.qa.config.Constants;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.qameta.allure.restassured.AllureRestAssured;
 import io.restassured.RestAssured;
@@ -15,23 +16,18 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-
 import static io.restassured.RestAssured.given;
 
 public abstract class BaseTest {
 
     protected static final ObjectMapper MAPPER = new ObjectMapper();
 
-    // Shared ids available to all test classes
     protected static int sharedPostId;
     protected static int sharedCommentId;
 
-    // Cached tokens — reset on every test class init to prevent stale tokens after restart
     private static String adminToken;
     private static String userToken;
 
-    // Self-provisioned user — fresh email per JVM session
     private static final String DYNAMIC_USER_EMAIL    = "testuser." + System.currentTimeMillis() + "@test.com";
     private static final String DYNAMIC_USER_PASSWORD = "Secure@123";
 
@@ -39,12 +35,29 @@ public abstract class BaseTest {
     static void init() {
         RestAssured.baseURI = Constants.BASE_URL;
         RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
-        // Reset cached tokens on each test class init — prevents stale tokens after Docker restart
-        adminToken = null;
-        userToken  = null;
+
+        if (sharedPostId == 0) {
+            sharedPostId = createPost(
+                    "Community Cleanup This Saturday",
+                    "Join us at the park at 9am. Bring gloves!",
+                    Constants.CATEGORY_EVENTS
+            );
+
+            // Comments endpoint is TODO in the backend
+            // Catching Throwable because REST Assured throws AssertionError (not Exception) on status mismatch
+            try {
+                sharedCommentId = createComment(sharedPostId, "Initial comment for edit and delete tests");
+            } catch (Throwable t) {
+                sharedCommentId = 0;
+            }
+
+            // Clean up shared data after all tests finish
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                if (sharedPostId != 0) deletePost(sharedPostId);
+            }));
+        }
     }
 
-    // Token management — lazy login, cached after first call
     protected static String adminToken() {
         if (adminToken == null) {
             adminToken = fetchToken(Constants.ADMIN_EMAIL, Constants.ADMIN_PASSWORD);
@@ -54,7 +67,6 @@ public abstract class BaseTest {
 
     protected static String userToken() {
         if (userToken == null) {
-            // Register a fresh dynamic user, then login
             given()
                     .spec(guestSpec())
                     .body(Map.of(
@@ -82,7 +94,6 @@ public abstract class BaseTest {
                 .path(Constants.FIELD_TOKEN);
     }
 
-    // Request specs — expresses clearly who is making the request
     protected RequestSpecification asGuest() {
         return given().spec(guestSpec());
     }
@@ -95,7 +106,6 @@ public abstract class BaseTest {
         return given().spec(authSpec(adminToken()));
     }
 
-    // Response specs — reusable status + content type checks
     protected ResponseSpecification success(int status) {
         return new ResponseSpecBuilder()
                 .expectStatusCode(status)
@@ -109,7 +119,6 @@ public abstract class BaseTest {
                 .build();
     }
 
-    // Shared data setup helpers used across test domains
     protected static int createPost(String title, String body, String category) {
         return given()
                 .spec(authSpec(adminToken()))
@@ -141,7 +150,6 @@ public abstract class BaseTest {
                 .delete(Constants.POST_BY_ID, postId);
     }
 
-    // JSON test data loader — reads from src/test/resources
     protected static List<Map<String, Object>> loadTestData(String path) {
         try {
             InputStream stream = BaseTest.class.getClassLoader().getResourceAsStream(path);
