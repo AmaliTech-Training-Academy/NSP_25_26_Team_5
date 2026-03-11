@@ -1,5 +1,6 @@
 package com.amalitech.communityboard.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -22,7 +23,8 @@ public class Category {
 
     private String description;
 
-    // Relationship: One category can have many posts
+    // Relationship: One category can have many posts (excluded from JSON to avoid circular serialization)
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<Post> posts;
 }

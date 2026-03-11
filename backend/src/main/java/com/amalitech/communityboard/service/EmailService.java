@@ -26,7 +26,7 @@ public class EmailService {
     // Send email notifications to all users when a new post is created in a category
     @Async
     public void sendNewPostNotification(Post post) {
-        if (post.getCategory() == null || post.getCategory().isBlank()) {
+        if (post.getCategory() == null) {
             return; // No category, nothing to notify
         }
 
@@ -36,10 +36,11 @@ public class EmailService {
             return;
         }
 
-        String subject = "New Post in " + post.getCategory() + " - CommunityBoard";
+        String categoryName = post.getCategory().getName();
+        String subject = "New Post in " + categoryName + " - CommunityBoard";
         String body = "Hello!\n\n"
                 + "A new post titled '" + post.getTitle() + "' has just been created by "
-                + post.getAuthor().getFullName() + " in category '" + post.getCategory() + "'.\n\n"
+                + post.getAuthor().getFullName() + " in category '" + categoryName + "'.\n\n"
                 + "Post content summary:\n"
                 + (post.getBody().length() > 50 ? post.getBody().substring(0, 50) + "..." : post.getBody()) + "\n\n"
                 + "Log in to the CommunityBoard to view more details!\n\nBest,\nYour Delivery Team.";

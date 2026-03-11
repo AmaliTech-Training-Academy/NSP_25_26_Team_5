@@ -17,6 +17,6 @@ public class PostRequest {
     @NotBlank(message = "Body must not be empty")
     private String body;
 
-    @NotBlank(message = "Category is required")
-    private String category;
+    @jakarta.validation.constraints.NotNull(message = "Category is required")
+    private Long categoryId;
 }

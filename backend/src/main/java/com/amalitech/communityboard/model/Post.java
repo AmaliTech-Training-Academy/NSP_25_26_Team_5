@@ -19,11 +19,12 @@ public class Post {
     @Column(nullable = false)
     private String title;
 
-    @Column(name = "body", columnDefinition = "TEXT", nullable = false)
+    @Column(name = "content", columnDefinition = "TEXT", nullable = false)
     private String body;
 
-    @Column(nullable = false)
-    private String category; // now a string
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id", nullable = false)
+    private Category category;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "author_id", nullable = false)

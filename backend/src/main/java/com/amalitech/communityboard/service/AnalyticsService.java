@@ -24,8 +24,8 @@ public class AnalyticsService {
 
         // 1. Posts Per Category
         Map<String, Long> postsCountByCategory = allPosts.stream()
-                .filter(post -> post.getCategory() != null && !post.getCategory().isBlank())
-                .collect(Collectors.groupingBy(Post::getCategory, Collectors.counting()));
+                .filter(post -> post.getCategory() != null)
+                .collect(Collectors.groupingBy(post -> post.getCategory().getName(), Collectors.counting()));
 
         List<AnalyticsCategoryResponse> categoryResponses = postsCountByCategory.entrySet().stream()
                 .map(entry -> new AnalyticsCategoryResponse(entry.getKey(), entry.getValue()))

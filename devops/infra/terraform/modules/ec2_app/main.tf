@@ -46,11 +46,16 @@ locals {
   })
 }
 
-# Single instance in private subnet (NAT for ECR pull)
+# Instance in public subnet (public IP) or first available subnet
+locals {
+  instance_subnet_id = length(var.public_subnet_ids) > 0 ? var.public_subnet_ids[0] : var.private_subnet_ids[0]
+}
+
 resource "aws_instance" "app" {
   ami                         = data.aws_ami.al2023.id
   instance_type               = var.instance_type
-  subnet_id                   = var.private_subnet_ids[0]
+  subnet_id                   = local.instance_subnet_id
+  associate_public_ip_address = length(var.public_subnet_ids) > 0
   vpc_security_group_ids      = [var.app_sg_id]
   iam_instance_profile        = aws_iam_instance_profile.app.name
   user_data                   = base64encode(local.user_data)

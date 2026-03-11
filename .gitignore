@@ -12,6 +12,7 @@ build/
 __pycache__/
 *.pyc
 .DS_Store
+.env
 
 # Terraform remote-state bootstrap (bucket + DynamoDB); keep local and uncommitted
 devops/infra/terraform/backend/
