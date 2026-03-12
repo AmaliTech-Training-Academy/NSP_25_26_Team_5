@@ -1,6 +1,6 @@
 package com.amalitech.communityboard.service;
 
-import com.amalitech.communityboard.config.JwtService;
+import com.amalitech.communityboard.config.JwtUtil;
 import com.amalitech.communityboard.dto.*;
 import com.amalitech.communityboard.exception.DuplicateEmailException;
 import com.amalitech.communityboard.exception.InvalidCredentialsException;
@@ -21,7 +21,7 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final JwtService jwtService;
+    private final JwtUtil jwtUtil; // use JwtUtil instead of JwtService
 
     public AuthResponse register(RegisterRequest request) {
         // STEP 0: Validate required fields
@@ -54,7 +54,8 @@ public class AuthService {
         userRepository.save(user);
         log.info("New user registered successfully: {}", user.getEmail());
 
-        String token = jwtService.generateToken(user.getId(), user.getEmail(), user.getRole().name());
+        // Generate JWT using JwtUtil
+        String token = jwtUtil.generateToken(user);
 
         return AuthResponse.builder()
                 .token(token)
@@ -67,7 +68,7 @@ public class AuthService {
     public AuthResponse login(AuthRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> {
-                    log.warn("Login attempt with non-existent email");
+                    log.warn("Login attempt with non-existent email: {}", request.getEmail());
                     return new InvalidCredentialsException();
                 });
 
@@ -76,7 +77,8 @@ public class AuthService {
             throw new InvalidCredentialsException();
         }
 
-        String token = jwtService.generateToken(user.getId(), user.getEmail(), user.getRole().name());
+        // Generate JWT using JwtUtil
+        String token = jwtUtil.generateToken(user);
         log.info("User logged in successfully: {}", user.getEmail());
 
         return AuthResponse.builder()

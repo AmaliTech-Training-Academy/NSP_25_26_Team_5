@@ -13,8 +13,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-
- // Security Configuration
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -26,10 +24,10 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                // Disable CSRF because we use JWT (not cookies/sessions)
+                // Disable CSRF because we use JWT
                 .csrf(csrf -> csrf.disable())
 
-                // Configure CORS to allow frontend calls
+                // Configure CORS for frontend calls
                 .cors(cors -> cors.configurationSource(request -> {
                     var config = new org.springframework.web.cors.CorsConfiguration();
                     config.addAllowedOrigin("http://localhost:3000");  // React frontend (dev)
@@ -40,27 +38,22 @@ public class SecurityConfig {
                     return config;
                 }))
 
-                // Stateless session: no server-side session storage
+                // Stateless session: JWT only
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
 
                 // Define access rules
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/posts/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/api-docs/**", "/v3/api-docs/**").permitAll()
-
-                        // Admin-only endpoints
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
-
-                        // Everything else requires authentication
                         .anyRequest().authenticated()
                 )
 
-                // Add JWT filter before the default UsernamePasswordAuthenticationFilter
+                // Add JWT filter before UsernamePasswordAuthenticationFilter
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
