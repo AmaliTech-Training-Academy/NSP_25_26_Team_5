@@ -1,61 +1,82 @@
 # Community Board – Terraform (AWS)
 
-Infrastructure: VPC, ALB, **ECR**, ECS (backend), RDS (Postgres), Amplify (frontend), **SNS** (notifications/alerts). Backend is private (only ALB is public). **ECR is created by Terraform** so CI can push without manual repo creation.
+Infrastructure for the Community Board app: **VPC**, **ALB**, **ECR** (backend + frontend), **EC2** (single instance running Postgres, backend, and frontend in Docker), and **SNS** (optional alerts). The ALB is public; the EC2 instance runs in a public or private subnet and pulls images from ECR. **ECR repositories are created by Terraform**; CD builds and pushes images from GitHub Actions.
 
-## Multi-environment (CD)
+## Where to run Terraform
 
-**CD uses environment folders**, not the root: `devops/infra/terraform/environments/<env>/`. Branch → env: **dev** → `environments/dev`, **staging** → `environments/staging`, **main** → `environments/production`. Each env has its own state key, ECR repo, and variable defaults (e.g. `db_instance_class`, `vpc_cidr`, `alert_email`). See **[environments/README.md](environments/README.md)**.
+**CD runs from environment folders**, not the repo root:
+
+- `devops/infra/terraform/environments/dev/` → **dev**
+- `devops/infra/terraform/environments/staging/` → **staging**
+- `devops/infra/terraform/environments/production/` → **production**
+
+Branch mapping: **dev** → dev, **staging** → staging, **main** → production. Each environment has its own state key, ECR repos, and (optionally) variable defaults.
+
+See **[environments/README.md](environments/README.md)** for per-environment layout, backend config, and variables.
+
+## What gets created
+
+| Component   | Purpose |
+|------------|---------|
+| **network** | VPC, public/private subnets (2 AZs), IGW, NAT Gateway. |
+| **security** | ALB security group (80 from internet); app SG (80, 8080 from ALB). |
+| **alb** | ALB, listener :80; `/api/*` → backend :8080; default → frontend :80. |
+| **ecr** / **ecr_frontend** | ECR repos: `communityboard-<env>`, `communityboard-frontend-<env>`; lifecycle keep last 10 images. |
+| **ec2_app** | One EC2 (Amazon Linux 2023); IAM (ECR pull, optional SSM); user_data runs Postgres + backend + frontend containers; instance registered to both ALB target groups. |
+| **sns** | Optional SNS topic per environment for alerts. |
+
+Postgres runs **on the EC2 instance** in a Docker container. Backend and frontend also run as containers on the same instance.
 
 ## Prerequisites
 
 - Terraform >= 1.0
-- AWS CLI / credentials (or OIDC in CI)
-- Required variables set (see below)
+- AWS CLI / credentials (or OIDC in GitHub Actions for CD)
+- S3 bucket and DynamoDB table for remote state (create once; see [environments/README.md](environments/README.md))
 
-## Quick start
+## Required variables (per environment)
 
-```bash
-cd devops/infra/terraform
-cp terraform.tfvars.example terraform.tfvars
-# Edit: set db_username, db_password, repo_url, api_url (and jwt_secret, github_token if needed)  
-terraform init
-terraform plan
-terraform apply
-# ECR repo is created; use output backend_image_url or ecr_repository_url for CI/CD.
-```
+Set via `terraform.tfvars`, `TF_VAR_*` in CI/CD, or `-var`:
 
-## Required variables (no default)
+| Variable          | Description |
+|-------------------|-------------|
+| `db_username`     | Postgres username (used by the Postgres container on EC2). |
+| `db_password`     | Postgres password (sensitive). |
+| `jwt_secret`      | Backend JWT signing secret (sensitive). |
 
-| Variable         | Description |
-|------------------|-------------|
-| `db_username`    | RDS master username |
-| `db_password`    | RDS master password (use `TF_VAR_db_password` or `-var`) |
-| `repo_url`       | GitHub repo URL for Amplify |
-| `api_url`        | Backend API URL for frontend (e.g. `http://<alb-dns-name>` after first apply) |
+Optional / with defaults: `db_name` (default `communityboard`), `backend_image_tag` / `frontend_image_tag` (default `latest`), `alert_email`, `instance_type`, `vpc_cidr`, `aws_region`, etc. See each environment’s `variables.tf` and `terraform.tfvars.example`.
 
-Optional/sensitive: `jwt_secret`, `github_token` (for Amplify private repo).
+## Outputs (per environment)
 
-**Backend image:** No longer required. Terraform creates an ECR repository and uses `ecr_repository_url:backend_image_tag` (default tag `latest`). Override with `backend_image` if you need a full URI. CI should push to the same repo name (`ecr_repository_name`, default `communityboard-backend`).
-
-## Outputs (image URL)
-
-- **ecr_repository_url** – ECR repo URL without tag (e.g. for `docker push`).
-- **backend_image_url** – Full image URI used by ECS (`repo_url:tag`). Use this or pass `backend_image_tag` in CD.
+Typical outputs: `environment`, `vpc_id`, `alb_dns_name`, `alb_zone_id`, `ec2_instance_id`, `ec2_public_ip` (if in public subnet), `ecr_backend_url`, `ecr_frontend_url`, `sns_topic_arn`. App URL: `http://<alb_dns_name>`.
 
 ## CI/CD (GitHub Actions)
 
-- **CI** (`ci.yml`): Builds and pushes backend image (per-env ECR repo created by Terraform in each environment folder).
-- **CD** (`cd.yml`): Runs from `environments/<env>` where env = branch (dev/staging) or production (main). Terraform validate → plan → apply ECR only → build & push image to `communityboard-backend-<env>:<sha>` → full apply. Each GitHub Environment (dev, staging, production) can have different secrets.
+- **CD** (`cd.yml`): Runs after CI succeeds on `main`, `dev`, or `staging`. Working directory: `devops/infra/terraform/environments/<env>`. Steps: Terraform init (S3 backend) → validate → plan → apply ECR only → build & push backend and frontend images → Terraform apply full. Image tags are set by CD (e.g. commit SHA or `latest`).
 
-Required **secrets** (per env or repo): `AWS_ROLE_ARN`, `AWS_REGION`, `TF_STATE_BUCKET`, `TF_LOCK_TABLE`, `TF_VAR_DB_USERNAME`, `TF_VAR_DB_PASSWORD`, `TF_VAR_JWT_SECRET`; optional `TF_VAR_GITHUB_TOKEN`.  
-Required **vars**: `TF_VAR_REPO_URL`; optional `TF_VAR_API_URL`, `TF_VAR_ALERT_EMAIL` (SNS).  
-State key is derived: `community-board/<env>/terraform.tfstate`.
+**Secrets (repo or environment):** `AWS_ROLE_ARN`, `AWS_REGION`, `TF_STATE_BUCKET`, `TF_LOCK_TABLE`, `TF_VAR_DB_USERNAME`, `TF_VAR_DB_PASSWORD`, `TF_VAR_JWT_SECRET`.
 
-## SonarQube / SonarCloud
+**Variables (optional):** `TF_VAR_ALERT_EMAIL`.  
+State key: `community-board/<env>/terraform.tfstate`.
 
-- **CI**: Job `sonar` runs after `backend`; uses `SONAR_TOKEN` and optional `SONAR_HOST_URL` (self-hosted).
-- **Variables** (optional): `SONAR_PROJECT_KEY`, `SONAR_ORGANIZATION`.
+## Repository layout
 
-## Remote state (recommended)
+```
+devops/infra/terraform/
+├── README.md                 # This file
+├── variables.tf              # Root-level vars (some envs may not use)
+├── terraform.tfvars.example  # Root-level example (CD uses environments/)
+├── environments/
+│   ├── README.md             # Environment-specific docs
+│   ├── dev/
+│   ├── staging/
+│   └── production/
+└── modules/
+    ├── network/
+    ├── security/
+    ├── alb/
+    ├── ecr/
+    ├── ec2_app/
+    └── sns/
+```
 
-Uncomment the `backend "s3"` block in `versions.tf` and create the bucket + DynamoDB table for locking (e.g. via `devops/infra/terraform/backend/`).
+Use **environments/<env>** for all CD and for local runs targeting that environment.
