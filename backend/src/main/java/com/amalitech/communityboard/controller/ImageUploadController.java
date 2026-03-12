@@ -52,6 +52,9 @@ public class ImageUploadController {
 
             // Save file
             Path filePath = uploadDir.resolve(fileName).normalize();
+            if (!filePath.startsWith(uploadDir)) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Invalid file path."));
+            }
             Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
             // Build full URL for frontend
@@ -75,7 +78,6 @@ public class ImageUploadController {
     @GetMapping("/{filename}")
     public ResponseEntity<Resource> getImage(@PathVariable String filename) {
         try {
-            // Sanitize filename to prevent path traversal
             String cleanFilename = StringUtils.cleanPath(filename);
 
             if (cleanFilename.contains("..")) {
@@ -83,6 +85,10 @@ public class ImageUploadController {
             }
 
             Path filePath = uploadDir.resolve(cleanFilename).normalize();
+            if (!filePath.startsWith(uploadDir)) {
+                return ResponseEntity.badRequest().build();
+            }
+
             Resource resource = new UrlResource(filePath.toUri());
 
             if (resource.exists() && resource.isReadable()) {

@@ -30,8 +30,11 @@ public class ImageStorageService {
         String fileName = UUID.randomUUID().toString() + extension;
 
         Path filePath = uploadDir.resolve(fileName).normalize();
-        Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+        if (!filePath.startsWith(uploadDir)) {
+            throw new IOException("Invalid path: " + fileName);
+        }
 
+        Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
         return fileName;
     }
 
@@ -43,6 +46,10 @@ public class ImageStorageService {
         }
 
         Path filePath = uploadDir.resolve(cleanFilename).normalize();
+        if (!filePath.startsWith(uploadDir)) {
+            throw new IOException("Invalid path: " + filename);
+        }
+
         Resource resource = new UrlResource(filePath.toUri());
 
         if (resource.exists() && resource.isReadable()) {
