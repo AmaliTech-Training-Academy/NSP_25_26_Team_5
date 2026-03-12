@@ -22,7 +22,7 @@ import java.util.UUID;
 @RequestMapping("/api/images")
 public class ImageUploadController {
 
-    private final String UPLOAD_DIR = "uploads/";
+    private final Path uploadDir = Paths.get("uploads");
 
     @Operation(summary = "Upload an image and get its URL")
     @PostMapping("/upload")
@@ -39,9 +39,8 @@ public class ImageUploadController {
             }
 
             // Ensure uploads directory exists
-            Path uploadPath = Paths.get(UPLOAD_DIR);
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
+            if (!Files.exists(uploadDir)) {
+                Files.createDirectories(uploadDir);
             }
 
             // Generate unique filename
@@ -52,7 +51,7 @@ public class ImageUploadController {
             String fileName = UUID.randomUUID().toString() + extension;
 
             // Save file
-            Path filePath = uploadPath.resolve(fileName);
+            Path filePath = uploadDir.resolve(fileName).normalize();
             Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
             // Build full URL for frontend
@@ -79,12 +78,11 @@ public class ImageUploadController {
             // Sanitize filename to prevent path traversal
             String cleanFilename = StringUtils.cleanPath(filename);
 
-            // Reject suspicious filenames
             if (cleanFilename.contains("..")) {
                 return ResponseEntity.badRequest().build();
             }
 
-            Path filePath = Paths.get(UPLOAD_DIR).resolve(cleanFilename).normalize();
+            Path filePath = uploadDir.resolve(cleanFilename).normalize();
             Resource resource = new UrlResource(filePath.toUri());
 
             if (resource.exists() && resource.isReadable()) {

@@ -7,7 +7,6 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -30,14 +29,20 @@ public class ImageStorageService {
                 : "";
         String fileName = UUID.randomUUID().toString() + extension;
 
-        Path filePath = uploadDir.resolve(fileName);
+        Path filePath = uploadDir.resolve(fileName).normalize();
         Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
         return fileName;
     }
 
     public Resource loadFile(String filename) throws IOException {
-        Path filePath = uploadDir.resolve(filename).normalize();
+        String cleanFilename = StringUtils.cleanPath(filename);
+
+        if (cleanFilename.contains("..")) {
+            throw new IOException("Invalid filename: " + filename);
+        }
+
+        Path filePath = uploadDir.resolve(cleanFilename).normalize();
         Resource resource = new UrlResource(filePath.toUri());
 
         if (resource.exists() && resource.isReadable()) {
