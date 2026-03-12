@@ -28,9 +28,20 @@ public class CategorySubscription {
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
 
-    /** SNS subscription ARN (pending until user confirms email). */
+    /** SNS subscription ARN (legacy; unused when using app confirmation flow). */
     @Column(name = "sns_subscription_arn", length = 512)
     private String snsSubscriptionArn;
+
+    /** True after user clicked the confirmation link in our email. */
+    @Column(name = "confirmed", nullable = false)
+    @Builder.Default
+    private boolean confirmed = false;
+
+    @Column(name = "confirmation_token", length = 64)
+    private String confirmationToken;
+
+    @Column(name = "confirmation_expires_at")
+    private java.time.LocalDateTime confirmationExpiresAt;
 
     @Column(name = "created_at", nullable = false)
     @Builder.Default

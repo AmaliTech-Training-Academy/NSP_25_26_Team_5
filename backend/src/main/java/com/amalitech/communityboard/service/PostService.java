@@ -6,6 +6,7 @@ import com.amalitech.communityboard.exception.UnauthorizedException;
 import com.amalitech.communityboard.model.*;
 import com.amalitech.communityboard.model.enums.Role;
 import com.amalitech.communityboard.repository.CategoryRepository;
+import com.amalitech.communityboard.repository.CategorySubscriptionRepository;
 import com.amalitech.communityboard.repository.CommentRepository;
 import com.amalitech.communityboard.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +31,8 @@ public class PostService {
     private final PostRepository postRepository;
     private final CategoryRepository categoryRepository;
     private final CommentRepository commentRepository;
-    private final SnsNotificationService snsNotificationService;
+    private final CategorySubscriptionRepository subscriptionRepository;
+    private final EmailService emailService;
 
     public Page<PostResponse> getAllPosts(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
@@ -73,7 +75,8 @@ public class PostService {
         Post savedPost = postRepository.save(post);
         log.info("Post created: '{}' by {}", savedPost.getTitle(), author.getEmail());
 
-        snsNotificationService.notifyNewPost(savedPost);
+        var subscribers = subscriptionRepository.findByCategoryIdAndConfirmedTrue(savedPost.getCategory().getId());
+        emailService.sendNewPostNotificationToSubscribers(savedPost, subscribers);
 
         return toResponse(savedPost);
     }

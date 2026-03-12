@@ -49,7 +49,7 @@ export default function CategoryNotificationSection({
     } catch {
       showToast({
         variant: "error",
-        message: "Could not subscribe. Check that the app has SNS configured.",
+        message: "Could not subscribe. Check that email is configured.",
       });
     } finally {
       setActionCategoryId(null);

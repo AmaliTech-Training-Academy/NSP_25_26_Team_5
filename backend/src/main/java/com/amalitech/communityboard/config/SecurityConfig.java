@@ -48,8 +48,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/posts/**").permitAll()
-                        // Subscription endpoints require auth; must be before broad GET /api/categories/**
-                        .requestMatchers("/api/categories/*/subscribe", "/api/categories/*/subscribed", "/api/categories/subscriptions/**").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/categories/subscriptions/confirm").permitAll()
+                        .requestMatchers("/api/categories/*/subscribe", "/api/categories/*/subscribed", "/api/categories/subscriptions/me").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/api-docs/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")

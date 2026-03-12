@@ -14,4 +14,8 @@ public interface CategorySubscriptionRepository extends JpaRepository<CategorySu
     Optional<CategorySubscription> findByUserIdAndCategoryId(Long userId, Long categoryId);
 
     boolean existsByUserIdAndCategoryId(Long userId, Long categoryId);
+
+    List<CategorySubscription> findByCategoryIdAndConfirmedTrue(Long categoryId);
+
+    Optional<CategorySubscription> findByConfirmationToken(String token);
 }

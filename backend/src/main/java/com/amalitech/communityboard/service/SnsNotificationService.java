@@ -24,6 +24,9 @@ public class SnsNotificationService {
     @Value("${aws.sns.topic-prefix:communityboard}")
     private String topicPrefix;
 
+    @Value("${app.base-url:}")
+    private String appBaseUrl;
+
     /** Returns topic ARN for the given category (creates topic if it does not exist). */
     public String ensureTopicExists(Long categoryId) {
         String topicName = topicPrefix + "-category-" + categoryId;
@@ -67,13 +70,11 @@ public class SnsNotificationService {
         Long categoryId = post.getCategory().getId();
         String categoryName = post.getCategory().getName();
         String authorName = post.getAuthor() != null ? post.getAuthor().getFullName() : "Someone";
-        String bodyPreview = post.getBody().length() > 100 ? post.getBody().substring(0, 100) + "..." : post.getBody();
+        String bodyPreview = post.getBody().length() > 200 ? post.getBody().substring(0, 200).trim() + "..." : post.getBody().trim();
+        bodyPreview = bodyPreview.replace("\r\n", " ").replace("\n", " ");
 
-        String subject = "New post in " + categoryName + " - CommunityBoard";
-        String message = "A new post titled \"" + post.getTitle() + "\" was created by " + authorName
-                + " in category \"" + categoryName + "\".\n\n"
-                + "Preview: " + bodyPreview + "\n\n"
-                + "Log in to CommunityBoard to read more.";
+        String subject = "New post in " + categoryName + ": " + post.getTitle();
+        String message = buildNewPostEmailMessage(post.getTitle(), authorName, categoryName, bodyPreview, post.getId());
 
         try {
             String topicArn = ensureTopicExists(categoryId);
@@ -86,5 +87,22 @@ public class SnsNotificationService {
         } catch (SnsException e) {
             log.warn("Failed to send SNS notification for category {}: {}", categoryName, e.getMessage());
         }
+    }
+
+    private String buildNewPostEmailMessage(String title, String authorName, String categoryName, String bodyPreview, Long postId) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("You're receiving this because you subscribed to category \"").append(categoryName).append("\" on CommunityBoard.\n\n");
+        sb.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+        sb.append("NEW POST\n");
+        sb.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n");
+        sb.append("Title: ").append(title).append("\n");
+        sb.append("Author: ").append(authorName).append("\n");
+        sb.append("Category: ").append(categoryName).append("\n\n");
+        sb.append("Preview:\n").append(bodyPreview).append("\n\n");
+        if (appBaseUrl != null && !appBaseUrl.isBlank()) {
+            sb.append("View full post: ").append(appBaseUrl.replaceAll("/$", "")).append("/posts/").append(postId).append("\n\n");
+        }
+        sb.append("— CommunityBoard");
+        return sb.toString();
     }
 }

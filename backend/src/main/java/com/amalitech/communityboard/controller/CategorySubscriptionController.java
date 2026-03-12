@@ -56,11 +56,23 @@ public class CategorySubscriptionController {
         return ResponseEntity.ok(list);
     }
 
+    @GetMapping("/subscriptions/confirm")
+    @Operation(summary = "Confirm email subscription via token (no auth required)")
+    public ResponseEntity<String> confirmSubscription(@RequestParam String token) {
+        boolean confirmed = subscriptionService.confirmByToken(token);
+        if (confirmed) {
+            return ResponseEntity.ok("Subscription confirmed. You will now receive email when new posts are added to this category.");
+        }
+        return ResponseEntity.status(HttpStatus.GONE)
+                .body("Invalid or expired confirmation link.");
+    }
+
     private CategorySubscriptionResponse toResponse(CategorySubscription sub) {
         return CategorySubscriptionResponse.builder()
                 .id(sub.getId())
                 .categoryId(sub.getCategory().getId())
                 .categoryName(sub.getCategory().getName())
+                .confirmed(sub.isConfirmed())
                 .build();
     }
 }

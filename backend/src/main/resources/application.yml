@@ -35,6 +35,10 @@ aws:
   sns:
     topic-prefix: ${AWS_SNS_TOPIC_PREFIX:communityboard}
 
+# Base URL of the frontend (for "View post" link in notification emails). No trailing slash.
+app:
+  base-url: ${APP_BASE_URL:}
+
 server:
   port: 8080
 

@@ -5,6 +5,7 @@ export interface CategorySubscriptionResponse {
   id: number;
   categoryId: number;
   categoryName: string;
+  confirmed: boolean;
 }
 
 export const categoryAPI = {
