@@ -29,6 +29,14 @@ function normalizeKey(value: string | null | undefined): string {
   return value?.trim().toUpperCase() ?? "";
 }
 
+function normalizeCount(value: number | null | undefined): number | null {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return null;
+  }
+
+  return Math.max(0, Math.trunc(value));
+}
+
 function findDayLabel(dayOfWeek: string): (typeof ANALYTICS_DAY_ORDER)[number] | null {
   const normalizedDay = normalizeKey(dayOfWeek);
 
@@ -64,8 +72,8 @@ function findDayLabel(dayOfWeek: string): (typeof ANALYTICS_DAY_ORDER)[number] |
 
 export function createEmptyAnalyticsDashboard(): AnalyticsDashboardData {
   return {
-    totalPosts: 0,
-    totalComments: 0,
+    totalPosts: null,
+    totalComments: null,
     postsPerCategory: ANALYTICS_CATEGORY_ORDER.map((categoryName) => ({
       categoryName,
       totalPosts: 0,
@@ -128,16 +136,11 @@ function normalizeContributors(
 export function normalizeAnalyticsDashboard(
   payload?: Partial<AnalyticsDashboardApiResponse> | null,
 ): AnalyticsDashboardData {
-  const emptyDashboard = createEmptyAnalyticsDashboard();
   const normalizedCategoryBuckets = normalizeCategoryBuckets(payload?.postsPerCategory);
-  const totalPosts = normalizedCategoryBuckets.reduce(
-    (sum, bucket) => sum + bucket.totalPosts,
-    0,
-  );
 
   return {
-    totalPosts,
-    totalComments: totalPosts === 0 ? 0 : null,
+    totalPosts: normalizeCount(payload?.totalPosts),
+    totalComments: normalizeCount(payload?.totalComments),
     postsPerCategory: normalizedCategoryBuckets,
     postsPerDayOfWeek: normalizeDayBuckets(payload?.mostActiveDays),
     topContributors: normalizeContributors(payload?.topContributors),

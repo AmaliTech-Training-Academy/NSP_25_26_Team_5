@@ -152,7 +152,7 @@ export default function AnalyticsDashboard() {
                     <TrendingUpIcon className={styles.statIcon} />
                   </span>
                 </div>
-                <p className={styles.statValue}>{dashboard.totalPosts}</p>
+                <p className={styles.statValue}>{dashboard.totalPosts ?? "--"}</p>
                 {isPostsEmpty && (
                   <p className={styles.emptyHint}>
                     No posts yet. Residents can start the first conversation.

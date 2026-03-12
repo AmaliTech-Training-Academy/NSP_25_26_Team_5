@@ -15,13 +15,15 @@ export interface AnalyticsContributor {
 }
 
 export interface AnalyticsDashboardApiResponse {
+  totalPosts?: number | null;
+  totalComments?: number | null;
   postsPerCategory: AnalyticsCategoryBucket[];
   mostActiveDays: AnalyticsDayBucket[];
   topContributors: AnalyticsContributor[];
 }
 
 export interface AnalyticsDashboardData {
-  totalPosts: number;
+  totalPosts: number | null;
   totalComments: number | null;
   postsPerCategory: AnalyticsCategoryBucket[];
   postsPerDayOfWeek: AnalyticsDayBucket[];
