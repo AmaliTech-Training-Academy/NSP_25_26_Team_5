@@ -354,30 +354,30 @@ export default function CommentsSection({
                         </p>
                       </div>
                     </div>
-
-                    {canManageCurrentComment && !isEditingComment && (
-                      <div className={styles.commentActions}>
-                        <button
-                          type="button"
-                          className={styles.commentActionButton}
-                          aria-label={`Edit comment by ${comment.authorName}`}
-                          onClick={() => handleStartEditingComment(comment)}
-                          disabled={isSavingComment || isDeletingComment}
-                        >
-                          <PenIcon className={styles.commentActionIcon} />
-                        </button>
-                        <button
-                          type="button"
-                          className={`${styles.commentActionButton} ${styles.deleteActionButton}`}
-                          aria-label={`Delete comment by ${comment.authorName}`}
-                          onClick={() => handleOpenDeleteCommentModal(comment)}
-                          disabled={isSavingComment || isDeletingComment}
-                        >
-                          <Trash2Icon className={styles.commentActionIcon} />
-                        </button>
-                      </div>
-                    )}
                   </div>
+
+                  {canManageCurrentComment && !isEditingComment && (
+                    <div className={styles.commentActions}>
+                      <button
+                        type="button"
+                        className={styles.commentActionButton}
+                        aria-label={`Edit comment by ${comment.authorName}`}
+                        onClick={() => handleStartEditingComment(comment)}
+                        disabled={isSavingComment || isDeletingComment}
+                      >
+                        <PenIcon className={styles.commentActionIcon} />
+                      </button>
+                      <button
+                        type="button"
+                        className={`${styles.commentActionButton} ${styles.deleteActionButton}`}
+                        aria-label={`Delete comment by ${comment.authorName}`}
+                        onClick={() => handleOpenDeleteCommentModal(comment)}
+                        disabled={isSavingComment || isDeletingComment}
+                      >
+                        <Trash2Icon className={styles.commentActionIcon} />
+                      </button>
+                    </div>
+                  )}
 
                   {isEditingComment ? (
                     <form

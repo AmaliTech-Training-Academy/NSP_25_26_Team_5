@@ -7,7 +7,7 @@
 .commentForm {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 11px;
 }
 
 .commentTextarea,
@@ -24,7 +24,7 @@
 }
 
 .commentTextarea {
-  min-height: 146px;
+  min-height: 218px;
   padding: 12px 16px;
   font-size: 14px;
 }
@@ -87,8 +87,7 @@
 .characterCount,
 .guestPrompt,
 .statusMessage,
-.emptyStateLabel,
-.commentTime {
+.emptyStateLabel {
   color: #5a6f7c;
 }
 
@@ -98,7 +97,8 @@
 
 .commentButton {
   width: 100%;
-  min-height: 44px;
+  min-height: 48px;
+  padding: 12px 20px;
   font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   font-size: 16px;
   font-weight: 500;
@@ -159,18 +159,22 @@
 }
 
 .commentItem {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 16px;
+  row-gap: 16px;
   padding-bottom: 24px;
   border-bottom: 1px solid #e6eaeb;
 }
 
+.commentItem:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
 .commentHeader {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
+  grid-column: 1;
+  min-width: 0;
 }
 
 .commentIdentity {
@@ -213,13 +217,18 @@
 }
 
 .commentTime {
+  color: #395362;
   font-size: 14px;
+  line-height: 14px;
 }
 
 .commentActions {
+  grid-column: 2;
+  grid-row: 1 / span 2;
   display: inline-flex;
   align-items: center;
   gap: 16px;
+  align-self: center;
   flex-shrink: 0;
 }
 
@@ -250,6 +259,8 @@
 }
 
 .commentBody {
+  grid-column: 1;
+  min-width: 0;
   margin: 0;
   color: #395362;
   font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
@@ -259,6 +270,8 @@
 }
 
 .editForm {
+  grid-column: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -285,10 +298,6 @@
 }
 
 @media (min-width: 768px) {
-  .commentTextarea {
-    min-height: 218px;
-  }
-
   .editTextarea {
     width: 421px;
     min-height: 42px;
@@ -306,8 +315,13 @@
 
   .commentButton {
     width: 345px;
+    min-height: 41px;
+    padding: 10px 20px;
     align-self: flex-end;
     font-size: 14px;
   }
 
+  .commentActions {
+    gap: 32px;
+  }
 }
