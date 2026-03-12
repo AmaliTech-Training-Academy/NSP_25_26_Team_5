@@ -2,8 +2,11 @@ import { isAxiosError } from "axios";
 import { BackendErrorPayload } from "./useRegisterForm.types";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const SPECIAL_CHARACTER_PATTERN = /[!-/:-@[-`{-~]/;
 
 export const isValidEmail = (value: string): boolean => EMAIL_PATTERN.test(value);
+export const hasSpecialCharacter = (value: string): boolean =>
+  SPECIAL_CHARACTER_PATTERN.test(value);
 
 const extractBackendMessage = (payload: unknown): string | null => {
   if (!payload) {

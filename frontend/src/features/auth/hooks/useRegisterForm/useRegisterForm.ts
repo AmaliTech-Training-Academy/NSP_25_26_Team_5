@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { useAuth } from "../../../../context/AuthContext/AuthContext";
 import { useToast } from "../../../../context/ToastContext/ToastContext";
 import {
+  hasSpecialCharacter,
   isValidEmail,
   mapRegisterErrorMessage,
 } from "./useRegisterForm.utils";
@@ -70,6 +71,8 @@ export function useRegisterForm() {
       ? "Password field can't be empty"
       : trimmedPassword.length < 8
         ? "Password must be at least 8 characters"
+        : !hasSpecialCharacter(trimmedPassword)
+          ? "Password must include at least 1 special character"
         : "";
     const nextConfirmPasswordError = !trimmedConfirmPassword
       ? "Confirm password can't be empty"

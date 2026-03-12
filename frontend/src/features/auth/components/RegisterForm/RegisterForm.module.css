@@ -33,6 +33,10 @@
   line-height: 1.25;
 }
 
+.passwordHintError {
+  color: #c81e1e;
+}
+
 .actionSection {
   width: 100%;
   display: flex;

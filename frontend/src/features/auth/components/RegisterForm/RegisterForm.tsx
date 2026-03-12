@@ -8,6 +8,10 @@ import PasswordVisibilityButton from "../../../../assets/Icons/PasswordVisibilit
 import Button from "../../../../components/ui/Button/Button";
 import { usePasswordVisibility } from "../../hooks/usePasswordVisibility";
 
+const PASSWORD_REQUIREMENTS_TEXT =
+  "Minimum of 8 characters and at least 1 special character";
+const PASSWORD_SPECIAL_CHARACTER_TEXT = "Include at least 1 special character";
+
 // Renders the register form fields and call-to-action controls.
 export default function RegisterForm({
   name,
@@ -37,6 +41,25 @@ export default function RegisterForm({
   const confirmPasswordVisibilityButtonClassName = confirmPasswordError
     ? `${styles.iconButton} ${styles.iconButtonError}`
     : styles.iconButton;
+  const normalizedPasswordError = passwordError?.toLowerCase() ?? "";
+  const hasMinimumLengthViolation =
+    normalizedPasswordError.includes("at least 8 characters") ||
+    normalizedPasswordError.includes("minimum of 8 characters");
+  const hasSpecialCharacterViolation =
+    normalizedPasswordError.includes("special character");
+  const shouldHighlightPasswordHint =
+    hasMinimumLengthViolation || hasSpecialCharacterViolation;
+  const passwordHintText =
+    hasMinimumLengthViolation || hasSpecialCharacterViolation
+      ? hasMinimumLengthViolation
+        ? PASSWORD_REQUIREMENTS_TEXT
+        : PASSWORD_SPECIAL_CHARACTER_TEXT
+      : PASSWORD_REQUIREMENTS_TEXT;
+  const shouldShowPasswordFieldError =
+    Boolean(passwordError) && !shouldHighlightPasswordHint;
+  const passwordHintClassName = shouldHighlightPasswordHint
+    ? `${styles.passwordHint} ${styles.passwordHintError}`
+    : styles.passwordHint;
 
   return (
     <form className={styles.formSection} onSubmit={handleSubmit} noValidate>
@@ -99,7 +122,9 @@ export default function RegisterForm({
             hasError={Boolean(passwordError)}
             id="register-password"
             aria-describedby={
-              passwordError ? "register-password-error" : undefined
+              shouldShowPasswordFieldError
+                ? "register-password-hint register-password-error"
+                : "register-password-hint"
             }
             aria-invalid={Boolean(passwordError)}
             rightIcon={
@@ -110,7 +135,7 @@ export default function RegisterForm({
               />
             }
           />
-          {passwordError && (
+          {shouldShowPasswordFieldError && (
             <p
               id="register-password-error"
               className={styles.fieldError}
@@ -121,8 +146,12 @@ export default function RegisterForm({
           )}
         </div>
 
-        <p className={styles.passwordHint}>
-          Minimum of 6 characters including special characters
+        <p
+          id="register-password-hint"
+          className={passwordHintClassName}
+          role={shouldHighlightPasswordHint ? "alert" : undefined}
+        >
+          {passwordHintText}
         </p>
 
         <div className={styles.field}>
