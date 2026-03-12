@@ -60,3 +60,9 @@ variable "instance_type" {
   type    = string
   default = "t3.small"
 }
+
+variable "sns_topic_prefix" {
+  type        = string
+  default     = "communityboard"
+  description = "Prefix for SNS topics created by the app (must match backend aws.sns.topic-prefix)"
+}
