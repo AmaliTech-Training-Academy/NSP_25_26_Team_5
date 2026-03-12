@@ -37,8 +37,8 @@ public class CategorySubscriptionService {
         try {
             subscriptionArn = snsNotificationService.subscribeEmailToCategoryTopic(categoryId, user.getEmail());
         } catch (Exception e) {
-            log.warn("SNS subscribe failed for user {} category {}: {}", user.getEmail(), categoryId, e.getMessage());
-            throw new IllegalStateException("Failed to subscribe to category notifications. Check AWS SNS configuration.", e);
+            log.warn("SNS subscribe failed for user {} category {}: {} - {}", user.getEmail(), categoryId, e.getClass().getSimpleName(), e.getMessage(), e);
+            throw new IllegalStateException("Failed to subscribe to category notifications. Check AWS SNS configuration (credentials, region, IAM permissions).", e);
         }
 
         CategorySubscription sub = CategorySubscription.builder()
