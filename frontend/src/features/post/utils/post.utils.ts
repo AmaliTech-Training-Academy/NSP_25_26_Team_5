@@ -37,9 +37,15 @@ const POST_CATEGORY_CONFIG: PostCategoryConfig[] = [
 ];
 
 export const EXPECTED_POST_CATEGORY_COUNT = POST_CATEGORY_CONFIG.length;
+const API_TIMESTAMP_WITHOUT_OFFSET =
+  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?$/;
 
 function normalizeCategoryName(value: string | null | undefined): string {
   return value?.trim().toUpperCase() ?? "";
+}
+
+function normalizeApiTimestamp(value: string): string {
+  return API_TIMESTAMP_WITHOUT_OFFSET.test(value) ? `${value}Z` : value;
 }
 
 // Normalizes backend categories into shared badge metadata.
@@ -91,7 +97,7 @@ export function findCategoryLabelByBadgeType(
 
 // Formats timestamps into the short relative strings used across post surfaces.
 export function formatRelativeTime(value: string): string {
-  const parsedDate = new Date(value);
+  const parsedDate = new Date(normalizeApiTimestamp(value));
 
   if (Number.isNaN(parsedDate.getTime())) {
     return "just now";
