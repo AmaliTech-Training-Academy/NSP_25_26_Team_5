@@ -30,7 +30,7 @@ public class PostService {
     private final PostRepository postRepository;
     private final CategoryRepository categoryRepository;
     private final CommentRepository commentRepository;
-    private final EmailService emailService;
+    private final SnsNotificationService snsNotificationService;
 
     public Page<PostResponse> getAllPosts(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
@@ -73,7 +73,7 @@ public class PostService {
         Post savedPost = postRepository.save(post);
         log.info("Post created: '{}' by {}", savedPost.getTitle(), author.getEmail());
 
-        emailService.sendNewPostNotification(savedPost);
+        snsNotificationService.notifyNewPost(savedPost);
 
         return toResponse(savedPost);
     }

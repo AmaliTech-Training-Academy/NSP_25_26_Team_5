@@ -16,6 +16,7 @@ import DeletePostModal from "../../features/post/components/DeletePostModal";
 import EditPostModal from "../../features/post/components/EditPostModal";
 import type { EditPostFormValues } from "../../features/post/components/EditPostModal";
 import PostFeed from "../../features/post/components/PostFeed/PostFeed";
+import CategoryNotificationSection from "../../features/post/components/CategoryNotificationSection";
 import type { PostCardData } from "../../features/post/components/PostCard/PostCard.types";
 import { usePaginatedPosts } from "../../hooks";
 import styles from "./Home.module.css";
@@ -489,6 +490,11 @@ export default function HomePage() {
             </Button>
           )}
         </div>
+
+        <CategoryNotificationSection
+          categories={categories}
+          isAuthenticated={!!isAuthenticated}
+        />
 
         {authorFilterLabel && (
           <div className={styles.authorFilterNotice}>
