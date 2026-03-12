@@ -17,6 +17,7 @@ import EditPostModal from "../../features/post/components/EditPostModal";
 import type { EditPostFormValues } from "../../features/post/components/EditPostModal";
 import PostFeed from "../../features/post/components/PostFeed/PostFeed";
 import PostFeedSkeleton from "../../features/post/components/PostFeedSkeleton/PostFeedSkeleton";
+import CategoryNotificationSection from "../../features/post/components/CategoryNotificationSection";
 import type { PostCardData } from "../../features/post/components/PostCard/PostCard.types";
 import { invalidateSuspenseResource, readSuspenseResource } from "../../lib/react/suspenseResource";
 import styles from "./Home.module.css";
@@ -629,6 +630,11 @@ export default function HomePage() {
             </Button>
           )}
         </div>
+
+        <CategoryNotificationSection
+          categories={categories}
+          isAuthenticated={!!isAuthenticated}
+        />
 
         {authorFilterLabel && (
           <div className={styles.authorFilterNotice}>

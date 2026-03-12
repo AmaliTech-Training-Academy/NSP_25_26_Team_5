@@ -29,6 +29,16 @@ jwt:
   secret: ${JWT_SECRET:communityboard-secret-key-amalitech-2024}
   expiration: 86400000   # 24 hours in milliseconds
 
+# AWS SNS for category email notifications (optional: set AWS_REGION and credentials)
+aws:
+  region: ${AWS_REGION:eu-north-1}
+  sns:
+    topic-prefix: ${AWS_SNS_TOPIC_PREFIX:communityboard}
+
+# Base URL of the frontend (for "View post" link in notification emails). No trailing slash.
+app:
+  base-url: ${APP_BASE_URL:}
+
 server:
   port: 8080
 

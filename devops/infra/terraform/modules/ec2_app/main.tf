@@ -18,6 +18,29 @@ resource "aws_iam_role_policy_attachment" "ecr" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
 
+# SNS: app creates per-category topics and subscribes user emails (category notifications)
+data "aws_caller_identity" "current" {}
+
+resource "aws_iam_role_policy" "sns" {
+  name = "${var.project_name}-ec2-sns"
+  role = aws_iam_role.app.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["sns:CreateTopic", "sns:ListTopics"]
+        Resource = "*"
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["sns:Subscribe", "sns:Unsubscribe", "sns:Publish"]
+        Resource = "arn:aws:sns:${var.aws_region}:${data.aws_caller_identity.current.account_id}:${var.sns_topic_prefix}-*"
+      }
+    ]
+  })
+}
+
 resource "aws_iam_instance_profile" "app" {
   name = "${var.project_name}-ec2-profile"
   role = aws_iam_role.app.name
@@ -59,7 +82,7 @@ resource "aws_instance" "app" {
   vpc_security_group_ids      = [var.app_sg_id]
   iam_instance_profile        = aws_iam_instance_profile.app.name
   user_data                   = base64encode(local.user_data)
-  user_data_replace_on_change = true
+  user_data_replace_on_change = false
 
   tags = {
     Name = "${var.project_name}-app"
