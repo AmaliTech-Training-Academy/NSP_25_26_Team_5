@@ -24,9 +24,11 @@ export default function PostCard({
   return (
     <>
       <article className={containerClassName}>
-        <header className={styles.header}>
-          <h2 className={styles.title}>{post.title}</h2>
-
+        <div className={styles.topSection}>
+          <div className={styles.contentBlock}>
+            <h2 className={styles.title}>{post.title}</h2>
+            <p className={styles.body}>{post.content}</p>
+          </div>
           <div className={styles.headerMeta}>
             <Button
               variant="badge"
@@ -53,9 +55,7 @@ export default function PostCard({
               </button>
             )}
           </div>
-        </header>
-
-        <p className={styles.body}>{post.content}</p>
+        </div>
 
         <footer className={styles.footer}>
           <div className={styles.metaLeft}>
