@@ -5,6 +5,7 @@ import com.amalitech.communityboard.dto.AnalyticsCategoryResponse;
 import com.amalitech.communityboard.dto.AnalyticsContributorResponse;
 import com.amalitech.communityboard.dto.AnalyticsResponse;
 import com.amalitech.communityboard.model.Post;
+import com.amalitech.communityboard.repository.CommentRepository;
 import com.amalitech.communityboard.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,11 +19,18 @@ import java.util.stream.Collectors;
 public class AnalyticsService {
 
     private final PostRepository postRepository;
+    private final CommentRepository commentRepository; //  Inject comment repo
 
     public AnalyticsResponse getDashboardAnalytics() {
         List<Post> allPosts = postRepository.findAll();
 
-        // 1. Posts Per Category
+        // 1. Total posts
+        long totalPosts = allPosts.size();
+
+        // 2. Total comments
+        long totalComments = commentRepository.count();
+
+        // 3. Posts Per Category
         Map<String, Long> postsCountByCategory = allPosts.stream()
                 .filter(post -> post.getCategory() != null)
                 .collect(Collectors.groupingBy(
@@ -34,7 +42,7 @@ public class AnalyticsService {
                 .map(entry -> new AnalyticsCategoryResponse(entry.getKey(), entry.getValue()))
                 .toList();
 
-        // 2. Most Active Days (group by day of week)
+        // 4. Most Active Days (group by day of week)
         Map<String, Long> postsByDay = allPosts.stream()
                 .filter(post -> post.getCreatedAt() != null)
                 .collect(Collectors.groupingBy(
@@ -47,7 +55,7 @@ public class AnalyticsService {
                 .sorted((a, b) -> b.getTotalPosts().compareTo(a.getTotalPosts()))
                 .toList();
 
-        // 3. Top Contributors (group by author fullName)
+        // 5. Top Contributors (group by author fullName)
         Map<String, Long> postsByAuthor = allPosts.stream()
                 .filter(post -> post.getAuthor() != null)
                 .collect(Collectors.groupingBy(
@@ -58,10 +66,13 @@ public class AnalyticsService {
         List<AnalyticsContributorResponse> contributorResponses = postsByAuthor.entrySet().stream()
                 .map(entry -> new AnalyticsContributorResponse(entry.getKey(), entry.getValue()))
                 .sorted((a, b) -> b.getTotalPosts().compareTo(a.getTotalPosts()))
-                .limit(10) // Top 10 contributors for dashboard
+                .limit(10) // Top 10 contributors
                 .toList();
 
+        //  Build response with totals
         return AnalyticsResponse.builder()
+                .totalPosts(totalPosts)
+                .totalComments(totalComments)
                 .postsPerCategory(categoryResponses)
                 .mostActiveDays(activeDayResponses)
                 .topContributors(contributorResponses)
