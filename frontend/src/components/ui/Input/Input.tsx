@@ -10,6 +10,7 @@ export default function Input({
   label,
   variant = "default",
   hasError = false,
+  highlightLabelOnError = true,
   leftIcon,
   rightIcon,
   id,
@@ -28,7 +29,7 @@ export default function Input({
   );
   const labelClasses = joinInputClassName(
     styles.label,
-    hasError ? styles.labelError : undefined,
+    hasError && highlightLabelOnError ? styles.labelError : undefined,
   );
   const wrapperClasses = joinInputClassName(
     styles.inputContainer,
