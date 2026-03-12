@@ -73,7 +73,6 @@ public class PostService {
         Post savedPost = postRepository.save(post);
         log.info("Post created: '{}' by {}", savedPost.getTitle(), author.getEmail());
 
-        // Send email notifications to users subscribed to this category
         emailService.sendNewPostNotification(savedPost);
 
         return toResponse(savedPost);
@@ -83,7 +82,6 @@ public class PostService {
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Post not found with id: " + id));
 
-        // Only the original author can edit the post
         if (!post.getAuthor().getId().equals(author.getId())) {
             throw new UnauthorizedException("You are not authorized to update this post");
         }
@@ -104,7 +102,6 @@ public class PostService {
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Post not found with id: " + id));
 
-        // Check authorization: must be the author OR an admin
         boolean isAuthor = post.getAuthor().getId().equals(author.getId());
         boolean isAdmin = author.getRole() == Role.ADMIN;
 
@@ -116,14 +113,12 @@ public class PostService {
         log.info("Post deleted: '{}' by {}", post.getTitle(), author.getEmail());
     }
 
-    // Search and Filter posts by multiple combined criteria.
     public Page<PostResponse> searchPosts(String keyword, String category, LocalDateTime startDate, LocalDateTime endDate, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
 
         Specification<Post> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
-            // Search by keyword (title OR body case-insensitive)
             if (keyword != null && !keyword.trim().isEmpty()) {
                 String pattern = "%" + keyword.toLowerCase() + "%";
                 Predicate titleMatch = cb.like(cb.lower(root.get("title")), pattern);
@@ -131,12 +126,10 @@ public class PostService {
                 predicates.add(cb.or(titleMatch, bodyMatch));
             }
 
-            // Filter by category (by category name)
             if (category != null && !category.trim().isEmpty()) {
                 predicates.add(cb.equal(root.join("category", JoinType.LEFT).get("name"), category.trim()));
             }
 
-            // Filter by Date Range (start to end)
             if (startDate != null) {
                 predicates.add(cb.greaterThanOrEqualTo(root.get("createdAt"), startDate));
             }
@@ -151,7 +144,22 @@ public class PostService {
         return postRepository.findAll(spec, pageable).map(this::toResponse);
     }
 
-    // This is what the frontend receives — contains all the display data
+    //  New method to attach image
+    public PostResponse attachImageToPost(Long postId, String imageUrl, User author) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new ResourceNotFoundException("Post not found with id: " + postId));
+
+        if (!post.getAuthor().getId().equals(author.getId())) {
+            throw new UnauthorizedException("You are not authorized to attach an image to this post");
+        }
+
+        post.setImageUrl(imageUrl);
+        post.setUpdatedAt(LocalDateTime.now());
+        Post savedPost = postRepository.save(post);
+
+        return toResponse(savedPost);
+    }
+
     private PostResponse toResponse(Post post) {
         return PostResponse.builder()
                 .id(post.getId())
@@ -163,6 +171,7 @@ public class PostService {
                 .createdAt(post.getCreatedAt())
                 .updatedAt(post.getUpdatedAt())
                 .commentCount(commentRepository.countByPostId(post.getId()))
+                .imageUrl(post.getImageUrl()) //  include image URL
                 .build();
     }
 }

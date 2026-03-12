@@ -25,7 +25,10 @@ public class AnalyticsService {
         // 1. Posts Per Category
         Map<String, Long> postsCountByCategory = allPosts.stream()
                 .filter(post -> post.getCategory() != null)
-                .collect(Collectors.groupingBy(post -> post.getCategory().getName(), Collectors.counting()));
+                .collect(Collectors.groupingBy(
+                        post -> post.getCategory().getName(),
+                        Collectors.counting()
+                ));
 
         List<AnalyticsCategoryResponse> categoryResponses = postsCountByCategory.entrySet().stream()
                 .map(entry -> new AnalyticsCategoryResponse(entry.getKey(), entry.getValue()))
@@ -55,7 +58,7 @@ public class AnalyticsService {
         List<AnalyticsContributorResponse> contributorResponses = postsByAuthor.entrySet().stream()
                 .map(entry -> new AnalyticsContributorResponse(entry.getKey(), entry.getValue()))
                 .sorted((a, b) -> b.getTotalPosts().compareTo(a.getTotalPosts()))
-                .limit(5)
+                .limit(10) // Top 10 contributors for dashboard
                 .toList();
 
         return AnalyticsResponse.builder()
