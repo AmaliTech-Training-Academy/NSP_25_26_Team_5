@@ -4,5 +4,6 @@ export interface PostImageModalProps {
   imageUrl: string | null;
   isOpen: boolean;
   onClose: () => void;
+  time: string;
   title: string;
 }

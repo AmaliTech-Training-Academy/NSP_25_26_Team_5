@@ -48,20 +48,18 @@
 }
 
 .imageButton {
-  width: 36px;
-  height: 36px;
-  border: 1px solid #d3dde2;
+  width: 40px;
+  height: 40px;
+  border: none;
   border-radius: 999px;
-  background: #f7fafb;
+  background: transparent;
+  appearance: none;
+  box-shadow: none;
+  padding: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-}
-
-.imageButton:hover {
-  background: #eef3f5;
-  border-color: #b8c7cf;
 }
 
 .imageButton:focus-visible {
@@ -70,9 +68,9 @@
 }
 
 .imageIcon {
-  width: 18px;
-  height: 18px;
-  color: #0f4f75;
+  width: 20px;
+  height: 20px;
+  color: #5a6f7c;
 }
 
 .body {
@@ -208,7 +206,7 @@
   }
 
   .header {
-    align-items: center;
+    align-items: flex-start;
     gap: 12px;
   }
 

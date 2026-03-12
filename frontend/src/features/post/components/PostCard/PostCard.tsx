@@ -41,6 +41,7 @@ export default function PostCard({
               <button
                 type="button"
                 className={styles.imageButton}
+                data-prevent-post-navigation="true"
                 aria-label={`View image for ${post.title}`}
                 onClick={(event) => {
                   event.preventDefault();
@@ -71,6 +72,7 @@ export default function PostCard({
                 <button
                   type="button"
                   className={styles.postActionButton}
+                  data-prevent-post-navigation="true"
                   aria-label={`Edit ${post.title}`}
                   onClick={(event) => {
                     event.preventDefault();
@@ -84,6 +86,7 @@ export default function PostCard({
                 <button
                   type="button"
                   className={styles.postActionButton}
+                  data-prevent-post-navigation="true"
                   aria-label={`Delete ${post.title}`}
                   onClick={(event) => {
                     event.preventDefault();
@@ -110,6 +113,7 @@ export default function PostCard({
         imageUrl={post.imageUrl ?? null}
         isOpen={isImageModalOpen}
         onClose={() => setIsImageModalOpen(false)}
+        time={post.time}
         title={post.title}
       />
     </>

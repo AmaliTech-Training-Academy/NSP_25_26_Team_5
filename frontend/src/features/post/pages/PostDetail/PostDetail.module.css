@@ -99,18 +99,14 @@
 .imageButton {
   width: 40px;
   height: 40px;
-  border: 1px solid #d3dde2;
+  border: none;
   border-radius: 999px;
-  background: #f7fafb;
+  background: transparent;
+  padding: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-}
-
-.imageButton:hover {
-  background: #eef3f5;
-  border-color: #b8c7cf;
 }
 
 .imageButton:focus-visible {
@@ -121,7 +117,7 @@
 .imageIcon {
   width: 20px;
   height: 20px;
-  color: #0f4f75;
+  color: #5a6f7c;
 }
 
 .body {

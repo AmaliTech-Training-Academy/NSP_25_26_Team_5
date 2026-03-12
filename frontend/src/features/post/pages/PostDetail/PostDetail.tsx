@@ -162,6 +162,7 @@ export default function PostDetail() {
               imageUrl={resolvedImageUrl}
               isOpen={isImageModalOpen}
               onClose={() => setIsImageModalOpen(false)}
+              time={formatRelativeTime(post.createdAt)}
               title={post.title}
             />
           </article>

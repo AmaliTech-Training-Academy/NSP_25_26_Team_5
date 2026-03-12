@@ -4,6 +4,7 @@ import {
   useState,
   type MouseEvent as ReactMouseEvent,
 } from "react";
+import ClockIcon from "../../../../assets/Icons/ClockIcon";
 import CloseIcon from "../../../../assets/Icons/CloseIcon";
 import { useAuth } from "../../../../context/AuthContext/AuthContext";
 import { apiClient } from "../../../../lib/axios/client";
@@ -31,6 +32,7 @@ export default function PostImageModal({
   imageUrl,
   isOpen,
   onClose,
+  time,
   title,
 }: PostImageModalProps) {
   const titleId = useId();
@@ -170,6 +172,21 @@ export default function PostImageModal({
           </button>
         </div>
 
+        <div className={styles.content}>
+          <h2 id={titleId} className={styles.title}>
+            {title}
+          </h2>
+          <p className={styles.description}>{description}</p>
+
+          <div className={styles.metaRow}>
+            <p className={styles.authorName}>{authorName}</p>
+            <div className={styles.timeGroup}>
+              <ClockIcon className={styles.clockIcon} />
+              <p className={styles.time}>{time}</p>
+            </div>
+          </div>
+        </div>
+
         <div className={styles.imageFrame}>
           {isLoadingImage && (
             <p className={styles.statusMessage} role="status" aria-live="polite">
@@ -186,18 +203,6 @@ export default function PostImageModal({
           {!isLoadingImage && !imageErrorMessage && resolvedImageSrc && (
             <img className={styles.image} src={resolvedImageSrc} alt={title} />
           )}
-        </div>
-
-        <div className={styles.content}>
-          <h2 id={titleId} className={styles.title}>
-            {title}
-          </h2>
-          <p className={styles.description}>{description}</p>
-
-          <div className={styles.authorBlock}>
-            <p className={styles.authorLabel}>Posted by</p>
-            <p className={styles.authorName}>{authorName}</p>
-          </div>
         </div>
       </section>
     </div>
