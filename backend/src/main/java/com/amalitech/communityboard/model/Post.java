@@ -35,4 +35,8 @@ public class Post {
 
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt = LocalDateTime.now();
+
+    //  New field for image URL
+    @Column(name = "image_url")
+    private String imageUrl;
 }

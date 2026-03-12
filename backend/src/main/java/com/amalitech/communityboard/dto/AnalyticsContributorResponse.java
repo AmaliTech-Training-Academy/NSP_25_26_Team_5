@@ -12,7 +12,6 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder
 public class AnalyticsContributorResponse {
-
     private String contributorName;
     private Long totalPosts;
 }
