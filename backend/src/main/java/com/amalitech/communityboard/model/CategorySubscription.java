@@ -33,5 +33,6 @@ public class CategorySubscription {
     private String snsSubscriptionArn;
 
     @Column(name = "created_at", nullable = false)
+    @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 }
