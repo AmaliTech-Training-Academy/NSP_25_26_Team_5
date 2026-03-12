@@ -1,77 +1,182 @@
 .section {
-  margin-top: 1.5rem;
-  padding: 1rem;
-  border: 1px solid #e0e0e0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.headerCopy {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.summaryPills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.summaryPill,
+.pendingPill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 6px 12px;
   border-radius: 8px;
-  background: #fafafa;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.summaryPill {
+  background: #e6eef3;
+  color: #08283b;
+}
+
+.pendingPill {
+  background: #ffebb0;
+  color: #8c6900;
 }
 
 .heading {
-  margin: 0 0 0.25rem 0;
-  font-size: 1rem;
+  margin: 0;
+  color: #08283b;
+  font-size: 20px;
   font-weight: 600;
+  line-height: 1.5;
 }
 
 .hint {
-  margin: 0 0 0.75rem 0;
-  font-size: 0.875rem;
-  color: #666;
+  margin: 0;
+  color: #395362;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 .categoryList {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 16px;
 }
 
 .categoryRow {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 0.75rem;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid #e6eaeb;
+  border-radius: 12px;
+  background: #fdfdfd;
+}
+
+.categoryContent,
+.categoryText {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.categoryContent {
+  gap: 12px;
+}
+
+.categoryText {
+  gap: 4px;
 }
 
 .categoryName {
-  font-size: 0.9375rem;
+  color: #08283b;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.5;
 }
 
-.subscribeBtn,
-.unsubscribeBtn {
-  padding: 0.35rem 0.75rem;
-  font-size: 0.8125rem;
+.categoryDescription {
+  color: #395362;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.subscribedStatusBadge,
+.pendingStatusBadge {
+  width: fit-content;
+  max-width: 100%;
+  padding: 4px 10px;
   border-radius: 6px;
-  cursor: pointer;
-  border: 1px solid transparent;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
 }
 
-.subscribeBtn {
-  background: #0984e3;
-  color: #fff;
-  border-color: #0984e3;
+.subscribedStatusBadge {
+  background: #def7ec;
+  color: #03543f;
 }
 
-.subscribeBtn:hover:not(:disabled) {
-  background: #0770c7;
+.pendingStatusBadge {
+  background: #fde8e8;
+  color: #9b1c1c;
 }
 
-.unsubscribeBtn {
-  background: transparent;
-  color: #636e72;
-  border-color: #b2bec3;
+.actionButton {
+  min-width: 128px;
 }
 
-.unsubscribeBtn:hover:not(:disabled) {
-  background: #f1f3f4;
+.statusMessage,
+.emptyMessage,
+.subscribedSummary,
+.errorMessage {
+  margin: 0;
+  color: #395362;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
-.subscribeBtn:disabled,
-.unsubscribeBtn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+.errorMessage {
+  color: #8a1c1c;
+}
+
+.feedbackBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
 }
 
 .subscribedSummary {
-  margin: 0.75rem 0 0 0;
-  font-size: 0.8125rem;
-  color: #636e72;
+  padding-top: 4px;
+}
+
+.retryButton {
+  min-height: 41px;
+  padding-inline: 16px;
+}
+
+@media (min-width: 768px) {
+  .header {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+
+  .categoryRow {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .categoryContent {
+    width: auto;
+    min-width: 0;
+    flex: 1;
+  }
 }

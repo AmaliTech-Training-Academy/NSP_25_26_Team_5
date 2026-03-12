@@ -1,0 +1,278 @@
+.profilePage {
+  width: 100%;
+}
+
+.content {
+  width: min(345px, calc(100% - 48px));
+  margin: 24px auto 72px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.screenReaderOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.breadcrumbs {
+  align-self: flex-start;
+}
+
+.heroCard {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 24px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #08283b 0%, #0f4f75 100%);
+  color: #fdfdfd;
+}
+
+.heroCopy {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.heroEyebrow {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(253, 253, 253, 0.8);
+}
+
+.heroTitle {
+  margin: 0;
+  font-family: "Poppins", "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.heroDescription {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: rgba(253, 253, 253, 0.88);
+}
+
+.heroIdentity {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 16px;
+  border-radius: 12px;
+  background: rgba(253, 253, 253, 0.12);
+}
+
+.heroAvatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  background: #fdfdfd;
+  color: #08283b;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.heroUserText {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.heroUserName,
+.heroUserEmail {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.heroUserName {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.heroUserEmail {
+  font-size: 14px;
+  line-height: 1.5;
+  color: rgba(253, 253, 253, 0.86);
+}
+
+.profileGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+
+.infoCard,
+.notificationCard {
+  border: 1px solid #e6eaeb;
+  border-radius: 12px;
+  background: #fdfdfd;
+}
+
+.infoCard {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.notificationCard {
+  padding: 24px;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.cardHeaderIcon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: #d4e9fb;
+  color: #08283b;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cardHeaderCopy {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cardTitle {
+  margin: 0;
+  color: #08283b;
+  font-family: "Poppins", "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.cardDescription {
+  margin: 0;
+  color: #395362;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.detailList {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.detailRow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px;
+  border-radius: 10px;
+  background: #f7fafb;
+}
+
+.detailLabel {
+  color: #395362;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.detailValue {
+  margin: 0;
+  color: #08283b;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.statusMessage,
+.errorMessage {
+  margin: 0;
+  color: #395362;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.errorMessage {
+  color: #8a1c1c;
+}
+
+.feedbackBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.retryButton {
+  min-height: 41px;
+  padding-inline: 16px;
+}
+
+@media (min-width: 768px) {
+  .content {
+    width: min(1202px, calc(100% - 48px));
+    margin: 48px auto 80px;
+    gap: 32px;
+  }
+
+  .heroCard {
+    flex-direction: row;
+    align-items: stretch;
+    justify-content: space-between;
+    gap: 32px;
+    padding: 32px;
+  }
+
+  .heroCopy {
+    max-width: 640px;
+    justify-content: center;
+  }
+
+  .heroTitle {
+    font-size: 36px;
+  }
+
+  .heroDescription {
+    font-size: 16px;
+  }
+
+  .heroIdentity {
+    width: min(100%, 360px);
+    align-self: center;
+  }
+
+  .profileGrid {
+    grid-template-columns: minmax(320px, 360px) minmax(0, 1fr);
+    gap: 32px;
+    align-items: start;
+  }
+}

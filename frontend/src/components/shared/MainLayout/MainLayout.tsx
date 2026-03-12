@@ -10,10 +10,16 @@ export default function MainLayout() {
   const canAccessAnalytics = isAdminRole(user?.role);
   const navBarVariant = location.pathname.startsWith("/analytics")
     ? "analytics"
+    : location.pathname.startsWith("/profile")
+      ? "profile"
     : "default";
 
   const handleAnalyticsNavigate = () => {
     navigate("/analytics");
+  };
+
+  const handleProfileNavigate = () => {
+    navigate("/profile");
   };
 
   const handleLogout = () => {
@@ -28,6 +34,7 @@ export default function MainLayout() {
         showAnalytics={canAccessAnalytics}
         variant={navBarVariant}
         onAnalyticsClick={handleAnalyticsNavigate}
+        onProfileClick={handleProfileNavigate}
         onLogoutClick={handleLogout}
       />
       <Outlet />

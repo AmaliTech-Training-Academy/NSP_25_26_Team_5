@@ -15,9 +15,11 @@ export default function NavBar({
   variant = "default",
   onMenuClick,
   onAnalyticsClick,
+  onProfileClick,
   onLogoutClick,
 }: NavBarProps) {
   const isAnalyticsVariant = variant === "analytics";
+  const isProfileVariant = variant === "profile";
   const navBarClassName = joinNavBarClassName(
     styles.navBar,
     isAnalyticsVariant ? styles.analyticsPageNavBar : undefined,
@@ -45,6 +47,11 @@ export default function NavBar({
   function handleAnalyticsAction() {
     setIsMobileMenuOpen(false);
     onAnalyticsClick?.();
+  }
+
+  function handleProfileAction() {
+    setIsMobileMenuOpen(false);
+    onProfileClick?.();
   }
 
   function handleLogoutAction() {
@@ -109,13 +116,29 @@ export default function NavBar({
                 </button>
               )}
 
-              <div className={styles.userInfo}>
-                <div className={styles.avatar}>{initials}</div>
-                <div className={styles.userText}>
-                  <p className={styles.userName}>{user.name}</p>
-                  <p className={styles.userEmail}>{user.email}</p>
-                </div>
-              </div>
+              <button
+                type="button"
+                className={joinNavBarClassName(
+                  styles.userInfoButton,
+                  isProfileVariant ? styles.activeUserInfoButton : undefined,
+                )}
+                onClick={handleProfileAction}
+                disabled={isProfileVariant}
+                aria-current={isProfileVariant ? "page" : undefined}
+              >
+                <span
+                  className={joinNavBarClassName(
+                    styles.avatar,
+                    isProfileVariant ? styles.activeAvatar : undefined,
+                  )}
+                >
+                  {initials}
+                </span>
+                <span className={styles.userText}>
+                  <span className={styles.userName}>{user.name}</span>
+                  <span className={styles.userEmail}>{user.email}</span>
+                </span>
+              </button>
 
               <button
                 type="button"
@@ -143,13 +166,29 @@ export default function NavBar({
           aria-label="Mobile menu"
         >
           <div className={styles.mobileSidebarTop}>
-            <div className={styles.mobileSidebarUserInfo}>
-              <div className={styles.mobileSidebarAvatar}>{initials}</div>
-              <div className={styles.mobileSidebarUserText}>
-                <p className={styles.mobileSidebarUserName}>{user.name}</p>
-                <p className={styles.mobileSidebarUserEmail}>{user.email}</p>
-              </div>
-            </div>
+            <button
+              type="button"
+              className={joinNavBarClassName(
+                styles.mobileSidebarProfileButton,
+                isProfileVariant ? styles.activeUserInfoButton : undefined,
+              )}
+              onClick={handleProfileAction}
+              disabled={isProfileVariant}
+              aria-current={isProfileVariant ? "page" : undefined}
+            >
+              <span
+                className={joinNavBarClassName(
+                  styles.mobileSidebarAvatar,
+                  isProfileVariant ? styles.activeAvatar : undefined,
+                )}
+              >
+                {initials}
+              </span>
+              <span className={styles.mobileSidebarUserText}>
+                <span className={styles.mobileSidebarUserName}>{user.name}</span>
+                <span className={styles.mobileSidebarUserEmail}>{user.email}</span>
+              </span>
+            </button>
 
             <button
               type="button"

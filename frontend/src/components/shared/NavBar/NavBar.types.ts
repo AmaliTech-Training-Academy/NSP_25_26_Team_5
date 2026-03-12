@@ -8,8 +8,9 @@ export interface NavBarProps {
   className?: string;
   user?: NavBarUser;
   showAnalytics?: boolean;
-  variant?: "default" | "analytics";
+  variant?: "default" | "analytics" | "profile";
   onMenuClick?: () => void;
   onAnalyticsClick?: () => void;
+  onProfileClick?: () => void;
   onLogoutClick?: () => void;
 }

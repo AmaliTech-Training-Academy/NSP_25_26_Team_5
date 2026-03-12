@@ -8,6 +8,7 @@ import MainLayout from "./components/shared/MainLayout/MainLayout";
 import AnalyticsDashboard from "./features/analytics/pages/AnalyticsDashboard";
 import PostDetail from "./features/post/pages/PostDetail/PostDetail";
 import PostNotFound from "./features/post/pages/PostNotFound/PostNotFound";
+import UserProfile from "./features/profile/pages/UserProfile";
 import Home from "./pages/Home/Home";
 import NotFound from "./pages/NotFound/NotFound";
 
@@ -28,6 +29,7 @@ const App = () => {
       <Route element={<ProtectedRoute />}>
         <Route element={<MainLayout />}>
           <Route index element={<Home />} />
+          <Route path="profile" element={<UserProfile />} />
           <Route element={<AdminRoute />}>
             <Route path="analytics" element={<AnalyticsDashboard />} />
           </Route>
