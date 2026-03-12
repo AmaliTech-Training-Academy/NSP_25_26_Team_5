@@ -3,6 +3,13 @@ import type { Post } from "../../features/post/types/post.type";
 import { findCategoryData, formatRelativeTime } from "../../features/post/utils/post.utils";
 import { resolvePostImageUrl } from "../../features/post/utils/post-image.storage";
 
+const API_TIMESTAMP_WITHOUT_OFFSET =
+  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?$/;
+
+function normalizePostTimestamp(value: string): string {
+  return API_TIMESTAMP_WITHOUT_OFFSET.test(value) ? `${value}Z` : value;
+}
+
 // Maps API post payloads to the post-card shape consumed by the home feed.
 export function mapPostToCardData(post: Post): PostCardData {
   const categoryData = findCategoryData(post.categoryName);
@@ -15,7 +22,7 @@ export function mapPostToCardData(post: Post): PostCardData {
     writerName: post.authorName,
     authorEmail: post.authorEmail,
     categoryName: post.categoryName,
-    time: formatRelativeTime(post.createdAt),
+    time: formatRelativeTime(normalizePostTimestamp(post.createdAt)),
     commentsCount: post.commentCount,
     badgeLabel: categoryData.badgeLabel,
     badgeType: categoryData.badgeType,

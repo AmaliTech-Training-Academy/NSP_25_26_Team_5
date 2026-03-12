@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-//Analytics Controller: endpoints for the Community Board analytics dashboard.
+// Analytics Controller: endpoints for the Community Board analytics dashboard.
 @RestController
 @RequestMapping("/api/analytics")
 @RequiredArgsConstructor
