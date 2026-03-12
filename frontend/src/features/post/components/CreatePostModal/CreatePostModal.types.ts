@@ -4,12 +4,14 @@ export interface CreatePostFormValues {
   title: string;
   body: string;
   categoryId: number;
+  imageUrl: string | null;
 }
 
 export interface CreatePostFormErrors {
   title?: string;
   body?: string;
   category?: string;
+  image?: string;
 }
 
 export interface CreatePostModalProps {

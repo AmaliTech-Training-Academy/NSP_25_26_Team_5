@@ -20,6 +20,12 @@ export interface PostPayload {
   categoryId: number;
 }
 
+export interface ImageUploadResponse {
+  imageUrl?: string;
+  error?: string;
+  [key: string]: string | undefined;
+}
+
 export interface PostSearchParams {
   keyword?: string;
   category?: string;
@@ -57,6 +63,7 @@ export interface Post {
   id: number;
   title: string;
   body: string;
+  imageUrl?: string | null;
   categoryName: string | null;
   authorName: string;
   authorEmail: string;

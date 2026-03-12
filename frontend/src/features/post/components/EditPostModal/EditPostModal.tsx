@@ -3,6 +3,7 @@ import {
   useId,
   useRef,
   useState,
+  type ChangeEvent,
   type FormEvent,
   type MouseEvent as ReactMouseEvent,
 } from "react";
@@ -14,6 +15,8 @@ import Breadcrumbs from "../../../../components/shared/Breadcrumbs/Breadcrumbs";
 import Button from "../../../../components/ui/Button/Button";
 import Input from "../../../../components/ui/Input/Input";
 import styles from "./EditPostModal.module.css";
+import { imageAPI } from "../../api/image.api";
+import PostImageField from "../PostImageField";
 import type {
   EditPostFormErrors,
   EditPostFormValues,
@@ -25,6 +28,10 @@ import {
   joinEditPostModalClassName,
   validateEditPostForm,
 } from "./EditPostModal.utils";
+import {
+  findImageUploadErrorMessage,
+  validatePostImageFile,
+} from "../../utils/post.utils";
 
 // Renders an edit-post modal prefilled from the selected post.
 export default function EditPostModal({
@@ -39,26 +46,34 @@ export default function EditPostModal({
 }: EditPostModalProps) {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+  const [existingImageUrl, setExistingImageUrl] = useState<string | null>(null);
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false);
   const [formErrors, setFormErrors] = useState<EditPostFormErrors>({});
   const [submitErrorMessage, setSubmitErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const categorySectionRef = useRef<HTMLDivElement | null>(null);
   const bodyInputId = useId();
+  const imageInputId = useId();
 
   const overlayClassName = joinEditPostModalClassName(styles.overlay, className);
   const selectedCategoryLabel =
     selectedCategoryId === null
       ? post?.badgeLabel ?? ""
       : findEditPostCategoryLabel(categoryOptions, selectedCategoryId);
+  const resolvedPreviewUrl = imagePreviewUrl ?? existingImageUrl;
   const canSubmit =
     !isSubmitting &&
+    !isUploadingImage &&
     !isLoadingCategories &&
     !categoriesErrorMessage &&
     title.trim().length > 0 &&
     body.trim().length > 0 &&
-    selectedCategoryId !== null;
+    selectedCategoryId !== null &&
+    !formErrors.image;
 
   useEffect(() => {
     if (!isOpen || !post) {
@@ -71,12 +86,30 @@ export default function EditPostModal({
 
     setTitle(post.title);
     setBody(post.content);
+    setExistingImageUrl(post.imageUrl ?? null);
+    setSelectedImageFile(null);
+    setImagePreviewUrl(null);
     setSelectedCategoryId(matchedCategory?.categoryId ?? null);
     setIsCategoryMenuOpen(false);
     setFormErrors({});
     setSubmitErrorMessage(null);
     setIsSubmitting(false);
+    setIsUploadingImage(false);
   }, [categoryOptions, isOpen, post]);
+
+  useEffect(() => {
+    if (!selectedImageFile) {
+      setImagePreviewUrl(null);
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(selectedImageFile);
+    setImagePreviewUrl(objectUrl);
+
+    return () => {
+      URL.revokeObjectURL(objectUrl);
+    };
+  }, [selectedImageFile]);
 
   // Locks body scrolling while the modal is active.
   useEffect(() => {
@@ -149,9 +182,46 @@ export default function EditPostModal({
     setSubmitErrorMessage(null);
   }
 
+  function handleImageFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const nextFile = event.target.files?.[0] ?? null;
+    event.target.value = "";
+
+    if (!nextFile) {
+      return;
+    }
+
+    const imageErrorMessage = validatePostImageFile(nextFile);
+
+    if (imageErrorMessage) {
+      setSelectedImageFile(null);
+      setFormErrors((previousErrors) => ({
+        ...previousErrors,
+        image: imageErrorMessage,
+      }));
+      setSubmitErrorMessage(null);
+      return;
+    }
+
+    setSelectedImageFile(nextFile);
+    setFormErrors((previousErrors) => ({
+      ...previousErrors,
+      image: undefined,
+    }));
+    setSubmitErrorMessage(null);
+  }
+
+  function handleClearSelectedImage() {
+    setSelectedImageFile(null);
+    setFormErrors((previousErrors) => ({
+      ...previousErrors,
+      image: undefined,
+    }));
+    setSubmitErrorMessage(null);
+  }
+
   // Resets transient form state and closes modal.
   function handleCancel(forceClose = false) {
-    if (isSubmitting && !forceClose) {
+    if ((isSubmitting || isUploadingImage) && !forceClose) {
       return;
     }
 
@@ -160,6 +230,29 @@ export default function EditPostModal({
     setSubmitErrorMessage(null);
     setIsSubmitting(false);
     onClose();
+  }
+
+  async function uploadSelectedImage(): Promise<string | null> {
+    if (!selectedImageFile) {
+      return existingImageUrl;
+    }
+
+    setIsUploadingImage(true);
+
+    try {
+      const response = await imageAPI.upload(selectedImageFile);
+      const uploadedImageUrl = response.data.imageUrl?.trim();
+
+      if (!uploadedImageUrl) {
+        throw new Error("Image upload completed without a usable image URL.");
+      }
+
+      return uploadedImageUrl;
+    } catch (error) {
+      throw new Error(findImageUploadErrorMessage(error));
+    } finally {
+      setIsUploadingImage(false);
+    }
   }
 
   // Submits an update payload to the parent edit handler.
@@ -173,7 +266,11 @@ export default function EditPostModal({
     const nextErrors = validateEditPostForm(title, body, selectedCategoryId);
     setFormErrors(nextErrors);
 
-    if (Object.keys(nextErrors).length > 0 || selectedCategoryId === null) {
+    if (
+      Object.keys(nextErrors).length > 0 ||
+      formErrors.image ||
+      selectedCategoryId === null
+    ) {
       return;
     }
 
@@ -182,13 +279,18 @@ export default function EditPostModal({
       title: title.trim(),
       body: body.trim(),
       categoryId: selectedCategoryId,
+      imageUrl: existingImageUrl,
     };
 
     setSubmitErrorMessage(null);
     setIsSubmitting(true);
 
     try {
-      await onEditPost(payload);
+      const imageUrl = await uploadSelectedImage();
+      await onEditPost({
+        ...payload,
+        imageUrl,
+      });
       handleCancel(true);
     } catch (error) {
       setSubmitErrorMessage(findEditPostErrorMessage(error));
@@ -223,7 +325,7 @@ export default function EditPostModal({
             className={styles.closeButton}
             aria-label="Close edit post modal"
             onClick={() => handleCancel()}
-            disabled={isSubmitting}
+            disabled={isSubmitting || isUploadingImage}
           >
             <CloseIcon className={styles.closeIcon} />
           </button>
@@ -349,6 +451,23 @@ export default function EditPostModal({
             )}
           </div>
 
+          <PostImageField
+            inputId={imageInputId}
+            isDisabled={isSubmitting || isUploadingImage}
+            isUploading={isUploadingImage}
+            previewUrl={resolvedPreviewUrl}
+            statusText={
+              selectedImageFile
+                ? `Selected image: ${selectedImageFile.name}`
+                : existingImageUrl
+                  ? "Current image attached."
+                  : null
+            }
+            errorMessage={formErrors.image}
+            onFileChange={handleImageFileChange}
+            onClearSelection={selectedImageFile ? handleClearSelectedImage : undefined}
+          />
+
           {submitErrorMessage && (
             <p className={styles.submitError} role="alert">
               {submitErrorMessage}
@@ -361,7 +480,7 @@ export default function EditPostModal({
               variant="secondary"
               className={styles.cancelButton}
               onClick={() => handleCancel()}
-              disabled={isSubmitting}
+              disabled={isSubmitting || isUploadingImage}
             >
               Cancel
             </Button>
@@ -372,7 +491,11 @@ export default function EditPostModal({
               className={styles.submitButton}
               disabled={!canSubmit}
             >
-              Update Post
+              {isUploadingImage
+                ? "Uploading image..."
+                : isSubmitting
+                  ? "Updating..."
+                  : "Update Post"}
             </Button>
           </div>
         </form>

@@ -4,6 +4,7 @@ export interface PostCardData {
   id: string;
   title: string;
   content: string;
+  imageUrl?: string | null;
   writerName: string;
   authorEmail: string;
   categoryName: string | null;

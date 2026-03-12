@@ -37,6 +37,7 @@ const POST_CATEGORY_CONFIG: PostCategoryConfig[] = [
 ];
 
 export const EXPECTED_POST_CATEGORY_COUNT = POST_CATEGORY_CONFIG.length;
+export const POST_IMAGE_MAX_SIZE_BYTES = 5 * 1024 * 1024;
 
 function normalizeCategoryName(value: string | null | undefined): string {
   return value?.trim().toUpperCase() ?? "";
@@ -163,5 +164,25 @@ export function findCreatePostErrorMessage(error: unknown): string {
     error,
     "Unable to create your post right now. Please try again.",
     "You are not authorized to create a post. Please sign in again.",
+  );
+}
+
+export function validatePostImageFile(file: File): string | null {
+  if (!file.type.startsWith("image/")) {
+    return "Please choose a valid image file.";
+  }
+
+  if (file.size > POST_IMAGE_MAX_SIZE_BYTES) {
+    return "Images must be 5 MB or smaller.";
+  }
+
+  return null;
+}
+
+export function findImageUploadErrorMessage(error: unknown): string {
+  return findPostRequestErrorMessage(
+    error,
+    "Unable to upload this image right now. Please try again.",
+    "You are not authorized to upload an image. Please sign in again.",
   );
 }

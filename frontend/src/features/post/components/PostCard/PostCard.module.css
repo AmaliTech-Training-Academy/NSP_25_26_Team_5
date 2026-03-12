@@ -14,7 +14,15 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 2px;
+  gap: 12px;
+}
+
+.headerMeta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  flex-shrink: 0;
 }
 
 .title {
@@ -37,6 +45,34 @@
 .badge:disabled {
   opacity: 1;
   cursor: default;
+}
+
+.imageButton {
+  width: 36px;
+  height: 36px;
+  border: 1px solid #d3dde2;
+  border-radius: 999px;
+  background: #f7fafb;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.imageButton:hover {
+  background: #eef3f5;
+  border-color: #b8c7cf;
+}
+
+.imageButton:focus-visible {
+  outline: 2px solid #0f4f75;
+  outline-offset: 2px;
+}
+
+.imageIcon {
+  width: 18px;
+  height: 18px;
+  color: #0f4f75;
 }
 
 .body {

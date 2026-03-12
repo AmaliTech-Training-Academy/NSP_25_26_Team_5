@@ -2,11 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import ClockIcon from "../../../../assets/Icons/ClockIcon";
 import HouseIcon from "../../../../assets/Icons/HouseIcon";
+import ImageIcon from "../../../../assets/Icons/ImageIcon";
 import Breadcrumbs from "../../../../components/shared/Breadcrumbs/Breadcrumbs";
 import Button from "../../../../components/ui/Button/Button";
 import CommentsSection from "../../../comment/components/CommentsSection";
 import { postAPI } from "../../api/api.post";
+import PostImageModal from "../../components/PostImageModal";
 import type { Post } from "../../types/post.type";
+import { resolvePostImageUrl } from "../../utils/post-image.storage";
 import {
   findCategoryData,
   findPostRequestErrorMessage,
@@ -21,6 +24,7 @@ export default function PostDetail() {
   const [post, setPost] = useState<Post | null>(null);
   const [isLoadingPost, setIsLoadingPost] = useState(true);
   const [postErrorMessage, setPostErrorMessage] = useState<string | null>(null);
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
 
   useEffect(() => {
     let isUnmounted = false;
@@ -76,6 +80,10 @@ export default function PostDetail() {
     () => findCategoryData(post?.categoryName ?? null),
     [post?.categoryName],
   );
+  const resolvedImageUrl = useMemo(
+    () => (post ? resolvePostImageUrl(post.id, post.imageUrl) : null),
+    [post],
+  );
   const breadcrumbItems = [
     {
       id: "home",
@@ -112,14 +120,28 @@ export default function PostDetail() {
               <header className={styles.postHeader}>
                 <div className={styles.titleRow}>
                   <h1 className={styles.title}>{post.title}</h1>
-                  <Button
-                    variant="badge"
-                    badgeType={categoryData.badgeType}
-                    className={styles.badge}
-                    disabled
-                  >
-                    {categoryData.badgeLabel}
-                  </Button>
+
+                  <div className={styles.titleMeta}>
+                    <Button
+                      variant="badge"
+                      badgeType={categoryData.badgeType}
+                      className={styles.badge}
+                      disabled
+                    >
+                      {categoryData.badgeLabel}
+                    </Button>
+
+                    {resolvedImageUrl && (
+                      <button
+                        type="button"
+                        className={styles.imageButton}
+                        aria-label={`View image for ${post.title}`}
+                        onClick={() => setIsImageModalOpen(true)}
+                      >
+                        <ImageIcon className={styles.imageIcon} />
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <p className={styles.body}>{post.body}</p>
@@ -137,6 +159,15 @@ export default function PostDetail() {
             </section>
 
             <CommentsSection postId={post.id} />
+
+            <PostImageModal
+              authorName={post.authorName}
+              description={post.body}
+              imageUrl={resolvedImageUrl}
+              isOpen={isImageModalOpen}
+              onClose={() => setIsImageModalOpen(false)}
+              title={post.title}
+            />
           </article>
         )}
       </section>

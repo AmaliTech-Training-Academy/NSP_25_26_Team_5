@@ -1,6 +1,7 @@
 import type { PostCardData } from "../../features/post/components/PostCard/PostCard.types";
 import type { Post } from "../../features/post/types/post.type";
 import { findCategoryData, formatRelativeTime } from "../../features/post/utils/post.utils";
+import { resolvePostImageUrl } from "../../features/post/utils/post-image.storage";
 
 // Maps API post payloads to the post-card shape consumed by the home feed.
 export function mapPostToCardData(post: Post): PostCardData {
@@ -10,6 +11,7 @@ export function mapPostToCardData(post: Post): PostCardData {
     id: String(post.id),
     title: post.title,
     content: post.body,
+    imageUrl: resolvePostImageUrl(post.id, post.imageUrl),
     writerName: post.authorName,
     authorEmail: post.authorEmail,
     categoryName: post.categoryName,

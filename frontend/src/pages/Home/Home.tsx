@@ -28,6 +28,7 @@ import {
   findCreatePostErrorMessage,
   findPostRequestErrorMessage,
 } from "../../features/post/utils/post.utils";
+import { postImageStorage } from "../../features/post/utils/post-image.storage";
 import type {
   Category,
   PagedResponse,
@@ -301,6 +302,10 @@ export default function HomePage() {
         categoryId: values.categoryId,
       });
 
+      if (values.imageUrl) {
+        postImageStorage.setImageUrl(response.data.id, values.imageUrl);
+      }
+
       const createdPost = mapPostToCardData(response.data);
       setHomePosts((previousPosts) => [createdPost, ...previousPosts]);
       showToast({
@@ -344,6 +349,12 @@ export default function HomePage() {
         body: values.body,
         categoryId: values.categoryId,
       });
+
+      if (values.imageUrl) {
+        postImageStorage.setImageUrl(values.postId, values.imageUrl);
+      } else {
+        postImageStorage.removeImage(values.postId);
+      }
 
       setPostsReloadKey((previousKey) => previousKey + 1);
       showToast({
@@ -408,6 +419,7 @@ export default function HomePage() {
       }
 
       await postAPI.delete(parsedPostId);
+      postImageStorage.removeImage(parsedPostId);
       setPostBeingDeleted(null);
 
       if (homePosts.length === 1 && currentPage > 1) {

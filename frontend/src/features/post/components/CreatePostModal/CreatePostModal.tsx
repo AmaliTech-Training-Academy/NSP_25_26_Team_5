@@ -3,6 +3,7 @@ import {
   useId,
   useRef,
   useState,
+  type ChangeEvent,
   type FormEvent,
   type MouseEvent as ReactMouseEvent,
 } from "react";
@@ -28,6 +29,12 @@ import ChevronUpIcon from "../../../../assets/Icons/ChevronUpIcon";
 import ChevronDownIcon from "../../../../assets/Icons/ChevronDownIcon";
 import HouseIcon from "../../../../assets/Icons/HouseIcon";
 import Breadcrumbs from "../../../../components/shared/Breadcrumbs/Breadcrumbs";
+import { imageAPI } from "../../api/image.api";
+import PostImageField from "../PostImageField";
+import {
+  findImageUploadErrorMessage,
+  validatePostImageFile,
+} from "../../utils/post.utils";
 
 // Renders the create-post modal and submits a new post payload to the parent.
 export default function CreatePostModal({
@@ -41,13 +48,17 @@ export default function CreatePostModal({
 }: CreatePostModalProps) {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false);
   const [formErrors, setFormErrors] = useState<CreatePostFormErrors>({});
   const [submitErrorMessage, setSubmitErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const categorySectionRef = useRef<HTMLDivElement | null>(null);
   const bodyInputId = useId();
+  const imageInputId = useId();
 
   const overlayClassName = joinCreatePostModalClassName(styles.overlay, className);
   const selectedCategoryLabel =
@@ -58,12 +69,14 @@ export default function CreatePostModal({
   const isTitleNearLimit = titleLength >= TITLE_WARNING_THRESHOLD;
   const canSubmit =
     !isSubmitting &&
+    !isUploadingImage &&
     !isLoadingCategories &&
     !categoriesErrorMessage &&
     title.trim().length > 0 &&
     title.trim().length <= TITLE_MAX_LENGTH &&
     body.trim().length > 0 &&
-    selectedCategoryId !== null;
+    selectedCategoryId !== null &&
+    !formErrors.image;
 
   // Locks body scrolling while the modal is active.
   useEffect(() => {
@@ -78,6 +91,20 @@ export default function CreatePostModal({
       document.body.style.overflow = previousOverflow;
     };
   }, [isOpen]);
+
+  useEffect(() => {
+    if (!selectedImageFile) {
+      setImagePreviewUrl(null);
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(selectedImageFile);
+    setImagePreviewUrl(objectUrl);
+
+    return () => {
+      URL.revokeObjectURL(objectUrl);
+    };
+  }, [selectedImageFile]);
 
   // Supports keyboard closing with Escape.
   useEffect(() => {
@@ -125,11 +152,14 @@ export default function CreatePostModal({
   function resetFormState() {
     setTitle("");
     setBody("");
+    setSelectedImageFile(null);
+    setImagePreviewUrl(null);
     setSelectedCategoryId(null);
     setIsCategoryMenuOpen(false);
     setFormErrors({});
     setSubmitErrorMessage(null);
     setIsSubmitting(false);
+    setIsUploadingImage(false);
   }
 
   // Closes the modal when the desktop backdrop is clicked.
@@ -147,14 +177,74 @@ export default function CreatePostModal({
     setSubmitErrorMessage(null);
   }
 
+  function handleImageFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const nextFile = event.target.files?.[0] ?? null;
+    event.target.value = "";
+
+    if (!nextFile) {
+      return;
+    }
+
+    const imageErrorMessage = validatePostImageFile(nextFile);
+
+    if (imageErrorMessage) {
+      setSelectedImageFile(null);
+      setFormErrors((previousErrors) => ({
+        ...previousErrors,
+        image: imageErrorMessage,
+      }));
+      setSubmitErrorMessage(null);
+      return;
+    }
+
+    setSelectedImageFile(nextFile);
+    setFormErrors((previousErrors) => ({
+      ...previousErrors,
+      image: undefined,
+    }));
+    setSubmitErrorMessage(null);
+  }
+
+  function handleClearSelectedImage() {
+    setSelectedImageFile(null);
+    setFormErrors((previousErrors) => ({
+      ...previousErrors,
+      image: undefined,
+    }));
+    setSubmitErrorMessage(null);
+  }
+
   // Closes the modal and clears temporary input state.
   function handleCancel(forceClose = false) {
-    if (isSubmitting && !forceClose) {
+    if ((isSubmitting || isUploadingImage) && !forceClose) {
       return;
     }
 
     resetFormState();
     onClose();
+  }
+
+  async function uploadSelectedImage(): Promise<string | null> {
+    if (!selectedImageFile) {
+      return null;
+    }
+
+    setIsUploadingImage(true);
+
+    try {
+      const response = await imageAPI.upload(selectedImageFile);
+      const uploadedImageUrl = response.data.imageUrl?.trim();
+
+      if (!uploadedImageUrl) {
+        throw new Error("Image upload completed without a usable image URL.");
+      }
+
+      return uploadedImageUrl;
+    } catch (error) {
+      throw new Error(findImageUploadErrorMessage(error));
+    } finally {
+      setIsUploadingImage(false);
+    }
   }
 
   // Emits the new post payload and closes the modal.
@@ -166,23 +256,24 @@ export default function CreatePostModal({
 
     if (
       Object.keys(nextErrors).length > 0 ||
+      formErrors.image ||
       selectedCategoryId === null ||
       !onCreatePost
     ) {
       return;
     }
 
-    const payload: CreatePostFormValues = {
-      title: title.trim(),
-      body: body.trim(),
-      categoryId: selectedCategoryId,
-    };
-
     setSubmitErrorMessage(null);
     setIsSubmitting(true);
 
     try {
-      await onCreatePost(payload);
+      const imageUrl = await uploadSelectedImage();
+      await onCreatePost({
+        title: title.trim(),
+        body: body.trim(),
+        categoryId: selectedCategoryId,
+        imageUrl,
+      });
       handleCancel(true);
     } catch (error) {
       setSubmitErrorMessage(findCreatePostErrorMessage(error));
@@ -217,7 +308,7 @@ export default function CreatePostModal({
             className={styles.closeButton}
             aria-label="Close create post modal"
             onClick={() => handleCancel()}
-            disabled={isSubmitting}
+            disabled={isSubmitting || isUploadingImage}
           >
             <CloseIcon className={styles.closeIcon} />
           </button>
@@ -353,6 +444,19 @@ export default function CreatePostModal({
             )}
           </div>
 
+          <PostImageField
+            inputId={imageInputId}
+            isDisabled={isSubmitting || isUploadingImage}
+            isUploading={isUploadingImage}
+            previewUrl={imagePreviewUrl}
+            statusText={
+              selectedImageFile ? `Selected image: ${selectedImageFile.name}` : null
+            }
+            errorMessage={formErrors.image}
+            onFileChange={handleImageFileChange}
+            onClearSelection={selectedImageFile ? handleClearSelectedImage : undefined}
+          />
+
           {submitErrorMessage && (
             <p className={styles.submitError} role="alert">
               {submitErrorMessage}
@@ -365,7 +469,7 @@ export default function CreatePostModal({
               variant="secondary"
               className={styles.cancelButton}
               onClick={() => handleCancel()}
-              disabled={isSubmitting}
+              disabled={isSubmitting || isUploadingImage}
             >
               Cancel
             </Button>
@@ -376,7 +480,11 @@ export default function CreatePostModal({
               className={styles.submitButton}
               disabled={!canSubmit}
             >
-              {isSubmitting ? "Creating..." : "Create Post"}
+              {isUploadingImage
+                ? "Uploading image..."
+                : isSubmitting
+                  ? "Creating..."
+                  : "Create Post"}
             </Button>
           </div>
         </form>

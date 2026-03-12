@@ -6,12 +6,14 @@ export interface EditPostFormValues {
   title: string;
   body: string;
   categoryId: number;
+  imageUrl: string | null;
 }
 
 export interface EditPostFormErrors {
   title?: string;
   body?: string;
   category?: string;
+  image?: string;
 }
 
 export interface EditPostModalProps {
