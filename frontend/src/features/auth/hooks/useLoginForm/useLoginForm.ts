@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "../../../../context/AuthContext/AuthContext";
 import { useToast } from "../../../../context/ToastContext/ToastContext";
-import { authApi as authAPI } from "../../api/auth.api";
+import { authApi } from "../../api/auth.api";
 import { isValidEmail, mapLoginErrorMessage } from "./useLoginForm.utils";
 
 
@@ -56,7 +56,7 @@ export function useLoginForm() {
     setIsSubmitting(true);
 
     try {
-      const res = await authAPI.login({
+      const res = await authApi.login({
         email: trimmedEmail,
         password: trimmedPassword,
       });
