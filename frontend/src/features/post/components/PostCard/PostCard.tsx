@@ -77,7 +77,7 @@ export default function PostCard({
                   onClick={(event) => {
                     event.preventDefault();
                     event.stopPropagation();
-                    onEdit?.(post.id);
+                    onEdit?.(post);
                   }}
                 >
                   <PenIcon className={styles.editIcon} />
@@ -91,7 +91,7 @@ export default function PostCard({
                   onClick={(event) => {
                     event.preventDefault();
                     event.stopPropagation();
-                    onDelete?.(post.id);
+                    onDelete?.(post);
                   }}
                 >
                   <Trash2Icon className={styles.deleteIcon} />

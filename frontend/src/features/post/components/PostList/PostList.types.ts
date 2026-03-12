@@ -4,6 +4,6 @@ export interface PostListProps {
   posts: PostCardData[];
   className?: string;
   showPostActions?: boolean;
-  onEditPost?: (postId: string) => void;
-  onDeletePost?: (postId: string) => void;
+  onEditPost?: (post: PostCardData) => void;
+  onDeletePost?: (post: PostCardData) => void;
 }

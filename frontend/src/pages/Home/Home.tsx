@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import type { FilterCategory } from "../../components/shared/FilterBar";
 import FilterBar from "../../components/shared/FilterBar";
@@ -16,8 +16,9 @@ import DeletePostModal from "../../features/post/components/DeletePostModal";
 import EditPostModal from "../../features/post/components/EditPostModal";
 import type { EditPostFormValues } from "../../features/post/components/EditPostModal";
 import PostFeed from "../../features/post/components/PostFeed/PostFeed";
+import PostFeedSkeleton from "../../features/post/components/PostFeedSkeleton/PostFeedSkeleton";
 import type { PostCardData } from "../../features/post/components/PostCard/PostCard.types";
-import { usePaginatedPosts } from "../../hooks";
+import { invalidateSuspenseResource, readSuspenseResource } from "../../lib/react/suspenseResource";
 import styles from "./Home.module.css";
 import { mapPostToCardData } from "./Home.utils";
 import {
@@ -37,6 +38,22 @@ import type {
 const PAGE_SIZE = 5;
 const CLIENT_FILTER_FETCH_LIMIT = 1000;
 type PostFeedScope = "ALL_POSTS" | "MY_POSTS";
+type PostsFetcher = (
+  page: number,
+  size: number,
+) => Promise<{ data: PagedResponse<Post> }>;
+
+type HomePostsLoadResult =
+  | {
+      status: "success";
+      posts: PostCardData[];
+      totalPages: number;
+      totalElements: number;
+    }
+  | {
+      status: "error";
+      errorMessage: string;
+    };
 
 // Builds a client-side paginated view for filtered posts when no dedicated endpoint exists.
 function buildClientPaginatedPosts(
@@ -93,6 +110,100 @@ function doesPostMatchFilters(
     isSameUserEmail(post.authorEmail, normalizedAuthorFilter);
 
   return matchesQuery && matchesCategory && matchesAuthor;
+}
+
+interface HomePostsContentProps {
+  cacheKey: string;
+  currentPage: number;
+  pageSize: number;
+  fetchPosts: PostsFetcher;
+  isAdminUser: boolean;
+  currentUserEmail?: string | null;
+  onEditPost: (post: PostCardData) => void;
+  onDeletePost: (post: PostCardData) => void;
+  onPageChange: (page: number) => void;
+}
+
+function HomePostsContent({
+  cacheKey,
+  currentPage,
+  pageSize,
+  fetchPosts,
+  isAdminUser,
+  currentUserEmail,
+  onEditPost,
+  onDeletePost,
+  onPageChange,
+}: HomePostsContentProps) {
+  const result = readSuspenseResource<HomePostsLoadResult>(cacheKey, async () => {
+    try {
+      const response = await fetchPosts(currentPage - 1, pageSize);
+
+      return {
+        status: "success",
+        posts: response.data.content.map(mapPostToCardData),
+        totalPages: Math.max(response.data.totalPages, 1),
+        totalElements: response.data.totalElements,
+      };
+    } catch {
+      return {
+        status: "error",
+        errorMessage: "Unable to load posts right now. Please try again.",
+      };
+    }
+  });
+
+  useEffect(() => {
+    return () => {
+      invalidateSuspenseResource(cacheKey);
+    };
+  }, [cacheKey]);
+
+  useEffect(() => {
+    if (result.status === "success" && currentPage > result.totalPages) {
+      onPageChange(result.totalPages);
+    }
+  }, [currentPage, onPageChange, result]);
+
+  if (result.status === "error") {
+    return (
+      <p className={styles.errorMessage} role="alert">
+        {result.errorMessage}
+      </p>
+    );
+  }
+
+  if (currentPage > result.totalPages) {
+    return null;
+  }
+
+  const visiblePosts = result.posts.map((post) => ({
+    ...post,
+    canManage: isAdminUser || isSameUserEmail(post.authorEmail, currentUserEmail),
+  }));
+  const shouldCenterEmptyFeed = visiblePosts.length === 0;
+
+  return (
+    <>
+      <div className={shouldCenterEmptyFeed ? styles.emptyFeed : undefined}>
+        <PostFeed
+          posts={visiblePosts}
+          showPostActions={isAdminUser}
+          onEditPost={onEditPost}
+          onDeletePost={onDeletePost}
+        />
+      </div>
+
+      {result.totalElements > pageSize && (
+        <Paginations
+          className={styles.pagination}
+          currentPage={currentPage}
+          totalPages={result.totalPages}
+          onPageChange={onPageChange}
+        />
+      )}
+    </>
+  );
 }
 
 
@@ -214,20 +325,16 @@ export default function HomePage() {
       user?.email,
     ],
   );
-
-  const {
-    posts: homePosts,
-    setPosts: setHomePosts,
-    isLoadingPosts,
-    postsErrorMessage,
-    totalPages,
-    totalElements,
-  } = usePaginatedPosts({
+  const postsQueryKey = JSON.stringify({
+    activeCategory,
+    authorFilter,
     currentPage,
     pageSize: PAGE_SIZE,
-    mapPost: mapPostToCardData,
-    fetchPosts,
-    reloadKey: postsReloadKey,
+    postFeedScope,
+    postsReloadKey,
+    searchQuery: normalizedSearchQuery,
+    selectedCategoryLabel,
+    userEmail: user?.email ?? null,
   });
 
   const categoryOptions = useMemo(
@@ -243,12 +350,6 @@ export default function HomePage() {
   useEffect(() => {
     setCurrentPage(1);
   }, [activeCategory, authorFilter, normalizedSearchQuery]);
-
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
-    }
-  }, [currentPage, totalPages]);
 
   // Keeps query state in sync with the search input field.
   function handleSearchValueChange(nextValue: string) {
@@ -336,20 +437,12 @@ export default function HomePage() {
       });
     }
 
-    const createdPostCard = mapPostToCardData(createdPost);
-    setHomePosts((previousPosts) => [createdPostCard, ...previousPosts]);
     navigate(`/posts/${createdPost.id}`);
   }
 
   // Opens the edit modal for the selected post card.
-  function handleEditPost(postId: string) {
-    const targetPost = homePosts.find((post) => post.id === postId);
-
-    if (!targetPost) {
-      return;
-    }
-
-    setPostBeingEdited(targetPost);
+  function handleEditPost(post: PostCardData) {
+    setPostBeingEdited(post);
     setIsEditPostOpen(true);
   }
 
@@ -405,18 +498,14 @@ export default function HomePage() {
       });
     }
 
+    invalidateSuspenseResource(postsQueryKey);
+    invalidateSuspenseResource(`post-detail:${values.postId}`);
     setPostsReloadKey((previousKey) => previousKey + 1);
   }
 
   // Opens the delete confirmation popup for the selected post.
-  function handleDeletePost(postId: string) {
-    const targetPost = homePosts.find((post) => post.id === postId);
-
-    if (!targetPost) {
-      return;
-    }
-
-    setPostBeingDeleted(targetPost);
+  function handleDeletePost(post: PostCardData) {
+    setPostBeingDeleted(post);
   }
 
   // Closes the delete modal when there is no in-flight delete request.
@@ -452,12 +541,9 @@ export default function HomePage() {
 
       await postAPI.delete(parsedPostId);
       setPostBeingDeleted(null);
-
-      if (homePosts.length === 1 && currentPage > 1) {
-        setCurrentPage((previousPage) => previousPage - 1);
-      } else {
-        setPostsReloadKey((previousKey) => previousKey + 1);
-      }
+      invalidateSuspenseResource(postsQueryKey);
+      invalidateSuspenseResource(`post-detail:${parsedPostId}`);
+      setPostsReloadKey((previousKey) => previousKey + 1);
       showToast({
         variant: "success",
         message: "Post deleted successfully",
@@ -482,11 +568,6 @@ export default function HomePage() {
   const isAdminUser =
     normalizedRole === "ADMIN" || normalizedRole === "ROLE_ADMIN";
   const isYourPostsActive = postFeedScope === "MY_POSTS";
-  const visiblePosts = homePosts.map((post) => ({
-    ...post,
-    canManage: isAdminUser || isSameUserEmail(post.authorEmail, user?.email),
-  }));
-  const shouldCenterEmptyFeed = visiblePosts.length === 0;
 
   return (
     <main className={styles.homePage}>
@@ -550,37 +631,20 @@ export default function HomePage() {
         )}
       </section>
 
-      {isLoadingPosts && (
-        <p className={styles.statusMessage} role="status" aria-live="polite">
-          Loading posts...
-        </p>
-      )}
-
-      {!isLoadingPosts && postsErrorMessage && (
-        <p className={styles.errorMessage} role="alert">
-          {postsErrorMessage}
-        </p>
-      )}
-
-      {!isLoadingPosts && !postsErrorMessage && (
-        <div className={shouldCenterEmptyFeed ? styles.emptyFeed : undefined}>
-          <PostFeed
-            posts={visiblePosts}
-            showPostActions={isAdminUser}
-            onEditPost={handleEditPost}
-            onDeletePost={handleDeletePost}
-          />
-        </div>
-      )}
-
-      {!isLoadingPosts && !postsErrorMessage && totalElements > PAGE_SIZE && (
-        <Paginations
-          className={styles.pagination}
+      <Suspense fallback={<PostFeedSkeleton />}>
+        <HomePostsContent
+          key={postsQueryKey}
+          cacheKey={postsQueryKey}
           currentPage={currentPage}
-          totalPages={totalPages}
+          pageSize={PAGE_SIZE}
+          fetchPosts={fetchPosts}
+          isAdminUser={isAdminUser}
+          currentUserEmail={user?.email}
+          onEditPost={handleEditPost}
+          onDeletePost={handleDeletePost}
           onPageChange={setCurrentPage}
         />
-      )}
+      </Suspense>
 
       {isAuthenticated && (
         <CreatePostModal

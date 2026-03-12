@@ -19,6 +19,6 @@ export interface PostCardProps {
   post: PostCardData;
   className?: string;
   canManage?: boolean;
-  onEdit?: (postId: string) => void;
-  onDelete?: (postId: string) => void;
+  onEdit?: (post: PostCardData) => void;
+  onDelete?: (post: PostCardData) => void;
 }
