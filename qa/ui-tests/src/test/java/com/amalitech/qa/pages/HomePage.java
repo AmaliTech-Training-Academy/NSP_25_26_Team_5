@@ -13,12 +13,10 @@ public class HomePage {
     private final WebDriver driver;
     private final WebDriverWait wait;
 
-    // From Home.tsx — aria-label="Create post" on the button
     private static final By CREATE_BTN   = By.cssSelector("button[aria-label='Create post']");
     private static final By YOUR_POSTS   = By.cssSelector("button[aria-pressed]");
     private static final By POST_LIST    = By.cssSelector("ul[aria-label='Posts']");
     private static final By POST_CARDS   = By.cssSelector("ul[aria-label='Posts'] article");
-    // Search input lives inside section[aria-label='Post controls']
     private static final By SEARCH_INPUT = By.cssSelector("section[aria-label='Post controls'] input");
 
     public HomePage(WebDriver driver, WebDriverWait wait) {
@@ -34,7 +32,6 @@ public class HomePage {
         input.submit();
     }
 
-    // Filter pills: All, News, Event, Discussion, Alert
     public void clickFilterPill(String label) {
         By pill = By.xpath("//button[normalize-space()='" + label + "']");
         wait.until(ExpectedConditions.elementToBeClickable(pill)).click();
@@ -45,14 +42,14 @@ public class HomePage {
         return new CreatePostModal(driver, wait);
     }
 
-    // From PostCard.tsx — aria-label="Edit {post.title}"
+    // aria-label="Edit {post.title}" — from PostCard.tsx
     public CreatePostModal clickEditOnPost(String title) {
         By btn = By.cssSelector("button[aria-label='Edit " + title + "']");
         wait.until(ExpectedConditions.elementToBeClickable(btn)).click();
         return new CreatePostModal(driver, wait);
     }
 
-    // From PostCard.tsx — aria-label="Delete {post.title}"
+    // aria-label="Delete {post.title}" — from PostCard.tsx
     public DeleteModal clickDeleteOnPost(String title) {
         By btn = By.cssSelector("button[aria-label='Delete " + title + "']");
         wait.until(ExpectedConditions.elementToBeClickable(btn)).click();
@@ -78,12 +75,15 @@ public class HomePage {
 
     public boolean hasCreateButton()   { return !driver.findElements(CREATE_BTN).isEmpty(); }
     public boolean hasPosts()          { return !driver.findElements(POST_CARDS).isEmpty(); }
+    public int postCount()             { return driver.findElements(POST_CARDS).size(); }
+
     public boolean isYourPostsActive() {
         List<WebElement> btn = driver.findElements(YOUR_POSTS);
         return !btn.isEmpty() && "true".equals(btn.get(0).getAttribute("aria-pressed"));
     }
-    public int postCount()             { return driver.findElements(POST_CARDS).size(); }
+
     public boolean isPostVisible(String title) {
-        return !driver.findElements(By.xpath("//h2[normalize-space()='" + title + "']")).isEmpty();
+        return !driver.findElements(
+                By.xpath("//h2[normalize-space()='" + title + "']")).isEmpty();
     }
 }

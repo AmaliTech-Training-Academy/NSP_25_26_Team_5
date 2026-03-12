@@ -10,12 +10,12 @@ public class RegisterPage {
     private final WebDriver driver;
     private final WebDriverWait wait;
 
-    private static final By NAME     = By.cssSelector("input[name='name'], input[placeholder*='name' i]");
-    private static final By EMAIL    = By.cssSelector("input[type='email']");
-    private static final By PASSWORD = By.cssSelector("input[name='password'], input[id='password']");
-    private static final By CONFIRM  = By.cssSelector("input[name='confirmPassword'], input[placeholder*='confirm' i]");
-    private static final By SUBMIT   = By.cssSelector("button[type='submit']");
-    private static final By ERROR    = By.cssSelector("[role='alert']");
+    private static final By NAME       = By.cssSelector("input[type='text']");
+    private static final By EMAIL      = By.cssSelector("input[type='email']");
+    private static final By PASSWORD   = By.xpath("(//input[@type='password'])[1]");
+    private static final By CONFIRM    = By.xpath("(//input[@type='password'])[2]");
+    private static final By SUBMIT     = By.cssSelector("button[type='submit']");
+    private static final By ERROR      = By.cssSelector("[role='alert']");
     private static final By LOGIN_LINK = By.cssSelector("a[href*='login']");
 
     public RegisterPage(WebDriver driver, WebDriverWait wait) {
@@ -29,6 +29,13 @@ public class RegisterPage {
         driver.findElement(PASSWORD).sendKeys(password);
         driver.findElement(CONFIRM).sendKeys(confirm);
         driver.findElement(SUBMIT).click();
+    }
+
+    /** Use this for valid credentials — blocks until URL leaves /register. */
+    public void registerAndWaitForRedirect(String name, String email,
+                                           String password, String confirm) {
+        register(name, email, password, confirm);
+        wait.until(ExpectedConditions.not(ExpectedConditions.urlContains("/register")));
     }
 
     public void clickLoginLink() {

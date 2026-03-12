@@ -12,28 +12,40 @@ public class PostDetailPage {
     private final WebDriver driver;
     private final WebDriverWait wait;
 
-    // Post detail — h1 inside article
+    // Post detail
     private static final By POST_TITLE = By.cssSelector("article h1");
     private static final By CATEGORY   = By.cssSelector("article button[disabled]");
 
-    // Comments — section[aria-label='Comments'] from CommentsSection.tsx
+    // Composer — uniquely identified by placeholder from CommentsSection.tsx
     private static final By COMMENT_INPUT   = By.cssSelector("textarea[placeholder='Share your thoughts...']");
-    private static final By ADD_COMMENT_BTN = By.cssSelector("section[aria-label='Comments'] button[type='submit']");
-    private static final By COMMENT_BODIES  = By.cssSelector("[class*='commentBody']");
-    private static final By COMMENT_AUTHORS = By.cssSelector("[class*='commentAuthor']");
+    // Anchored to button text — never ambiguous with Save Changes
+    private static final By ADD_COMMENT_BTN = By.xpath("//button[normalize-space()='Add comment']");
 
-    // Edit comment inline — textarea inside the edit form
-    private static final By EDIT_TEXTAREA   = By.cssSelector("section[aria-label='Comments'] form textarea");
-    private static final By SAVE_BTN        = By.xpath("//button[normalize-space()='Save Changes']");
+    // Comment list — <p> directly inside <li>, not nested in a form or identity block
+    private static final By COMMENT_AUTHORS = By.cssSelector(
+            "section[aria-label='Comments'] [class*='commentMeta'] p:first-child");
+    private static final By COMMENT_BODIES  = By.cssSelector(
+            "section[aria-label='Comments'] li > p");
+
+    // Edit textarea — id always starts with "edit-comment-" from CommentsSection.tsx
+    private static final By EDIT_TEXTAREA = By.cssSelector("textarea[id^='edit-comment-']");
+    private static final By SAVE_BTN      = By.xpath("//button[normalize-space()='Save Changes']");
 
     public PostDetailPage(WebDriver driver, WebDriverWait wait) {
         this.driver = driver;
         this.wait = wait;
-        wait.until(ExpectedConditions.visibilityOfElementLocated(POST_TITLE));
+        // No wait in constructor — waits lazily when methods are called
     }
 
-    public String getPostTitle()    { return driver.findElement(POST_TITLE).getText().trim(); }
-    public String getCategoryBadge(){ return driver.findElement(CATEGORY).getText().trim(); }
+    public String getPostTitle() {
+        return wait.until(ExpectedConditions.visibilityOfElementLocated(POST_TITLE))
+                .getText().trim();
+    }
+
+    public String getCategoryBadge() {
+        return wait.until(ExpectedConditions.visibilityOfElementLocated(CATEGORY))
+                .getText().trim();
+    }
 
     public void addComment(String text) {
         WebElement ta = wait.until(ExpectedConditions.visibilityOfElementLocated(COMMENT_INPUT));
@@ -49,9 +61,9 @@ public class PostDetailPage {
     }
 
     public void saveEditedComment(String newText) {
-        WebElement f = wait.until(ExpectedConditions.visibilityOfElementLocated(EDIT_TEXTAREA));
-        f.clear();
-        f.sendKeys(newText);
+        WebElement ta = wait.until(ExpectedConditions.visibilityOfElementLocated(EDIT_TEXTAREA));
+        ta.clear();
+        ta.sendKeys(newText);
         wait.until(ExpectedConditions.elementToBeClickable(SAVE_BTN)).click();
     }
 
@@ -62,13 +74,14 @@ public class PostDetailPage {
         return new DeleteModal(driver, wait);
     }
 
-    // Get the first comment author name to use in edit/delete aria-labels
     public String getFirstCommentAuthor() {
-        return wait.until(ExpectedConditions.visibilityOfElementLocated(COMMENT_AUTHORS)).getText().trim();
+        return wait.until(ExpectedConditions.visibilityOfElementLocated(COMMENT_AUTHORS))
+                .getText().trim();
     }
 
     public boolean isCommentVisible(String text) {
-        return driver.findElements(COMMENT_BODIES).stream().anyMatch(e -> e.getText().contains(text));
+        return driver.findElements(COMMENT_BODIES).stream()
+                .anyMatch(e -> e.getText().contains(text));
     }
 
     public boolean hasCommentInput() { return !driver.findElements(COMMENT_INPUT).isEmpty(); }

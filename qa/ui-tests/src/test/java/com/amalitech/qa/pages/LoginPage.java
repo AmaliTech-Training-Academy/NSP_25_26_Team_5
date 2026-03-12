@@ -21,10 +21,17 @@ public class LoginPage {
         this.wait = wait;
     }
 
+    /** Fills and submits — does NOT wait for redirect. Use loginAndWaitForRedirect() for valid creds. */
     public void login(String email, String password) {
         wait.until(ExpectedConditions.visibilityOfElementLocated(EMAIL)).sendKeys(email);
         driver.findElement(PASSWORD).sendKeys(password);
         driver.findElement(SUBMIT).click();
+    }
+
+    /** Submits and blocks until URL leaves /login — use only when creds are expected to be valid. */
+    public void loginAndWaitForRedirect(String email, String password) {
+        login(email, password);
+        wait.until(ExpectedConditions.not(ExpectedConditions.urlContains("/login")));
     }
 
     public void clickRegisterLink() {
