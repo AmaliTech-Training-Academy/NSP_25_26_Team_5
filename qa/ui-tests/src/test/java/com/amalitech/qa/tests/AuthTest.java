@@ -8,11 +8,14 @@ import io.qameta.allure.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.openqa.selenium.support.ui.ExpectedConditions;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @Epic("Authentication")
 class AuthTest extends BaseTest {
+
+    // ── Login ──────────────────────────────────────────────────────────────
 
     @Test
     @Feature("Login")
@@ -33,8 +36,10 @@ class AuthTest extends BaseTest {
     @DisplayName("Valid credentials redirect away from /login")
     void login_validCredentials_redirects() {
         goTo(TestConfig.LOGIN);
-        new LoginPage(driver, wait).login(TestConfig.EMAIL, TestConfig.PASSWORD);
+        new LoginPage(driver, wait).login(TestConfig.ADMIN_EMAIL, TestConfig.ADMIN_PASSWORD);
 
+        // Wait for the SPA redirect — without this the assertion races against React Router
+        wait.until(ExpectedConditions.not(ExpectedConditions.urlContains("/login")));
         assertFalse(driver.getCurrentUrl().contains("/login"));
     }
 
@@ -64,6 +69,8 @@ class AuthTest extends BaseTest {
         assertTrue(driver.getCurrentUrl().contains("/register"));
     }
 
+    // ── Register ───────────────────────────────────────────────────────────
+
     @Test
     @Feature("Register")
     @Severity(SeverityLevel.NORMAL)
@@ -84,7 +91,8 @@ class AuthTest extends BaseTest {
     @Feature("Register")
     @Severity(SeverityLevel.CRITICAL)
     @DisplayName("Invalid registration inputs stay on register or show an error")
-    void register_invalidInputs_fail(String name, String email, String password, String confirm, String scenario) {
+    void register_invalidInputs_fail(String name, String email,
+                                     String password, String confirm, String scenario) {
         goTo(TestConfig.REGISTER);
         RegisterPage page = new RegisterPage(driver, wait);
         page.register(name, email, password, confirm);
@@ -99,10 +107,25 @@ class AuthTest extends BaseTest {
     @Feature("Register")
     @Severity(SeverityLevel.CRITICAL)
     @DisplayName("Valid registration redirects away from /register")
-    void register_validData_redirects(String name, String email, String password, String confirm) {
+    void register_validData_redirects(String name, String email,
+                                      String password, String confirm) {
         goTo(TestConfig.REGISTER);
         new RegisterPage(driver, wait).register(name, email, password, confirm);
 
-        assertFalse(driver.getCurrentUrl().contains("/register"));
+        // App redirects to /login on success — assert we LEFT /register (not that we avoided /login)
+        wait.until(ExpectedConditions.not(ExpectedConditions.urlContains("/register")));
+        assertFalse(driver.getCurrentUrl().contains("/register"),
+                "should leave /register on success. URL: " + driver.getCurrentUrl());
+    }
+
+    @Test
+    @Feature("Register")
+    @Severity(SeverityLevel.MINOR)
+    @DisplayName("Login link on register page navigates back to /login")
+    void registerPage_loginLink_navigates() {
+        goTo(TestConfig.REGISTER);
+        new RegisterPage(driver, wait).clickLoginLink();
+
+        assertTrue(driver.getCurrentUrl().contains("/login"));
     }
 }

@@ -23,6 +23,11 @@ devops/infra/terraform/backend/
 # Local Codex agent notes
 frontend/agents.md
 frontend/agent-migration.md
+
 frontend/agent-alignment.md
 frontend/alignment-workflow.md
 
+
+# Data-engineering runtime artefacts (git-ignored, never committed)
+data-engineering/logs/
+data-engineering/.env

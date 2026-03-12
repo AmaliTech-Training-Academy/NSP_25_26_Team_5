@@ -14,7 +14,7 @@ public final class TestData {
     public static Stream<Arguments> invalidLogins() {
         return Stream.of(
                 Arguments.of("wrong@email.com", "WrongPass!1",   "wrong email"),
-                Arguments.of(TestConfig.EMAIL,  "WrongPass!999", "wrong password"),
+                Arguments.of(TestConfig.ADMIN_EMAIL,  "WrongPass!999", "wrong password"),
                 Arguments.of("notanemail",      "somepassword",  "bad email format"),
                 Arguments.of("",               "",              "empty fields")
         );
