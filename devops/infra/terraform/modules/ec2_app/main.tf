@@ -82,7 +82,7 @@ resource "aws_instance" "app" {
   vpc_security_group_ids      = [var.app_sg_id]
   iam_instance_profile        = aws_iam_instance_profile.app.name
   user_data                   = base64encode(local.user_data)
-  user_data_replace_on_change = false 
+  user_data_replace_on_change = false
 
   tags = {
     Name = "${var.project_name}-app"
