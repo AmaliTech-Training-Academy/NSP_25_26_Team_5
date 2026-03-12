@@ -1,7 +1,6 @@
 package com.amalitech.communityboard.dto;
 
 import lombok.*;
-
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -21,4 +20,7 @@ public class PostResponse {
     private LocalDateTime updatedAt;
     private int commentCount;
     private List<CommentResponse> comments;
+
+    // New field
+    private String imageUrl;
 }
