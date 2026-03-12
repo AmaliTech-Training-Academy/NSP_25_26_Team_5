@@ -319,9 +319,7 @@ export default function CommentsSection({
           comments.length === 0 && (
             <div className={styles.emptyState}>
               <EmptyPostsIcon className={styles.emptyStateIcon} />
-              <p className={styles.emptyStateLabel}>
-                No comments yet. Be the first to share your thoughts
-              </p>
+              <p className={styles.emptyStateLabel}>No Comments yet</p>
             </div>
           )}
 

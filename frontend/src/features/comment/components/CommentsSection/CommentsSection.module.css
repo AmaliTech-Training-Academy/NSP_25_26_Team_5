@@ -115,7 +115,7 @@
 .commentsBlock {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 40px;
 }
 
 .commentsHeading {
@@ -129,12 +129,13 @@
 }
 
 .emptyState {
-  min-height: 260px;
+  width: 100%;
+  min-height: 232px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .emptyStateIcon {
@@ -143,7 +144,7 @@
 }
 
 .emptyStateLabel {
-  max-width: 340px;
+  width: 100%;
   font-size: 16px;
   text-align: center;
 }
@@ -309,7 +310,4 @@
     font-size: 14px;
   }
 
-  .emptyState {
-    min-height: 320px;
-  }
 }
