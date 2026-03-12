@@ -18,7 +18,7 @@
 .item {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 16px;
   min-width: 0;
 }
 
@@ -28,6 +28,23 @@
   height: 20px;
   color: #08283b;
   flex-shrink: 0;
+}
+
+.itemIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+
+.itemIcon > svg {
+  width: 17px;
+  height: 18px;
+  display: block;
+}
+
+.separator {
+  display: block;
 }
 
 .itemButton,
