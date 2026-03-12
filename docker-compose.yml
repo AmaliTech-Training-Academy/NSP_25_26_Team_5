@@ -30,5 +30,43 @@ services:
     depends_on:
       - backend
 
+  # ── Data Engineering Services ─────────────────────────────────────────────
+  # Credentials come exclusively from env_file — zero hardcoded secrets.
+
+  data-seed:
+    build: ./data-engineering
+    command: ["python", "seed_data.py"]
+    env_file: ./data-engineering/.env
+    depends_on:
+      backend:
+        condition: service_started
+    restart: "no"
+
+  data-etl:
+    build: ./data-engineering
+    command: ["python", "etl_pipeline.py"]
+    env_file: ./data-engineering/.env
+    depends_on:
+      data-seed:
+        condition: service_completed_successfully
+    restart: "no"
+
+  data-dashboard:
+    build: ./data-engineering
+    command:
+      - streamlit
+      - run
+      - dashboard.py
+      - "--server.port=8501"
+      - "--server.address=0.0.0.0"
+      - "--server.headless=true"
+    ports:
+      - "8501:8501"
+    env_file: ./data-engineering/.env
+    depends_on:
+      data-etl:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
 volumes:
   pgdata:
