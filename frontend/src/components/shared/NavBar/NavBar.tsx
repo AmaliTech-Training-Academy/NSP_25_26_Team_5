@@ -121,6 +121,8 @@ export default function NavBar({
               <span className={styles.analyticsText}>Analytics</span>
             </button>
 
+            <div className={styles.mobileSidebarDivider} aria-hidden="true" />
+
             <button
               type="button"
               className={joinNavBarClassName(
