@@ -76,10 +76,18 @@ public class ImageUploadController {
     @GetMapping("/{filename}")
     public ResponseEntity<Resource> getImage(@PathVariable String filename) {
         try {
-            Path filePath = Paths.get(UPLOAD_DIR).resolve(filename).normalize();
+            // Sanitize filename to prevent path traversal
+            String cleanFilename = StringUtils.cleanPath(filename);
+
+            // Reject suspicious filenames
+            if (cleanFilename.contains("..")) {
+                return ResponseEntity.badRequest().build();
+            }
+
+            Path filePath = Paths.get(UPLOAD_DIR).resolve(cleanFilename).normalize();
             Resource resource = new UrlResource(filePath.toUri());
 
-            if (resource.exists()) {
+            if (resource.exists() && resource.isReadable()) {
                 return ResponseEntity.ok()
                         .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
                         .body(resource);
