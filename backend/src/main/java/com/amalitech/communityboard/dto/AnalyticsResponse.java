@@ -14,6 +14,11 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class AnalyticsResponse {
+
+    //  New top-level fields
+    private Long totalPosts;
+    private Long totalComments;
+
     private List<AnalyticsCategoryResponse> postsPerCategory;
     private List<AnalyticsActiveDayResponse> mostActiveDays;
     private List<AnalyticsContributorResponse> topContributors;
