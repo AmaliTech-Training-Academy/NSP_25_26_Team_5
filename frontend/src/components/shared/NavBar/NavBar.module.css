@@ -6,12 +6,6 @@
   font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.mobileMenuToggle {
-  position: fixed;
-  opacity: 0;
-  pointer-events: none;
-}
-
 .mobileContent {
   width: 100%;
   display: flex;
@@ -59,7 +53,7 @@
   padding: 24px 24px 0;
 }
 
-.mobileMenuToggle:checked ~ .mobileSidebar {
+.mobileSidebarOpen {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
@@ -245,7 +239,6 @@
 }
 
 @media (min-width: 768px) {
-  .mobileMenuToggle,
   .mobileContent,
   .mobileSidebar {
     display: none;

@@ -1,4 +1,4 @@
-import { useId } from "react";
+import { useEffect, useId, useState } from "react";
 import styles from "./NavBar.module.css";
 import type { NavBarProps } from "./NavBar.types";
 import { getUserInitials, joinNavBarClassName } from "./NavBar.utils";
@@ -24,32 +24,51 @@ export default function NavBar({
     className,
   );
   const initials = user ? user.initials ?? getUserInitials(user.name) : "";
-  const mobileMenuToggleId = useId();
+  const mobileMenuId = useId();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (!user) {
+      setIsMobileMenuOpen(false);
+    }
+  }, [user]);
+
+  function handleOpenMobileMenu() {
+    onMenuClick?.();
+    setIsMobileMenuOpen(true);
+  }
+
+  function handleCloseMobileMenu() {
+    setIsMobileMenuOpen(false);
+  }
+
+  function handleAnalyticsAction() {
+    setIsMobileMenuOpen(false);
+    onAnalyticsClick?.();
+  }
+
+  function handleLogoutAction() {
+    setIsMobileMenuOpen(false);
+    onLogoutClick?.();
+  }
 
   return (
     <>
-      {user && (
-        <input
-          id={mobileMenuToggleId}
-          type="checkbox"
-          className={styles.mobileMenuToggle}
-          aria-hidden="true"
-        />
-      )}
-
       <header className={navBarClassName}>
         <div className={styles.mobileContent}>
           <PingLogoIcon className={styles.mobileLogo} />
 
           {user && (
-            <label
-              htmlFor={mobileMenuToggleId}
+            <button
+              type="button"
               className={styles.iconOnlyButton}
               aria-label="Open menu"
-              onClick={onMenuClick}
+              aria-expanded={isMobileMenuOpen}
+              aria-controls={mobileMenuId}
+              onClick={handleOpenMobileMenu}
             >
               <MenuIcon className={styles.mobileMenuIcon} />
-            </label>
+            </button>
           )}
         </div>
 
@@ -65,7 +84,7 @@ export default function NavBar({
                     styles.desktopActionButton,
                     isAnalyticsVariant ? styles.analyticsActionButton : undefined,
                   )}
-                  onClick={onAnalyticsClick}
+                  onClick={handleAnalyticsAction}
                   disabled={isAnalyticsVariant}
                   aria-current={isAnalyticsVariant ? "page" : undefined}
                 >
@@ -104,7 +123,7 @@ export default function NavBar({
                   styles.desktopActionButton,
                   styles.logoutActionButton,
                 )}
-                onClick={onLogoutClick}
+                onClick={handleLogoutAction}
               >
                 <LogOutIcon className={styles.actionIcon} />
                 <span className={styles.logoutText}>Log out</span>
@@ -115,7 +134,14 @@ export default function NavBar({
       </header>
 
       {user && (
-        <aside className={styles.mobileSidebar} aria-label="Mobile menu">
+        <aside
+          id={mobileMenuId}
+          className={joinNavBarClassName(
+            styles.mobileSidebar,
+            isMobileMenuOpen ? styles.mobileSidebarOpen : undefined,
+          )}
+          aria-label="Mobile menu"
+        >
           <div className={styles.mobileSidebarTop}>
             <div className={styles.mobileSidebarUserInfo}>
               <div className={styles.mobileSidebarAvatar}>{initials}</div>
@@ -125,13 +151,14 @@ export default function NavBar({
               </div>
             </div>
 
-            <label
-              htmlFor={mobileMenuToggleId}
+            <button
+              type="button"
               className={styles.sidebarCloseButton}
               aria-label="Close menu"
+              onClick={handleCloseMobileMenu}
             >
               <CloseIcon className={styles.sidebarCloseIcon} />
-            </label>
+            </button>
           </div>
 
           <div className={styles.mobileSidebarActions}>
@@ -139,7 +166,7 @@ export default function NavBar({
               <button
                 type="button"
                 className={styles.mobileActionButton}
-                onClick={onAnalyticsClick}
+                onClick={handleAnalyticsAction}
                 disabled={isAnalyticsVariant}
                 aria-current={isAnalyticsVariant ? "page" : undefined}
               >
@@ -163,7 +190,7 @@ export default function NavBar({
                 styles.mobileActionButton,
                 styles.mobileLogoutActionButton,
               )}
-              onClick={onLogoutClick}
+              onClick={handleLogoutAction}
             >
               <LogOutIcon className={styles.actionIcon} />
               <span className={styles.logoutText}>Log out</span>
