@@ -107,10 +107,9 @@
   display: inline-flex;
   align-items: center;
   gap: 16px;
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-  transition: opacity 0.15s ease;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
 }
 
 .postActionButton {
@@ -164,21 +163,6 @@
   height: 16px;
   color: #5a6f7c;
   flex-shrink: 0;
-}
-
-.postCard:hover .postActions,
-.postCard:focus-within .postActions {
-  opacity: 1;
-  visibility: visible;
-  pointer-events: auto;
-}
-
-@media (hover: none) {
-  .postActions {
-    opacity: 1;
-    visibility: visible;
-    pointer-events: auto;
-  }
 }
 
 @media (min-width: 521px) {
