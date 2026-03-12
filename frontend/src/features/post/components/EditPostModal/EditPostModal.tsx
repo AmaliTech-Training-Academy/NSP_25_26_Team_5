@@ -46,7 +46,6 @@ export default function EditPostModal({
   const [body, setBody] = useState("");
   const [existingImageUrl, setExistingImageUrl] = useState<string | null>(null);
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
-  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false);
   const [formErrors, setFormErrors] = useState<EditPostFormErrors>({});
@@ -61,7 +60,6 @@ export default function EditPostModal({
     selectedCategoryId === null
       ? post?.badgeLabel ?? ""
       : findEditPostCategoryLabel(categoryOptions, selectedCategoryId);
-  const resolvedPreviewUrl = imagePreviewUrl ?? existingImageUrl;
   const canSubmit =
     !isSubmitting &&
     !isLoadingCategories &&
@@ -84,27 +82,12 @@ export default function EditPostModal({
     setBody(post.content);
     setExistingImageUrl(post.imageUrl ?? null);
     setSelectedImageFile(null);
-    setImagePreviewUrl(null);
     setSelectedCategoryId(matchedCategory?.categoryId ?? null);
     setIsCategoryMenuOpen(false);
     setFormErrors({});
     setSubmitErrorMessage(null);
     setIsSubmitting(false);
   }, [categoryOptions, isOpen, post]);
-
-  useEffect(() => {
-    if (!selectedImageFile) {
-      setImagePreviewUrl(null);
-      return;
-    }
-
-    const objectUrl = URL.createObjectURL(selectedImageFile);
-    setImagePreviewUrl(objectUrl);
-
-    return () => {
-      URL.revokeObjectURL(objectUrl);
-    };
-  }, [selectedImageFile]);
 
   // Locks body scrolling while the modal is active.
   useEffect(() => {
@@ -422,7 +405,8 @@ export default function EditPostModal({
           <PostImageField
             inputId={imageInputId}
             isDisabled={isSubmitting}
-            previewUrl={resolvedPreviewUrl}
+            previewFile={selectedImageFile}
+            previewUrl={selectedImageFile ? null : existingImageUrl}
             statusText={
               selectedImageFile
                 ? `Selected image: ${selectedImageFile.name}`

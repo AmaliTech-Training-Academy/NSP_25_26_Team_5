@@ -40,6 +40,13 @@ export const EXPECTED_POST_CATEGORY_COUNT = POST_CATEGORY_CONFIG.length;
 const API_TIMESTAMP_WITHOUT_OFFSET =
   /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?$/;
 export const POST_IMAGE_MAX_SIZE_BYTES = 5 * 1024 * 1024;
+export const ALLOWED_POST_IMAGE_MIME_TYPES = [
+  "image/png",
+  "image/jpeg",
+  "image/jpg",
+  "image/webp",
+] as const;
+export const POST_IMAGE_ACCEPT_ATTRIBUTE = ALLOWED_POST_IMAGE_MIME_TYPES.join(",");
 
 function normalizeCategoryName(value: string | null | undefined): string {
   return value?.trim().toUpperCase() ?? "";
@@ -174,8 +181,8 @@ export function findCreatePostErrorMessage(error: unknown): string {
 }
 
 export function validatePostImageFile(file: File): string | null {
-  if (!file.type.startsWith("image/")) {
-    return "Please choose a valid image file.";
+  if (!ALLOWED_POST_IMAGE_MIME_TYPES.includes(file.type as (typeof ALLOWED_POST_IMAGE_MIME_TYPES)[number])) {
+    return "Please choose a PNG, JPG, or WebP image.";
   }
 
   if (file.size > POST_IMAGE_MAX_SIZE_BYTES) {
