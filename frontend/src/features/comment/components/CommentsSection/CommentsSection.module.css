@@ -30,7 +30,7 @@
 }
 
 .editTextarea {
-  min-height: 52px;
+  min-height: 76px;
   padding: 14px 16px;
   font-size: 16px;
   resize: none;
@@ -278,6 +278,8 @@
 }
 
 .editSaveButton {
+  width: 136px;
+  min-height: 41px;
   padding: 10px 20px;
   align-self: flex-start;
   font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
