@@ -4,7 +4,6 @@ import Trash2Icon from "../../../../assets/Icons/Trash2Icon";
 import EmptyPostsIcon from "../../../../assets/Icons/EmptyPostsIcon";
 import Button from "../../../../components/ui/Button/Button";
 import { useAuth } from "../../../../context/AuthContext/AuthContext";
-import { useToast } from "../../../../context/ToastContext/ToastContext";
 import DeletePostModal from "../../../post/components/DeletePostModal";
 import { commentAPI } from "../../api/comment.api";
 import type { Comment } from "../../types/comment.types";
@@ -27,11 +26,11 @@ export default function CommentsSection({
   postId,
 }: CommentsSectionProps) {
   const { isAuthenticated, user } = useAuth();
-  const { showToast } = useToast();
   const commentInputId = useId();
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentDraft, setCommentDraft] = useState("");
   const [commentDraftError, setCommentDraftError] = useState<string | null>(null);
+  const [commentRequestError, setCommentRequestError] = useState<string | null>(null);
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
   const [editingDraft, setEditingDraft] = useState("");
   const [editingDraftError, setEditingDraftError] = useState<string | null>(null);
@@ -54,6 +53,7 @@ export default function CommentsSection({
     async function loadComments() {
       setIsLoadingComments(true);
       setCommentsErrorMessage(null);
+      setCommentRequestError(null);
       setEditingCommentId(null);
       setEditingDraft("");
       setEditingDraftError(null);
@@ -97,6 +97,7 @@ export default function CommentsSection({
   function handleCommentDraftChange(nextValue: string) {
     setCommentDraft(nextValue);
     setCommentDraftError(null);
+    setCommentRequestError(null);
   }
 
   // Validates and submits a new comment through the frontend API contract.
@@ -111,6 +112,7 @@ export default function CommentsSection({
     }
 
     setCommentDraftError(null);
+    setCommentRequestError(null);
     setIsSubmittingComment(true);
 
     try {
@@ -122,20 +124,14 @@ export default function CommentsSection({
         sortCommentsOldestFirst([...previousComments, response.data]),
       );
       setCommentDraft("");
-      showToast({
-        variant: "success",
-        message: "Comment added successfully",
-      });
     } catch (error) {
-      const errorMessage = findCommentRequestErrorMessage(
-        error,
-        "Unable to add your comment right now. Please try again.",
-        "You are not authorized to add comments. Please sign in again.",
+      setCommentRequestError(
+        findCommentRequestErrorMessage(
+          error,
+          "Unable to add your comment right now. Please try again.",
+          "You are not authorized to add comments. Please sign in again.",
+        ),
       );
-      showToast({
-        variant: "error",
-        message: errorMessage,
-      });
     } finally {
       setIsSubmittingComment(false);
     }
@@ -146,12 +142,14 @@ export default function CommentsSection({
     setEditingCommentId(comment.id);
     setEditingDraft(comment.body);
     setEditingDraftError(null);
+    setCommentRequestError(null);
   }
 
   // Keeps the inline editor value in sync and clears stale errors.
   function handleEditingDraftChange(nextValue: string) {
     setEditingDraft(nextValue);
     setEditingDraftError(null);
+    setCommentRequestError(null);
   }
 
   // Saves the inline edit against the configured comment endpoint.
@@ -169,6 +167,7 @@ export default function CommentsSection({
     }
 
     setEditingDraftError(null);
+    setCommentRequestError(null);
     setIsSavingComment(true);
 
     try {
@@ -183,21 +182,15 @@ export default function CommentsSection({
       );
       setEditingCommentId(null);
       setEditingDraft("");
-      showToast({
-        variant: "success",
-        message: "Comment updated successfully",
-      });
     } catch (error) {
-      const errorMessage = findCommentRequestErrorMessage(
-        error,
-        "Unable to update this comment right now. Please try again.",
-        "You are not authorized to edit this comment. Please sign in again.",
-        "This comment could not be found anymore.",
+      setCommentRequestError(
+        findCommentRequestErrorMessage(
+          error,
+          "Unable to update this comment right now. Please try again.",
+          "You are not authorized to edit this comment. Please sign in again.",
+          "This comment could not be found anymore.",
+        ),
       );
-      showToast({
-        variant: "error",
-        message: errorMessage,
-      });
     } finally {
       setIsSavingComment(false);
     }
@@ -206,6 +199,7 @@ export default function CommentsSection({
   // Opens the confirmation prompt for the selected comment.
   function handleOpenDeleteCommentModal(comment: Comment) {
     setCommentBeingDeleted(comment);
+    setCommentRequestError(null);
   }
 
   // Closes the delete prompt when no request is in flight.
@@ -223,6 +217,7 @@ export default function CommentsSection({
       return;
     }
 
+    setCommentRequestError(null);
     setIsDeletingComment(true);
 
     try {
@@ -238,21 +233,15 @@ export default function CommentsSection({
       }
 
       setCommentBeingDeleted(null);
-      showToast({
-        variant: "success",
-        message: "Comment deleted successfully",
-      });
     } catch (error) {
-      const errorMessage = findCommentRequestErrorMessage(
-        error,
-        "Unable to delete this comment right now. Please try again.",
-        "You are not authorized to delete this comment. Please sign in again.",
-        "This comment could not be found anymore.",
+      setCommentRequestError(
+        findCommentRequestErrorMessage(
+          error,
+          "Unable to delete this comment right now. Please try again.",
+          "You are not authorized to delete this comment. Please sign in again.",
+          "This comment could not be found anymore.",
+        ),
       );
-      showToast({
-        variant: "error",
-        message: errorMessage,
-      });
     } finally {
       setIsDeletingComment(false);
     }
@@ -290,6 +279,11 @@ export default function CommentsSection({
                 {commentDraft.length}/{MAX_COMMENT_LENGTH}
               </p>
             </div>
+            {commentRequestError && (
+              <p className={styles.requestError} role="alert">
+                {commentRequestError}
+              </p>
+            )}
           </div>
           <Button
             type="submit"
@@ -319,13 +313,20 @@ export default function CommentsSection({
           </p>
         )}
 
-        {!isLoadingComments && !commentsErrorMessage && comments.length === 0 && (
-          <div className={styles.emptyState}>
-            <EmptyPostsIcon className={styles.emptyStateIcon} />
-            <p className={styles.emptyStateLabel}>
-              No comments yet. Be the first to share your thoughts
-            </p>
-          </div>
+        {!isLoadingComments &&
+          !commentsErrorMessage &&
+          !commentRequestError &&
+          comments.length === 0 && (
+            <div className={styles.emptyState}>
+              <EmptyPostsIcon className={styles.emptyStateIcon} />
+              <p className={styles.emptyStateLabel}>No Comments yet</p>
+            </div>
+          )}
+
+        {!isLoadingComments && !commentsErrorMessage && commentRequestError && (
+          <p className={styles.requestError} role="alert">
+            {commentRequestError}
+          </p>
         )}
 
         {!isLoadingComments && !commentsErrorMessage && comments.length > 0 && (
@@ -353,30 +354,30 @@ export default function CommentsSection({
                         </p>
                       </div>
                     </div>
-
-                    {canManageCurrentComment && !isEditingComment && (
-                      <div className={styles.commentActions}>
-                        <button
-                          type="button"
-                          className={styles.commentActionButton}
-                          aria-label={`Edit comment by ${comment.authorName}`}
-                          onClick={() => handleStartEditingComment(comment)}
-                          disabled={isSavingComment || isDeletingComment}
-                        >
-                          <PenIcon className={styles.commentActionIcon} />
-                        </button>
-                        <button
-                          type="button"
-                          className={`${styles.commentActionButton} ${styles.deleteActionButton}`}
-                          aria-label={`Delete comment by ${comment.authorName}`}
-                          onClick={() => handleOpenDeleteCommentModal(comment)}
-                          disabled={isSavingComment || isDeletingComment}
-                        >
-                          <Trash2Icon className={styles.commentActionIcon} />
-                        </button>
-                      </div>
-                    )}
                   </div>
+
+                  {canManageCurrentComment && !isEditingComment && (
+                    <div className={styles.commentActions}>
+                      <button
+                        type="button"
+                        className={styles.commentActionButton}
+                        aria-label={`Edit comment by ${comment.authorName}`}
+                        onClick={() => handleStartEditingComment(comment)}
+                        disabled={isSavingComment || isDeletingComment}
+                      >
+                        <PenIcon className={styles.commentActionIcon} />
+                      </button>
+                      <button
+                        type="button"
+                        className={`${styles.commentActionButton} ${styles.deleteActionButton}`}
+                        aria-label={`Delete comment by ${comment.authorName}`}
+                        onClick={() => handleOpenDeleteCommentModal(comment)}
+                        disabled={isSavingComment || isDeletingComment}
+                      >
+                        <Trash2Icon className={styles.commentActionIcon} />
+                      </button>
+                    </div>
+                  )}
 
                   {isEditingComment ? (
                     <form

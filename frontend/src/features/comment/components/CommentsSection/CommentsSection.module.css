@@ -7,7 +7,7 @@
 .commentForm {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 11px;
 }
 
 .commentTextarea,
@@ -24,13 +24,13 @@
 }
 
 .commentTextarea {
-  min-height: 146px;
+  min-height: 218px;
   padding: 12px 16px;
   font-size: 14px;
 }
 
 .editTextarea {
-  min-height: 52px;
+  min-height: 76px;
   padding: 14px 16px;
   font-size: 16px;
   resize: none;
@@ -87,8 +87,7 @@
 .characterCount,
 .guestPrompt,
 .statusMessage,
-.emptyStateLabel,
-.commentTime {
+.emptyStateLabel {
   color: #5a6f7c;
 }
 
@@ -98,7 +97,8 @@
 
 .commentButton {
   width: 100%;
-  min-height: 44px;
+  min-height: 48px;
+  padding: 12px 20px;
   font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   font-size: 16px;
   font-weight: 500;
@@ -115,7 +115,7 @@
 .commentsBlock {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 40px;
 }
 
 .commentsHeading {
@@ -129,12 +129,13 @@
 }
 
 .emptyState {
-  min-height: 260px;
+  width: 100%;
+  min-height: 232px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .emptyStateIcon {
@@ -143,7 +144,7 @@
 }
 
 .emptyStateLabel {
-  max-width: 340px;
+  width: 100%;
   font-size: 16px;
   text-align: center;
 }
@@ -158,18 +159,22 @@
 }
 
 .commentItem {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 16px;
+  row-gap: 16px;
   padding-bottom: 24px;
   border-bottom: 1px solid #e6eaeb;
 }
 
+.commentItem:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
 .commentHeader {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
+  grid-column: 1;
+  min-width: 0;
 }
 
 .commentIdentity {
@@ -212,13 +217,18 @@
 }
 
 .commentTime {
+  color: #395362;
   font-size: 14px;
+  line-height: 14px;
 }
 
 .commentActions {
+  grid-column: 2;
+  grid-row: 1 / span 2;
   display: inline-flex;
   align-items: center;
   gap: 16px;
+  align-self: center;
   flex-shrink: 0;
 }
 
@@ -249,6 +259,8 @@
 }
 
 .commentBody {
+  grid-column: 1;
+  min-width: 0;
   margin: 0;
   color: #395362;
   font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
@@ -258,12 +270,16 @@
 }
 
 .editForm {
+  grid-column: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
 .editSaveButton {
+  width: 136px;
+  min-height: 41px;
   padding: 10px 20px;
   align-self: flex-start;
   font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
@@ -284,10 +300,6 @@
 }
 
 @media (min-width: 768px) {
-  .commentTextarea {
-    min-height: 218px;
-  }
-
   .editTextarea {
     width: 421px;
     min-height: 42px;
@@ -305,11 +317,13 @@
 
   .commentButton {
     width: 345px;
+    min-height: 41px;
+    padding: 10px 20px;
     align-self: flex-end;
     font-size: 14px;
   }
 
-  .emptyState {
-    min-height: 320px;
+  .commentActions {
+    gap: 32px;
   }
 }

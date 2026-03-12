@@ -1,0 +1,4 @@
+[
+  { "label": "TC-015 Empty title", "title": "",        "body": "Some body", "categoryId": 1 },
+  { "label": "TC-016 Empty body",  "title": "A title", "body": "",          "categoryId": 1 }
+]

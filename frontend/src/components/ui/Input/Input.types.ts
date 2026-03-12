@@ -11,6 +11,7 @@ export interface InputProps
   label: string;
   variant?: InputVariant;
   hasError?: boolean;
+  highlightLabelOnError?: boolean;
   leftIcon?: ReactNode;
   rightIcon?: ReactNode;
   containerClassName?: string;
