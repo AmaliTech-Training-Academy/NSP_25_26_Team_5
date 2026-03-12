@@ -6,7 +6,11 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "posts")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Post {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -15,20 +19,24 @@ public class Post {
     @Column(nullable = false)
     private String title;
 
-    @Column(columnDefinition = "TEXT", nullable = false)
-    private String content;
+    @Column(name = "content", columnDefinition = "TEXT", nullable = false)
+    private String body;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "category_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id", nullable = false)
     private Category category;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "author_id", nullable = false)
     private User author;
 
-    @Column(name = "created_at")
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    @Column(name = "updated_at")
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt = LocalDateTime.now();
+
+    //  New field for image URL
+    @Column(name = "image_url")
+    private String imageUrl;
 }

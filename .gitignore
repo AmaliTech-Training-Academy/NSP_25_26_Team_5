@@ -1,6 +1,7 @@
 target/
 node_modules/
 .env
+*.env.local
 *.class
 *.jar
 *.log
@@ -11,10 +12,17 @@ build/
 __pycache__/
 *.pyc
 .DS_Store
+.env
 
 # Terraform remote-state bootstrap (bucket + DynamoDB); keep local and uncommitted
 devops/infra/terraform/backend/
 .terraform/
 .terraform.lock.hcl  
 *.tfvars   
+
+# Local Codex agent notes
+frontend/agents.md
+frontend/agent-migration.md
+frontend/agent-alignment.md
+frontend/alignment-workflow.md
 

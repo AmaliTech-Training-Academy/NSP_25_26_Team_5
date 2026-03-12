@@ -1,8 +1,12 @@
 spring:
+  profiles:
+    active: dev   # default profile
+
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/communityboard}
     username: ${SPRING_DATASOURCE_USERNAME:postgres}
     password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+
   jpa:
     hibernate:
       ddl-auto: update
@@ -11,13 +15,25 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
+
   sql:
     init:
       mode: always
 
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
+
 jwt:
   secret: ${JWT_SECRET:communityboard-secret-key-amalitech-2024}
-  expiration: 86400000
+  expiration: 86400000   # 24 hours in milliseconds
+
+# AWS SNS for category email notifications (optional: set AWS_REGION and credentials)
+aws:
+  region: ${AWS_REGION:eu-north-1}
+  sns:
+    topic-prefix: ${AWS_SNS_TOPIC_PREFIX:communityboard}
 
 server:
   port: 8080

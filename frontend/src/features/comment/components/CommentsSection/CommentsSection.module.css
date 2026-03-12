@@ -1,0 +1,329 @@
+.commentsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.commentForm {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.commentTextarea,
+.editTextarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #b2bcc2;
+  border-radius: 8px;
+  background: #ececeb;
+  color: #395362;
+  font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.commentTextarea {
+  min-height: 218px;
+  padding: 12px 16px;
+  font-size: 14px;
+}
+
+.editTextarea {
+  min-height: 76px;
+  padding: 14px 16px;
+  font-size: 16px;
+  resize: none;
+}
+
+.commentTextarea::placeholder,
+.editTextarea::placeholder {
+  color: #395362;
+  opacity: 1;
+}
+
+.commentTextarea:focus-visible,
+.editTextarea:focus-visible {
+  outline: none;
+  border-color: #607684;
+}
+
+.textareaError {
+  border-color: #c81e1e;
+}
+
+.formMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.assistRow {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fieldError,
+.requestError,
+.characterCount,
+.guestPrompt,
+.statusMessage,
+.errorMessage,
+.emptyStateLabel,
+.commentTime {
+  margin: 0;
+  font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.5;
+}
+
+.fieldError,
+.requestError,
+.errorMessage {
+  color: #8a1c1c;
+  font-size: 14px;
+}
+
+.characterCount,
+.guestPrompt,
+.statusMessage,
+.emptyStateLabel {
+  color: #5a6f7c;
+}
+
+.characterCount {
+  font-size: 12px;
+}
+
+.commentButton {
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 20px;
+  font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.guestPrompt {
+  padding: 16px 20px;
+  border: 1px solid #e6eaeb;
+  border-radius: 8px;
+  background: #f0f3f4;
+  font-size: 16px;
+}
+
+.commentsBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.commentsHeading {
+  margin: 0;
+  color: #395362;
+  font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.5;
+  letter-spacing: -0.24px;
+}
+
+.emptyState {
+  width: 100%;
+  min-height: 232px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.emptyStateIcon {
+  width: 200px;
+  height: 200px;
+}
+
+.emptyStateLabel {
+  width: 100%;
+  font-size: 16px;
+  text-align: center;
+}
+
+.commentsList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.commentItem {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 16px;
+  row-gap: 16px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #e6eaeb;
+}
+
+.commentItem:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.commentHeader {
+  grid-column: 1;
+  min-width: 0;
+}
+
+.commentIdentity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.commentAvatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  background: #c3c3c2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #222220;
+  font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.commentMeta {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.commentAuthor {
+  margin: 0;
+  color: #08283b;
+  font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.commentTime {
+  color: #395362;
+  font-size: 14px;
+  line-height: 14px;
+}
+
+.commentActions {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+  align-self: center;
+  flex-shrink: 0;
+}
+
+.commentActionButton {
+  border: none;
+  background: transparent;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #08283b;
+  cursor: pointer;
+}
+
+.deleteActionButton {
+  color: #c81e1e;
+}
+
+.commentActionButton:focus-visible {
+  outline: 2px solid #0f4f75;
+  outline-offset: 2px;
+}
+
+.commentActionIcon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.commentBody {
+  grid-column: 1;
+  min-width: 0;
+  margin: 0;
+  color: #395362;
+  font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.editForm {
+  grid-column: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.editSaveButton {
+  width: 136px;
+  min-height: 41px;
+  padding: 10px 20px;
+  align-self: flex-start;
+  font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (min-width: 768px) {
+  .editTextarea {
+    width: 421px;
+    min-height: 42px;
+    padding: 12px;
+    font-size: 14px;
+    line-height: 1.25;
+  }
+
+  .assistRow {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .commentButton {
+    width: 345px;
+    min-height: 41px;
+    padding: 10px 20px;
+    align-self: flex-end;
+    font-size: 14px;
+  }
+
+  .commentActions {
+    gap: 32px;
+  }
+}

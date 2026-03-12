@@ -24,7 +24,7 @@ const CreatePost = () => {
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
-      await postAPI.create({ title, content, categoryId: categoryId || null });
+      await postAPI.create({ title, body: content, categoryId: categoryId ? Number(categoryId) : null });
       navigate("/");
     } catch {
       setError("Failed to create post");

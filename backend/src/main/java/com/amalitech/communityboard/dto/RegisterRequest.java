@@ -5,12 +5,21 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor
+
+ // DTO for user registration requests.
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class RegisterRequest {
-    @NotBlank
-    private String name;
-    @Email @NotBlank
+    @NotBlank(message = "Name is required")
+    private String fullName;
+
+    @Email(message = "Email must be in a valid format (e.g. name@domain.com)")
+    @NotBlank(message = "Email is required")
     private String email;
-    @NotBlank @Size(min = 6)
+
+    @NotBlank(message = "Password is required")
+    @Size(min = 8, message = "Password must be at least 8 characters long")
     private String password;
 }

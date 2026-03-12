@@ -1,27 +1,36 @@
-import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router";
-import { AuthProvider } from "./context/AuthContext";
-import Navbar from "./components/Navbar";
-import Home from "./pages/Home";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import CreatePost from "./pages/CreatePost";
+import { Route, Routes } from "react-router";
+import AdminRoute from "./app/router/AdminRoute";
+import PublicRoute from "./app/router/PublicRoute";
+import Login from "./features/auth/pages/Login/Login";
+import Register from "./features/auth/pages/Register/Register";
+import ProtectedRoute from "./app/router/ProtectedRoute";
+import MainLayout from "./components/shared/MainLayout/MainLayout";
+import AnalyticsDashboard from "./features/analytics/pages/AnalyticsDashboard";
+import PostDetail from "./features/post/pages/PostDetail/PostDetail";
+import Home from "./pages/Home/Home";
+
 
 const App = () => {
   return (
-    <AuthProvider>
-      <Router>
-        <Navbar />
-        <div className="container">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/create-post" element={<CreatePost />} />
-          </Routes>
-        </div>
-      </Router>
-    </AuthProvider>
+    <Routes>
+      <Route element={<PublicRoute />}>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+      </Route>
+
+      <Route element={<MainLayout />}>
+        <Route path="posts/:postId" element={<PostDetail />} />
+      </Route>
+
+      <Route element={<ProtectedRoute />}>
+        <Route element={<MainLayout />}>
+          <Route index element={<Home />} />
+          <Route element={<AdminRoute />}>
+            <Route path="analytics" element={<AnalyticsDashboard />} />
+          </Route>
+        </Route>
+      </Route>
+    </Routes>
   );
 };
 

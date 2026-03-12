@@ -1,0 +1,300 @@
+.analyticsPage {
+  width: 100%;
+}
+
+.content {
+  width: min(345px, calc(100% - 48px));
+  margin: 24px auto 72px;
+  display: flex;
+  flex-direction: column;
+}
+
+.screenReaderOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.breadcrumbs {
+  align-self: flex-start;
+}
+
+.statusMessage,
+.errorMessage {
+  margin: 24px 0 0;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #395362;
+}
+
+.errorMessage {
+  color: #9b1c1c;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 32px;
+  width: 100%;
+  margin-top: 24px;
+}
+
+.statCard,
+.sectionCard,
+.tableCard {
+  border: 1px solid #e6eaeb;
+  border-radius: 8px;
+  background: #fdfdfd;
+}
+
+.statCard {
+  min-height: 132px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.statCardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 40px;
+}
+
+.statLabel {
+  margin: 0;
+  color: #395362;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.statValue {
+  margin: 0;
+  color: #08283b;
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.125;
+}
+
+.statIconWrapper {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: #d4e9fb;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #08283b;
+  flex-shrink: 0;
+}
+
+.statIcon {
+  width: 20px;
+  height: 20px;
+}
+
+.emptyHint {
+  margin: 0;
+  color: #395362;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.visualGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 32px;
+  width: 100%;
+  margin-top: 32px;
+}
+
+.sectionCard {
+  min-height: 340px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sectionTitle {
+  margin: 0;
+  color: #08283b;
+  font-family: "Poppins", "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.5;
+  min-height: 43px;
+  display: flex;
+  align-items: center;
+}
+
+.contributorsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  margin-top: 32px;
+}
+
+.tableTitle {
+  margin: 0;
+  color: #08283b;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.tableCard {
+  width: 100%;
+  overflow: hidden;
+}
+
+.tableOverflow {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  min-width: 345px;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.table thead {
+  background: #e6eaeb;
+}
+
+.table th,
+.table td {
+  height: 56px;
+  padding: 16px;
+  text-align: left;
+  border-bottom: 1px solid #e6eaeb;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #08283b;
+  vertical-align: middle;
+}
+
+.table th {
+  color: #395362;
+  font-weight: 500;
+}
+
+.rankColumn {
+  width: 81px;
+}
+
+.nameColumn {
+  width: 189px;
+}
+
+.postsColumn {
+  width: 75px;
+}
+
+.contributorLink {
+  display: inline-block;
+  max-width: 100%;
+  border: none;
+  padding: 0;
+  background: transparent;
+  color: #08283b;
+  cursor: pointer;
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.contributorLink:hover {
+  color: #0c4a6e;
+}
+
+.contributorLink:focus-visible {
+  outline: 2px solid #0f4f75;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.placeholderContributor {
+  display: inline-block;
+  max-width: 100%;
+  color: #5a6f7c;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.emptyTableCell {
+  color: #395362;
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .content {
+    width: min(1202px, calc(100% - 48px));
+    margin: 48px auto 80px;
+  }
+
+  .statusMessage,
+  .errorMessage {
+    margin-top: 64px;
+    font-size: 18px;
+  }
+
+  .statsGrid {
+    width: min(100%, 810.656px);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 64px;
+  }
+
+  .statCard {
+    min-height: 168px;
+  }
+
+  .statLabel {
+    font-size: 24px;
+  }
+
+  .statValue {
+    font-size: 48px;
+    line-height: 1.5;
+  }
+
+  .visualGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 50px;
+  }
+
+  .sectionCard {
+    min-height: 363px;
+  }
+
+  .sectionTitle {
+    font-size: 24px;
+    min-height: 52px;
+  }
+
+  .table {
+    min-width: 0;
+  }
+
+  .nameColumn,
+  .postsColumn {
+    width: calc((100% - 81px) / 2);
+  }
+}

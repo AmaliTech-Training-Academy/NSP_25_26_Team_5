@@ -7,7 +7,11 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -16,11 +20,11 @@ public class User {
     @Column(unique = true, nullable = false)
     private String email;
 
-    @Column(nullable = false)
-    private String name;
+    @Column(name = "name", nullable = false)
+    private String fullName;
 
-    @Column(nullable = false)
-    private String password;
+    @Column(name = "password", nullable = false)
+    private String passwordHash;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

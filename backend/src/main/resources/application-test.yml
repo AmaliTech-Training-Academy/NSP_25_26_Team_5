@@ -1,0 +1,14 @@
+server:
+  port: 8083
+
+spring:
+  datasource:
+    url: jdbc:h2:mem:test_db
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: Annet@25437
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true

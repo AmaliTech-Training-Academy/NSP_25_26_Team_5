@@ -14,8 +14,15 @@ const Register = () => {
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
-      const res = await authAPI.register({ name, email, password });
-      login({ name: res.data.name, email: res.data.email, role: res.data.role }, res.data.token);
+      const res = await authAPI.register({ fullName: name, email, password });
+      login(
+        {
+          name: res.data.fullName,
+          email: res.data.email,
+          role: res.data.role,
+        },
+        res.data.token,
+      );
       navigate("/");
     } catch {
       setError("Registration failed. Email may already be in use.");

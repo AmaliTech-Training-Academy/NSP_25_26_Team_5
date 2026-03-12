@@ -1,0 +1,99 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.label {
+  color: #08283b;
+  font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.labelError {
+  color: #c81e1e;
+}
+
+.inputContainer {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border: 1px solid #b2bcc2;
+  border-radius: 8px;
+  background: #ececeb;
+}
+
+.inputContainer:focus-within {
+  border-color: #607684;
+}
+
+.inputContainerError {
+  border-color: #c81e1e;
+  background: #fde8e8;
+}
+
+.inputContainerError:focus-within {
+  border-color: #c81e1e;
+}
+
+.inputContainerSelect {
+  cursor: pointer;
+}
+
+.icon {
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+  align-items: center;
+  justify-content: center;
+  color: #5a6f7c;
+  flex-shrink: 0;
+}
+
+.inputContainerError .icon {
+  color: #c81e1e;
+}
+
+.inputElement {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #08283b;
+  font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 1.25;
+  border-radius: 0px;
+}
+
+.inputElement::placeholder {
+  color: #5a6f7c;
+  opacity: 1;
+}
+
+.inputElementError {
+  color: #c81e1e;
+}
+
+.inputElementError::placeholder {
+  color: #c81e1e;
+}
+
+.inputElementSelect {
+  cursor: pointer;
+}
+
+.inputElementSelect:read-only {
+  pointer-events: none;
+}
