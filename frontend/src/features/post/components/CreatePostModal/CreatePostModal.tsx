@@ -45,7 +45,6 @@ export default function CreatePostModal({
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
-  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false);
   const [formErrors, setFormErrors] = useState<CreatePostFormErrors>({});
@@ -85,20 +84,6 @@ export default function CreatePostModal({
       document.body.style.overflow = previousOverflow;
     };
   }, [isOpen]);
-
-  useEffect(() => {
-    if (!selectedImageFile) {
-      setImagePreviewUrl(null);
-      return;
-    }
-
-    const objectUrl = URL.createObjectURL(selectedImageFile);
-    setImagePreviewUrl(objectUrl);
-
-    return () => {
-      URL.revokeObjectURL(objectUrl);
-    };
-  }, [selectedImageFile]);
 
   // Supports keyboard closing with Escape.
   useEffect(() => {
@@ -147,7 +132,6 @@ export default function CreatePostModal({
     setTitle("");
     setBody("");
     setSelectedImageFile(null);
-    setImagePreviewUrl(null);
     setSelectedCategoryId(null);
     setIsCategoryMenuOpen(false);
     setFormErrors({});
@@ -416,7 +400,7 @@ export default function CreatePostModal({
           <PostImageField
             inputId={imageInputId}
             isDisabled={isSubmitting}
-            previewUrl={imagePreviewUrl}
+            previewFile={selectedImageFile}
             statusText={
               selectedImageFile ? `Selected image: ${selectedImageFile.name}` : null
             }
