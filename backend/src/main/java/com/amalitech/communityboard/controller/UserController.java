@@ -1,5 +1,6 @@
 package com.amalitech.communityboard.controller;
 
+import com.amalitech.communityboard.config.JwtUtil;
 import com.amalitech.communityboard.dto.AuthUserResponse;
 import com.amalitech.communityboard.dto.UserRequest;
 import com.amalitech.communityboard.model.User;
@@ -20,6 +21,7 @@ public class UserController {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil; // inject JwtUtil
 
     // Create a new user account
     @PostMapping
@@ -38,8 +40,8 @@ public class UserController {
 
         User saved = userRepository.save(user);
 
-        // Here you would generate a JWT token for the new user
-        String token = "GENERATED_JWT_TOKEN"; // replace with actual JwtUtil.generateToken(saved)
+        // Generate real JWT token
+        String token = jwtUtil.generateToken(saved);
 
         AuthUserResponse response = AuthUserResponse.builder()
                 .token(token)
@@ -58,8 +60,8 @@ public class UserController {
             return ResponseEntity.status(401).build();
         }
 
-        // Optionally regenerate token for current user
-        String token = "GENERATED_JWT_TOKEN"; // replace with actual JwtUtil.generateToken(user)
+        // Regenerate token for current user
+        String token = jwtUtil.generateToken(user);
 
         AuthUserResponse response = AuthUserResponse.builder()
                 .token(token)

@@ -8,40 +8,62 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
-// JwtUtil: Utility class for generating and validating JWT tokens.
 @Component
 public class JwtUtil {
-    // Secret key and expiration loaded from application.yml
+
     @Value("${jwt.secret}")
     private String secret;
 
-    @Value("${jwt.expiration:3600000}") // default 1 hour if not set
+    @Value("${jwt.expiration:3600000}") // default 1 hour
     private long expiration;
 
     private SecretKey getSigningKey() {
-        return Keys.hmacShaKeyFor(secret.getBytes());
+        return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-    // Generate a JWT token for a given user.
     public String generateToken(User user) {
         return Jwts.builder()
-                .subject(user.getEmail())
+                .setSubject(user.getEmail())
                 .claim("id", user.getId())
                 .claim("role", user.getRole().name())
-                .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + expiration))
-                .signWith(getSigningKey()) // HMAC SHA-256 by default
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + expiration))
+                .signWith(getSigningKey())
                 .compact();
     }
 
-     // Extract claims from a JWT token.
     public Claims extractClaims(String token) {
         return Jwts.parser()
-                .verifyWith(getSigningKey())
+                .verifyWith(getSigningKey())   // verify signature
                 .build()
-                .parseSignedClaims(token)
-                .getPayload();
+                .parseSignedClaims(token)      // parse signed claims
+                .getPayload();                 // return Claims payload
+    }
+
+
+    public String extractEmail(String token) {
+        return extractClaims(token).getSubject();
+    }
+
+    public String extractRole(String token) {
+        return extractClaims(token).get("role", String.class);
+    }
+
+    public Long extractUserId(String token) {
+        return extractClaims(token).get("id", Long.class);
+    }
+
+    public boolean isTokenValid(String token, User user) {
+        try {
+            Claims claims = extractClaims(token);
+            String email = claims.getSubject();
+            Date expirationDate = claims.getExpiration();
+            return email.equals(user.getEmail()) && expirationDate.after(new Date());
+        } catch (Exception e) {
+            return false;
+        }
     }
 }
