@@ -104,9 +104,9 @@ export function useRegisterForm() {
       });
       showToast({
         variant: "success",
-        message: "Authenticated successfully",
+        message: "Account created. Please log in.",
       });
-      navigate("/");
+      navigate("/login", { replace: true });
     } catch (caughtError: unknown) {
       setError(mapRegisterErrorMessage(caughtError));
     } finally {

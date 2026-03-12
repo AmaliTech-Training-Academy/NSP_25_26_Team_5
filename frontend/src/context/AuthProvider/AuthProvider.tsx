@@ -57,14 +57,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   const register = async (payload: RegisterRequest): Promise<void> => {
-    const response = await authApi.register(payload);
-    const userData: AuthUser = {
-      name: response.data.fullName,
-      email: response.data.email,
-      role: response.data.role,
-    };
-
-    login(userData, response.data.token);
+    await authApi.register(payload);
   };
 
   const logout = () => {

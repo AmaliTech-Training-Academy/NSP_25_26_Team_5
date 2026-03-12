@@ -8,7 +8,7 @@ import MainLayout from "./components/shared/MainLayout/MainLayout";
 import AnalyticsDashboard from "./features/analytics/pages/AnalyticsDashboard";
 import PostDetail from "./features/post/pages/PostDetail/PostDetail";
 import Home from "./pages/Home/Home";
-
+import NotFound from "./pages/NotFound/NotFound";
 
 const App = () => {
   return (
@@ -30,6 +30,8 @@ const App = () => {
           </Route>
         </Route>
       </Route>
+
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 };

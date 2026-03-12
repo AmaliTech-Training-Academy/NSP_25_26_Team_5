@@ -1,0 +1,121 @@
+.notFoundLayout {
+  background:
+    radial-gradient(circle at top, rgba(8, 40, 59, 0.08), transparent 48%),
+    #fdfdfd;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  min-height: 100svh;
+  padding: 80px 0 40px;
+  width: 100%;
+}
+
+.notFoundCard {
+  width: 100%;
+  max-width: 393px;
+  padding: 24px;
+  border-radius: 24px;
+  background: #fdfdfd;
+  box-shadow: 0 24px 48px rgba(8, 40, 59, 0.08);
+}
+
+.notFoundCardContent {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 32px;
+}
+
+.headerSection {
+  width: min(100%, 311px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  text-align: center;
+}
+
+.statusPill {
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: #e6eef3;
+  color: #08283b;
+  font-family: "Poppins", "Segoe UI", sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: 0.06em;
+}
+
+.logo {
+  width: 100px;
+  height: 37.95px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logoSvg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.titleGroup {
+  width: 100%;
+}
+
+.title {
+  margin: 0;
+  color: #041620;
+  font-family: "Poppins", "Segoe UI", sans-serif;
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.subtitle {
+  margin: 12px 0 0;
+  color: #395362;
+  font-family: "Inter", "Segoe UI", sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.copySection {
+  width: min(100%, 311px);
+}
+
+.description {
+  margin: 0;
+  color: #4f6775;
+  font-family: "Inter", "Segoe UI", sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.loginButton {
+  display: inline-flex;
+  align-items: center;
+  width: min(100%, 311px);
+  justify-content: center;
+  padding: 12px 18px;
+}
+
+@media (min-width: 521px) {
+  .notFoundLayout {
+    align-items: center;
+    padding: 24px;
+  }
+
+  .notFoundCard {
+    max-width: 428px;
+    padding: 32px;
+    border: 1px solid #e6eaeb;
+  }
+}
