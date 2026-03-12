@@ -185,6 +185,7 @@ export default function AnalyticsDashboard() {
                   labels={dashboard.postsPerCategory.map((bucket) => bucket.categoryName)}
                   values={dashboard.postsPerCategory.map((bucket) => bucket.totalPosts)}
                   ariaLabel="Posts by category bar chart"
+                  variant="category"
                 />
                 {isCategoryChartEmpty && (
                   <p className={styles.emptyHint}>
@@ -199,6 +200,7 @@ export default function AnalyticsDashboard() {
                   labels={dashboard.postsPerDayOfWeek.map((bucket) => bucket.dayOfWeek)}
                   values={dashboard.postsPerDayOfWeek.map((bucket) => bucket.totalPosts)}
                   ariaLabel="Posts by day of week bar chart"
+                  variant="weekday"
                 />
                 {isDayChartEmpty && (
                   <p className={styles.emptyHint}>
@@ -216,12 +218,12 @@ export default function AnalyticsDashboard() {
                   <table className={styles.table}>
                     <colgroup>
                       <col className={styles.rankColumn} />
-                      <col />
+                      <col className={styles.nameColumn} />
                       <col className={styles.postsColumn} />
                     </colgroup>
                     <thead>
                       <tr>
-                        <th scope="col">Rank</th>
+                        <th scope="col">Ranks</th>
                         <th scope="col">Name</th>
                         <th scope="col">Posts</th>
                       </tr>

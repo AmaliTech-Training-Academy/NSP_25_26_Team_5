@@ -6,6 +6,10 @@
   font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
+.analyticsPageNavBar {
+  padding: 10px 24px;
+}
+
 .mobileContent {
   width: 100%;
   display: flex;
@@ -249,7 +253,7 @@
   }
 
   .analyticsPageNavBar {
-    padding: 10px clamp(24px, 8.34vw, 120px);
+    padding: 10px 80px;
   }
 
   .desktopContent {

@@ -3,13 +3,10 @@
 }
 
 .content {
-  width: 100%;
-  max-width: 1320px;
-  margin: 0 auto;
-  padding: 16px 12px 40px;
+  width: min(345px, calc(100% - 48px));
+  margin: 24px auto 72px;
   display: flex;
   flex-direction: column;
-  gap: 18px;
 }
 
 .screenReaderOnly {
@@ -30,7 +27,7 @@
 
 .statusMessage,
 .errorMessage {
-  margin: 0;
+  margin: 24px 0 0;
   font-size: 16px;
   line-height: 1.5;
   color: #395362;
@@ -43,7 +40,9 @@
 .statsGrid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 14px;
+  gap: 32px;
+  width: 100%;
+  margin-top: 24px;
 }
 
 .statCard,
@@ -52,24 +51,22 @@
   border: 1px solid #e6eaeb;
   border-radius: 8px;
   background: #fdfdfd;
-  box-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.1),
-    0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .statCard {
-  min-height: 102px;
-  padding: 16px;
+  min-height: 132px;
+  padding: 24px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .statCardTop {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
+  min-height: 40px;
 }
 
 .statLabel {
@@ -85,12 +82,12 @@
   color: #08283b;
   font-size: 32px;
   font-weight: 700;
-  line-height: 1.15;
+  line-height: 1.125;
 }
 
 .statIconWrapper {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border-radius: 8px;
   background: #d4e9fb;
   display: inline-flex;
@@ -101,8 +98,8 @@
 }
 
 .statIcon {
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
 }
 
 .emptyHint {
@@ -115,17 +112,39 @@
 .visualGrid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 18px;
+  gap: 32px;
+  width: 100%;
+  margin-top: 32px;
 }
 
 .sectionCard {
-  padding: 16px 10px 12px;
+  min-height: 340px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
 }
 
-.sectionTitle,
+.sectionTitle {
+  margin: 0;
+  color: #08283b;
+  font-family: "Poppins", "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.5;
+  min-height: 43px;
+  display: flex;
+  align-items: center;
+}
+
+.contributorsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  margin-top: 32px;
+}
+
 .tableTitle {
   margin: 0;
   color: #08283b;
@@ -134,13 +153,8 @@
   line-height: 1.5;
 }
 
-.contributorsSection {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
 .tableCard {
+  width: 100%;
   overflow: hidden;
 }
 
@@ -151,15 +165,9 @@
 
 .table {
   width: 100%;
+  min-width: 345px;
   border-collapse: collapse;
-}
-
-.rankColumn {
-  width: 72px;
-}
-
-.postsColumn {
-  width: 72px;
+  table-layout: fixed;
 }
 
 .table thead {
@@ -168,26 +176,47 @@
 
 .table th,
 .table td {
-  padding: 11px 10px;
+  height: 56px;
+  padding: 16px;
   text-align: left;
   border-bottom: 1px solid #e6eaeb;
-  font-size: 12px;
+  font-size: 16px;
   line-height: 1.5;
   color: #08283b;
+  vertical-align: middle;
 }
 
 .table th {
   color: #395362;
-  font-weight: 600;
+  font-weight: 500;
+}
+
+.rankColumn {
+  width: 81px;
+}
+
+.nameColumn {
+  width: 189px;
+}
+
+.postsColumn {
+  width: 75px;
 }
 
 .contributorLink {
+  display: inline-block;
+  max-width: 100%;
   border: none;
   padding: 0;
   background: transparent;
   color: #08283b;
   cursor: pointer;
-  font-size: 12px;
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 16px;
+  font-weight: 400;
   line-height: 1.5;
 }
 
@@ -202,7 +231,12 @@
 }
 
 .placeholderContributor {
+  display: inline-block;
+  max-width: 100%;
   color: #5a6f7c;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .emptyTableCell {
@@ -212,53 +246,55 @@
 
 @media (min-width: 768px) {
   .content {
-    padding: 32px 72px 56px;
-    gap: 20px;
+    width: min(1202px, calc(100% - 48px));
+    margin: 48px auto 80px;
   }
 
-  .statsGrid {
-    grid-template-columns: repeat(2, minmax(0, 240px));
-    gap: 20px;
-  }
-
-  .statCard {
-    min-height: 103px;
-    padding: 18px 16px 20px;
-  }
-
-  .statLabel {
+  .statusMessage,
+  .errorMessage {
+    margin-top: 64px;
     font-size: 18px;
   }
 
+  .statsGrid {
+    width: min(100%, 810.656px);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 64px;
+  }
+
+  .statCard {
+    min-height: 168px;
+  }
+
+  .statLabel {
+    font-size: 24px;
+  }
+
   .statValue {
-    font-size: 46px;
+    font-size: 48px;
+    line-height: 1.5;
   }
 
   .visualGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 30px;
+    gap: 50px;
   }
 
   .sectionCard {
-    padding: 16px 10px 12px;
-    gap: 18px;
+    min-height: 363px;
   }
 
-  .table th,
-  .table td {
-    padding: 16px;
-    font-size: 16px;
+  .sectionTitle {
+    font-size: 24px;
+    min-height: 52px;
   }
 
-  .contributorLink {
-    font-size: 16px;
+  .table {
+    min-width: 0;
   }
 
-  .rankColumn {
-    width: 82px;
-  }
-
+  .nameColumn,
   .postsColumn {
-    width: 88px;
+    width: calc((100% - 81px) / 2);
   }
 }
