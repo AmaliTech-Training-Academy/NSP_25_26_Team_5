@@ -39,6 +39,7 @@ export default function LoginForm({
             onChange={(event) => onEmailChange(event.target.value)}
             leftIcon={<MailIcon />}
             hasError={Boolean(emailError)}
+            highlightLabelOnError={false}
             id="login-email"
             aria-describedby={emailError ? "login-email-error" : undefined}
             aria-invalid={Boolean(emailError)}
@@ -60,6 +61,7 @@ export default function LoginForm({
             onChange={(event) => onPasswordChange(event.target.value)}
             leftIcon={<LockIcon />}
             hasError={Boolean(passwordError)}
+            highlightLabelOnError={false}
             id="login-password"
             aria-describedby={passwordError ? "login-password-error" : undefined}
             aria-invalid={Boolean(passwordError)}

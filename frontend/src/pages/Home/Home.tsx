@@ -6,6 +6,7 @@ import Paginations from "../../components/shared/Paginations";
 import SearchBar from "../../components/shared/SearchBar";
 import Button from "../../components/ui/Button/Button";
 import { useAuth } from "../../context/AuthContext/AuthContext";
+import { useToast } from "../../context/ToastContext/ToastContext";
 import { commentAPI } from "../../features/comment/api/comment.api";
 import { categoryAPI } from "../../features/post/api/category.api";
 import { postAPI } from "../../features/post/api/api.post";
@@ -100,13 +101,13 @@ export default function HomePage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { isAuthenticated, user } = useAuth();
+  const { showToast } = useToast();
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   const [isEditPostOpen, setIsEditPostOpen] = useState(false);
   const [isDeletingPost, setIsDeletingPost] = useState(false);
   const [postBeingEdited, setPostBeingEdited] = useState<PostCardData | null>(null);
   const [postBeingDeleted, setPostBeingDeleted] = useState<PostCardData | null>(null);
   const [postFeedScope, setPostFeedScope] = useState<PostFeedScope>("ALL_POSTS");
-  const [postActionErrorMessage, setPostActionErrorMessage] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<FilterCategory>("ALL");
@@ -276,7 +277,6 @@ export default function HomePage() {
   // Toggles between all posts and authenticated-user posts.
   function handleToggleYourPosts() {
     setCurrentPage(1);
-    setPostActionErrorMessage(null);
     setPostFeedScope((previousScope) =>
       previousScope === "MY_POSTS" ? "ALL_POSTS" : "MY_POSTS",
     );
@@ -303,9 +303,18 @@ export default function HomePage() {
 
       const createdPost = mapPostToCardData(response.data);
       setHomePosts((previousPosts) => [createdPost, ...previousPosts]);
+      showToast({
+        variant: "success",
+        message: "Post created successfully",
+      });
       navigate(`/posts/${response.data.id}`);
     } catch (error) {
-      throw new Error(findCreatePostErrorMessage(error));
+      const errorMessage = findCreatePostErrorMessage(error);
+      showToast({
+        variant: "error",
+        message: errorMessage,
+      });
+      throw new Error(errorMessage);
     }
   }
 
@@ -317,7 +326,6 @@ export default function HomePage() {
       return;
     }
 
-    setPostActionErrorMessage(null);
     setPostBeingEdited(targetPost);
     setIsEditPostOpen(true);
   }
@@ -337,17 +345,23 @@ export default function HomePage() {
         categoryId: values.categoryId,
       });
 
-      setPostActionErrorMessage(null);
       setPostsReloadKey((previousKey) => previousKey + 1);
+      showToast({
+        variant: "success",
+        message: "Post updated successfully",
+      });
     } catch (error) {
-      throw new Error(
-        findPostRequestErrorMessage(
-          error,
-          "Unable to update this post right now. Please try again.",
-          "You are not authorized to update this post.",
-          "This post could not be found anymore.",
-        ),
+      const errorMessage = findPostRequestErrorMessage(
+        error,
+        "Unable to update this post right now. Please try again.",
+        "You are not authorized to update this post.",
+        "This post could not be found anymore.",
       );
+      showToast({
+        variant: "error",
+        message: errorMessage,
+      });
+      throw new Error(errorMessage);
     }
   }
 
@@ -359,7 +373,6 @@ export default function HomePage() {
       return;
     }
 
-    setPostActionErrorMessage(null);
     setPostBeingDeleted(targetPost);
   }
 
@@ -385,7 +398,6 @@ export default function HomePage() {
       return;
     }
 
-    setPostActionErrorMessage(null);
     setIsDeletingPost(true);
 
     try {
@@ -403,15 +415,21 @@ export default function HomePage() {
       } else {
         setPostsReloadKey((previousKey) => previousKey + 1);
       }
+      showToast({
+        variant: "success",
+        message: "Post deleted successfully",
+      });
     } catch (error) {
-      setPostActionErrorMessage(
-        findPostRequestErrorMessage(
-          error,
-          "Unable to delete this post while it still has comments. Remove the comments first or use an admin account.",
-          "You are not authorized to delete this post or one of its comments.",
-          "This post could not be found anymore.",
-        ),
+      const errorMessage = findPostRequestErrorMessage(
+        error,
+        "Unable to delete this post while it still has comments. Remove the comments first or use an admin account.",
+        "You are not authorized to delete this post or one of its comments.",
+        "This post could not be found anymore.",
       );
+      showToast({
+        variant: "error",
+        message: errorMessage,
+      });
     } finally {
       setIsDeletingPost(false);
     }
@@ -498,12 +516,6 @@ export default function HomePage() {
       {!isLoadingPosts && postsErrorMessage && (
         <p className={styles.errorMessage} role="alert">
           {postsErrorMessage}
-        </p>
-      )}
-
-      {!isLoadingPosts && !postsErrorMessage && postActionErrorMessage && (
-        <p className={styles.errorMessage} role="alert">
-          {postActionErrorMessage}
         </p>
       )}
 

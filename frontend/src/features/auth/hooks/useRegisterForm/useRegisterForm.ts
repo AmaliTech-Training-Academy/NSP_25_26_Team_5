@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "../../../../context/AuthContext/AuthContext";
+import { useToast } from "../../../../context/ToastContext/ToastContext";
 import {
   isValidEmail,
   mapRegisterErrorMessage,
@@ -19,6 +20,7 @@ export function useRegisterForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { register } = useAuth();
+  const { showToast } = useToast();
   const navigate = useNavigate();
 
   const clearFormErrors = () => {
@@ -96,6 +98,10 @@ export function useRegisterForm() {
         fullName: trimmedName,
         email: trimmedEmail,
         password: trimmedPassword,
+      });
+      showToast({
+        variant: "success",
+        message: "Authenticated successfully",
       });
       navigate("/");
     } catch (caughtError: unknown) {

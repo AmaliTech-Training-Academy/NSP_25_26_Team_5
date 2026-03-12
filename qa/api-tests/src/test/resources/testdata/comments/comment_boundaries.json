@@ -1,0 +1,5 @@
+[
+  { "label": "TC-029 Exactly 1 char",    "length": 1,   "expectedStatus": 201 },
+  { "label": "TC-029 Exactly 500 chars", "length": 500, "expectedStatus": 201 },
+  { "label": "TC-029 501 chars",         "length": 501, "expectedStatus": 400 }
+]

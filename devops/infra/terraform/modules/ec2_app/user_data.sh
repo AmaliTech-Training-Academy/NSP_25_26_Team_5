@@ -27,11 +27,14 @@ aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS 
 # Docker network for app <-> postgres
 docker network create appnet 2>/dev/null || true
 
+docker volume create pgdata 2>/dev/null || true
+
 # Postgres on same host (only backend container needs it)
 docker run -d --name postgres --restart unless-stopped --network appnet \
   -e POSTGRES_DB="$DB_NAME" \
   -e POSTGRES_USER="$DB_USER" \
   -e POSTGRES_PASSWORD="$DB_PASS" \
+  -v pgdata:/var/lib/postgresql/data \
   -p 127.0.0.1:5432:5432 \
   postgres:15-alpine
 

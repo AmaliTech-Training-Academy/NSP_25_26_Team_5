@@ -28,13 +28,17 @@
   width: 100%;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   gap: 20px;
 }
 
 .loginButton {
   width: 100%;
   padding: 10px 20px;
+  font-family: "Inter", "Segoe UI", sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
 }
 
 .iconButton {
@@ -76,7 +80,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 13px;
+  gap: 5px;
+  width: 100%;
   color: #395362;
   font-family: "Inter", "Segoe UI", sans-serif;
   font-size: 14px;
@@ -85,6 +90,9 @@
 }
 
 .signupLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   color: #b54000;
   text-decoration: underline;
   font-family: "Inter", "Segoe UI", sans-serif;
@@ -92,7 +100,7 @@
   font-weight: 500;
   line-height: 1.5;
   cursor: pointer;
-  padding: 0;
+  padding: 8px;
 }
 
 .signupLink:focus-visible {

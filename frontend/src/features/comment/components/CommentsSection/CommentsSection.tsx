@@ -319,9 +319,7 @@ export default function CommentsSection({
           comments.length === 0 && (
             <div className={styles.emptyState}>
               <EmptyPostsIcon className={styles.emptyStateIcon} />
-              <p className={styles.emptyStateLabel}>
-                No comments yet. Be the first to share your thoughts
-              </p>
+              <p className={styles.emptyStateLabel}>No Comments yet</p>
             </div>
           )}
 
@@ -356,30 +354,30 @@ export default function CommentsSection({
                         </p>
                       </div>
                     </div>
-
-                    {canManageCurrentComment && !isEditingComment && (
-                      <div className={styles.commentActions}>
-                        <button
-                          type="button"
-                          className={styles.commentActionButton}
-                          aria-label={`Edit comment by ${comment.authorName}`}
-                          onClick={() => handleStartEditingComment(comment)}
-                          disabled={isSavingComment || isDeletingComment}
-                        >
-                          <PenIcon className={styles.commentActionIcon} />
-                        </button>
-                        <button
-                          type="button"
-                          className={`${styles.commentActionButton} ${styles.deleteActionButton}`}
-                          aria-label={`Delete comment by ${comment.authorName}`}
-                          onClick={() => handleOpenDeleteCommentModal(comment)}
-                          disabled={isSavingComment || isDeletingComment}
-                        >
-                          <Trash2Icon className={styles.commentActionIcon} />
-                        </button>
-                      </div>
-                    )}
                   </div>
+
+                  {canManageCurrentComment && !isEditingComment && (
+                    <div className={styles.commentActions}>
+                      <button
+                        type="button"
+                        className={styles.commentActionButton}
+                        aria-label={`Edit comment by ${comment.authorName}`}
+                        onClick={() => handleStartEditingComment(comment)}
+                        disabled={isSavingComment || isDeletingComment}
+                      >
+                        <PenIcon className={styles.commentActionIcon} />
+                      </button>
+                      <button
+                        type="button"
+                        className={`${styles.commentActionButton} ${styles.deleteActionButton}`}
+                        aria-label={`Delete comment by ${comment.authorName}`}
+                        onClick={() => handleOpenDeleteCommentModal(comment)}
+                        disabled={isSavingComment || isDeletingComment}
+                      >
+                        <Trash2Icon className={styles.commentActionIcon} />
+                      </button>
+                    </div>
+                  )}
 
                   {isEditingComment ? (
                     <form
