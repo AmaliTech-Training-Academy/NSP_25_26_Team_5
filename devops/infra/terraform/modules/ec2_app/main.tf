@@ -18,6 +18,12 @@ resource "aws_iam_role_policy_attachment" "ecr" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
 
+# So CD can run deploy script on the instance (pull new images, restart containers)
+resource "aws_iam_role_policy_attachment" "ssm" {
+  role       = aws_iam_role.app.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
 # SNS: app creates per-category topics and subscribes user emails (category notifications)
 data "aws_caller_identity" "current" {}
 

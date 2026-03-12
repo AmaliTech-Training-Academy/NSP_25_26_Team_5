@@ -55,3 +55,42 @@ docker run -d --name backend --restart unless-stopped --network appnet \
 docker run -d --name frontend --restart unless-stopped \
   -p 80:80 \
   "$ECR_FRONTEND:$FRONTEND_TAG"
+
+# Persist config and deploy script for in-place updates (CD runs via SSM: /opt/app/deploy.sh <new-tag>)
+mkdir -p /opt/app
+cat > /opt/app/app.env << 'APPENV'
+AWS_REGION=${aws_region}
+ECR_BACKEND=${ecr_backend_repo}
+ECR_FRONTEND=${ecr_frontend_repo}
+DB_NAME=${db_name}
+DB_USER=${db_username}
+DB_PASS=${db_password}
+JWT_SECRET=${jwt_secret}
+APPENV
+chmod 600 /opt/app/app.env
+
+cat > /opt/app/deploy.sh << 'DEPLOYSH'
+#!/bin/bash
+set -e
+TAG="$$1"
+if [ -z "$$TAG" ]; then echo "Usage: deploy.sh <image-tag>"; exit 1; fi
+source /opt/app/app.env
+export AWS_REGION ECR_BACKEND ECR_FRONTEND DB_NAME DB_USER DB_PASS JWT_SECRET
+aws ecr get-login-password --region "$$AWS_REGION" | docker login --username AWS --password-stdin "$${ECR_BACKEND%%/*}"
+docker pull "$$ECR_BACKEND:$$TAG"
+docker pull "$$ECR_FRONTEND:$$TAG"
+docker stop backend frontend 2>/dev/null || true
+docker rm backend frontend 2>/dev/null || true
+docker run -d --name backend --restart unless-stopped --network appnet \
+  -e SPRING_DATASOURCE_URL="jdbc:postgresql://postgres:5432/$$DB_NAME" \
+  -e SPRING_DATASOURCE_USERNAME="$$DB_USER" \
+  -e SPRING_DATASOURCE_PASSWORD="$$DB_PASS" \
+  -e JWT_SECRET="$$JWT_SECRET" \
+  -p 8080:8080 \
+  "$$ECR_BACKEND:$$TAG"
+docker run -d --name frontend --restart unless-stopped \
+  -p 80:80 \
+  "$$ECR_FRONTEND:$$TAG"
+echo "Deploy completed: tag=$$TAG"
+DEPLOYSH
+chmod +x /opt/app/deploy.sh
