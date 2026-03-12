@@ -97,10 +97,10 @@
 
 .emptyFeed {
   width: 100%;
-  min-height: 320px;
+  min-height: 232px;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
 }
 
 @media (min-width: 768px) {
@@ -158,6 +158,6 @@
   }
 
   .emptyFeed {
-    min-height: 420px;
+    min-height: 312px;
   }
 }
