@@ -6,7 +6,7 @@ export interface EditPostFormValues {
   title: string;
   body: string;
   categoryId: number;
-  imageUrl: string | null;
+  imageFile: File | null;
 }
 
 export interface EditPostFormErrors {

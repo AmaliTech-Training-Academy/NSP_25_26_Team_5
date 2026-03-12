@@ -47,12 +47,16 @@
 
 .imageFrame {
   width: 100%;
+  min-height: 240px;
   border-radius: 16px;
   overflow: hidden;
   background:
     linear-gradient(135deg, rgba(12, 52, 77, 0.06), rgba(15, 79, 117, 0.14)),
     #f5f8f9;
   border: 1px solid #dce3e6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .image {
@@ -60,6 +64,24 @@
   max-height: 420px;
   display: block;
   object-fit: contain;
+}
+
+.statusMessage,
+.errorMessage {
+  margin: 0;
+  padding: 24px;
+  text-align: center;
+  font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.statusMessage {
+  color: #395362;
+}
+
+.errorMessage {
+  color: #b91c1c;
 }
 
 .content {

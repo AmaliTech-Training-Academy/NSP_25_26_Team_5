@@ -15,7 +15,6 @@ import Breadcrumbs from "../../../../components/shared/Breadcrumbs/Breadcrumbs";
 import Button from "../../../../components/ui/Button/Button";
 import Input from "../../../../components/ui/Input/Input";
 import styles from "./EditPostModal.module.css";
-import { imageAPI } from "../../api/image.api";
 import PostImageField from "../PostImageField";
 import type {
   EditPostFormErrors,
@@ -29,7 +28,6 @@ import {
   validateEditPostForm,
 } from "./EditPostModal.utils";
 import {
-  findImageUploadErrorMessage,
   validatePostImageFile,
 } from "../../utils/post.utils";
 
@@ -54,7 +52,6 @@ export default function EditPostModal({
   const [formErrors, setFormErrors] = useState<EditPostFormErrors>({});
   const [submitErrorMessage, setSubmitErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const categorySectionRef = useRef<HTMLDivElement | null>(null);
   const bodyInputId = useId();
   const imageInputId = useId();
@@ -67,7 +64,6 @@ export default function EditPostModal({
   const resolvedPreviewUrl = imagePreviewUrl ?? existingImageUrl;
   const canSubmit =
     !isSubmitting &&
-    !isUploadingImage &&
     !isLoadingCategories &&
     !categoriesErrorMessage &&
     title.trim().length > 0 &&
@@ -94,7 +90,6 @@ export default function EditPostModal({
     setFormErrors({});
     setSubmitErrorMessage(null);
     setIsSubmitting(false);
-    setIsUploadingImage(false);
   }, [categoryOptions, isOpen, post]);
 
   useEffect(() => {
@@ -221,7 +216,7 @@ export default function EditPostModal({
 
   // Resets transient form state and closes modal.
   function handleCancel(forceClose = false) {
-    if ((isSubmitting || isUploadingImage) && !forceClose) {
+    if (isSubmitting && !forceClose) {
       return;
     }
 
@@ -230,29 +225,6 @@ export default function EditPostModal({
     setSubmitErrorMessage(null);
     setIsSubmitting(false);
     onClose();
-  }
-
-  async function uploadSelectedImage(): Promise<string | null> {
-    if (!selectedImageFile) {
-      return existingImageUrl;
-    }
-
-    setIsUploadingImage(true);
-
-    try {
-      const response = await imageAPI.upload(selectedImageFile);
-      const uploadedImageUrl = response.data.imageUrl?.trim();
-
-      if (!uploadedImageUrl) {
-        throw new Error("Image upload completed without a usable image URL.");
-      }
-
-      return uploadedImageUrl;
-    } catch (error) {
-      throw new Error(findImageUploadErrorMessage(error));
-    } finally {
-      setIsUploadingImage(false);
-    }
   }
 
   // Submits an update payload to the parent edit handler.
@@ -279,18 +251,14 @@ export default function EditPostModal({
       title: title.trim(),
       body: body.trim(),
       categoryId: selectedCategoryId,
-      imageUrl: existingImageUrl,
+      imageFile: selectedImageFile,
     };
 
     setSubmitErrorMessage(null);
     setIsSubmitting(true);
 
     try {
-      const imageUrl = await uploadSelectedImage();
-      await onEditPost({
-        ...payload,
-        imageUrl,
-      });
+      await onEditPost(payload);
       handleCancel(true);
     } catch (error) {
       setSubmitErrorMessage(findEditPostErrorMessage(error));
@@ -325,7 +293,7 @@ export default function EditPostModal({
             className={styles.closeButton}
             aria-label="Close edit post modal"
             onClick={() => handleCancel()}
-            disabled={isSubmitting || isUploadingImage}
+            disabled={isSubmitting}
           >
             <CloseIcon className={styles.closeIcon} />
           </button>
@@ -453,8 +421,7 @@ export default function EditPostModal({
 
           <PostImageField
             inputId={imageInputId}
-            isDisabled={isSubmitting || isUploadingImage}
-            isUploading={isUploadingImage}
+            isDisabled={isSubmitting}
             previewUrl={resolvedPreviewUrl}
             statusText={
               selectedImageFile
@@ -480,7 +447,7 @@ export default function EditPostModal({
               variant="secondary"
               className={styles.cancelButton}
               onClick={() => handleCancel()}
-              disabled={isSubmitting || isUploadingImage}
+              disabled={isSubmitting}
             >
               Cancel
             </Button>
@@ -491,11 +458,7 @@ export default function EditPostModal({
               className={styles.submitButton}
               disabled={!canSubmit}
             >
-              {isUploadingImage
-                ? "Uploading image..."
-                : isSubmitting
-                  ? "Updating..."
-                  : "Update Post"}
+              {isSubmitting ? "Updating..." : "Update Post"}
             </Button>
           </div>
         </form>

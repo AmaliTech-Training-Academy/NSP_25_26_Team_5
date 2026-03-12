@@ -9,7 +9,6 @@ import CommentsSection from "../../../comment/components/CommentsSection";
 import { postAPI } from "../../api/api.post";
 import PostImageModal from "../../components/PostImageModal";
 import type { Post } from "../../types/post.type";
-import { resolvePostImageUrl } from "../../utils/post-image.storage";
 import {
   findCategoryData,
   findPostRequestErrorMessage,
@@ -80,10 +79,7 @@ export default function PostDetail() {
     () => findCategoryData(post?.categoryName ?? null),
     [post?.categoryName],
   );
-  const resolvedImageUrl = useMemo(
-    () => (post ? resolvePostImageUrl(post.id, post.imageUrl) : null),
-    [post],
-  );
+  const resolvedImageUrl = post?.imageUrl ?? null;
   const breadcrumbItems = [
     {
       id: "home",

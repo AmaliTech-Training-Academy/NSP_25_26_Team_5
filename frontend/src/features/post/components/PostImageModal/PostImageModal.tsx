@@ -1,7 +1,29 @@
-import { useEffect, useId, type MouseEvent as ReactMouseEvent } from "react";
+import {
+  useEffect,
+  useId,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+} from "react";
 import CloseIcon from "../../../../assets/Icons/CloseIcon";
+import { useAuth } from "../../../../context/AuthContext/AuthContext";
+import { apiClient } from "../../../../lib/axios/client";
 import styles from "./PostImageModal.module.css";
 import type { PostImageModalProps } from "./PostImageModal.types";
+
+function extractImageFilename(imageUrl: string): string | null {
+  try {
+    const parsedUrl = new URL(
+      imageUrl,
+      typeof window !== "undefined" ? window.location.origin : "http://localhost",
+    );
+    const filename = parsedUrl.pathname.split("/").filter(Boolean).pop()?.trim();
+
+    return filename ? filename : null;
+  } catch {
+    const filename = imageUrl.split("/").filter(Boolean).pop()?.split("?")[0]?.trim();
+    return filename ? filename : null;
+  }
+}
 
 export default function PostImageModal({
   authorName,
@@ -12,6 +34,10 @@ export default function PostImageModal({
   title,
 }: PostImageModalProps) {
   const titleId = useId();
+  const { isAuthenticated } = useAuth();
+  const [resolvedImageSrc, setResolvedImageSrc] = useState<string | null>(null);
+  const [isLoadingImage, setIsLoadingImage] = useState(false);
+  const [imageErrorMessage, setImageErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isOpen) {
@@ -44,6 +70,82 @@ export default function PostImageModal({
     };
   }, [isOpen, onClose]);
 
+  useEffect(() => {
+    if (!isOpen || !imageUrl) {
+      setResolvedImageSrc(null);
+      setIsLoadingImage(false);
+      setImageErrorMessage(null);
+      return;
+    }
+
+    if (imageUrl.startsWith("blob:") || imageUrl.startsWith("data:")) {
+      setResolvedImageSrc(imageUrl);
+      setIsLoadingImage(false);
+      setImageErrorMessage(null);
+      return;
+    }
+
+    let isDisposed = false;
+    let objectUrl: string | null = null;
+    const imageFilename = extractImageFilename(imageUrl);
+
+    if (!imageFilename) {
+      setImageErrorMessage("Unable to resolve this image right now.");
+      setResolvedImageSrc(null);
+      setIsLoadingImage(false);
+      return;
+    }
+
+    const resolvedImageFilename = imageFilename;
+
+    async function loadProtectedImage() {
+      setIsLoadingImage(true);
+      setImageErrorMessage(null);
+      setResolvedImageSrc(null);
+
+      try {
+        const response = await apiClient.get(`/images/${encodeURIComponent(resolvedImageFilename)}`, {
+          responseType: "blob",
+        });
+        const imageBlob = response.data as Blob;
+        objectUrl = URL.createObjectURL(imageBlob);
+
+        if (isDisposed) {
+          if (objectUrl) {
+            URL.revokeObjectURL(objectUrl);
+          }
+          return;
+        }
+
+        setResolvedImageSrc(objectUrl);
+      } catch {
+        if (isDisposed) {
+          return;
+        }
+
+        setImageErrorMessage(
+          isAuthenticated
+            ? "Unable to load this image right now."
+            : "Sign in to view this image.",
+        );
+      } finally {
+        if (!isDisposed) {
+          setIsLoadingImage(false);
+        }
+      }
+    }
+
+    void loadProtectedImage();
+
+    return () => {
+      isDisposed = true;
+
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+    };
+  }, [imageUrl, isAuthenticated, isOpen]);
+
   function handleBackdropMouseDown(event: ReactMouseEvent<HTMLDivElement>) {
     if (event.target === event.currentTarget) {
       onClose();
@@ -69,7 +171,21 @@ export default function PostImageModal({
         </div>
 
         <div className={styles.imageFrame}>
-          <img className={styles.image} src={imageUrl} alt={title} />
+          {isLoadingImage && (
+            <p className={styles.statusMessage} role="status" aria-live="polite">
+              Loading image...
+            </p>
+          )}
+
+          {!isLoadingImage && imageErrorMessage && (
+            <p className={styles.errorMessage} role="alert">
+              {imageErrorMessage}
+            </p>
+          )}
+
+          {!isLoadingImage && !imageErrorMessage && resolvedImageSrc && (
+            <img className={styles.image} src={resolvedImageSrc} alt={title} />
+          )}
         </div>
 
         <div className={styles.content}>

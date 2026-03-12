@@ -29,12 +29,8 @@ import ChevronUpIcon from "../../../../assets/Icons/ChevronUpIcon";
 import ChevronDownIcon from "../../../../assets/Icons/ChevronDownIcon";
 import HouseIcon from "../../../../assets/Icons/HouseIcon";
 import Breadcrumbs from "../../../../components/shared/Breadcrumbs/Breadcrumbs";
-import { imageAPI } from "../../api/image.api";
 import PostImageField from "../PostImageField";
-import {
-  findImageUploadErrorMessage,
-  validatePostImageFile,
-} from "../../utils/post.utils";
+import { validatePostImageFile } from "../../utils/post.utils";
 
 // Renders the create-post modal and submits a new post payload to the parent.
 export default function CreatePostModal({
@@ -55,7 +51,6 @@ export default function CreatePostModal({
   const [formErrors, setFormErrors] = useState<CreatePostFormErrors>({});
   const [submitErrorMessage, setSubmitErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const categorySectionRef = useRef<HTMLDivElement | null>(null);
   const bodyInputId = useId();
   const imageInputId = useId();
@@ -69,7 +64,6 @@ export default function CreatePostModal({
   const isTitleNearLimit = titleLength >= TITLE_WARNING_THRESHOLD;
   const canSubmit =
     !isSubmitting &&
-    !isUploadingImage &&
     !isLoadingCategories &&
     !categoriesErrorMessage &&
     title.trim().length > 0 &&
@@ -159,7 +153,6 @@ export default function CreatePostModal({
     setFormErrors({});
     setSubmitErrorMessage(null);
     setIsSubmitting(false);
-    setIsUploadingImage(false);
   }
 
   // Closes the modal when the desktop backdrop is clicked.
@@ -216,35 +209,12 @@ export default function CreatePostModal({
 
   // Closes the modal and clears temporary input state.
   function handleCancel(forceClose = false) {
-    if ((isSubmitting || isUploadingImage) && !forceClose) {
+    if (isSubmitting && !forceClose) {
       return;
     }
 
     resetFormState();
     onClose();
-  }
-
-  async function uploadSelectedImage(): Promise<string | null> {
-    if (!selectedImageFile) {
-      return null;
-    }
-
-    setIsUploadingImage(true);
-
-    try {
-      const response = await imageAPI.upload(selectedImageFile);
-      const uploadedImageUrl = response.data.imageUrl?.trim();
-
-      if (!uploadedImageUrl) {
-        throw new Error("Image upload completed without a usable image URL.");
-      }
-
-      return uploadedImageUrl;
-    } catch (error) {
-      throw new Error(findImageUploadErrorMessage(error));
-    } finally {
-      setIsUploadingImage(false);
-    }
   }
 
   // Emits the new post payload and closes the modal.
@@ -267,12 +237,11 @@ export default function CreatePostModal({
     setIsSubmitting(true);
 
     try {
-      const imageUrl = await uploadSelectedImage();
       await onCreatePost({
         title: title.trim(),
         body: body.trim(),
         categoryId: selectedCategoryId,
-        imageUrl,
+        imageFile: selectedImageFile,
       });
       handleCancel(true);
     } catch (error) {
@@ -308,7 +277,7 @@ export default function CreatePostModal({
             className={styles.closeButton}
             aria-label="Close create post modal"
             onClick={() => handleCancel()}
-            disabled={isSubmitting || isUploadingImage}
+            disabled={isSubmitting}
           >
             <CloseIcon className={styles.closeIcon} />
           </button>
@@ -446,8 +415,7 @@ export default function CreatePostModal({
 
           <PostImageField
             inputId={imageInputId}
-            isDisabled={isSubmitting || isUploadingImage}
-            isUploading={isUploadingImage}
+            isDisabled={isSubmitting}
             previewUrl={imagePreviewUrl}
             statusText={
               selectedImageFile ? `Selected image: ${selectedImageFile.name}` : null
@@ -469,7 +437,7 @@ export default function CreatePostModal({
               variant="secondary"
               className={styles.cancelButton}
               onClick={() => handleCancel()}
-              disabled={isSubmitting || isUploadingImage}
+              disabled={isSubmitting}
             >
               Cancel
             </Button>
@@ -480,11 +448,7 @@ export default function CreatePostModal({
               className={styles.submitButton}
               disabled={!canSubmit}
             >
-              {isUploadingImage
-                ? "Uploading image..."
-                : isSubmitting
-                  ? "Creating..."
-                  : "Create Post"}
+              {isSubmitting ? "Creating..." : "Create Post"}
             </Button>
           </div>
         </form>

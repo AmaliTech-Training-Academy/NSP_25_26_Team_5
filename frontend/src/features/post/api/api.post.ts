@@ -37,6 +37,13 @@ export const postAPI = {
     return apiClient.put<Post>(`/posts/${id}`, data);
   },
 
+  uploadImage(id: number, file: File) {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    return apiClient.post<Post>(`/posts/${id}/image`, formData);
+  },
+
   delete(id: number) {
     return apiClient.delete<void>(`/posts/${id}`);
   },

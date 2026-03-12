@@ -28,7 +28,6 @@ import {
   findCreatePostErrorMessage,
   findPostRequestErrorMessage,
 } from "../../features/post/utils/post.utils";
-import { postImageStorage } from "../../features/post/utils/post-image.storage";
 import type {
   Category,
   PagedResponse,
@@ -295,24 +294,16 @@ export default function HomePage() {
 
   // Adds a newly created post to the top of the feed.
   async function handleCreatePost(values: CreatePostFormValues): Promise<void> {
+    let createdPost: Post;
+    let didImageUploadSucceed = !values.imageFile;
+
     try {
       const response = await postAPI.create({
         title: values.title,
         body: values.body,
         categoryId: values.categoryId,
       });
-
-      if (values.imageUrl) {
-        postImageStorage.setImageUrl(response.data.id, values.imageUrl);
-      }
-
-      const createdPost = mapPostToCardData(response.data);
-      setHomePosts((previousPosts) => [createdPost, ...previousPosts]);
-      showToast({
-        variant: "success",
-        message: "Post created successfully",
-      });
-      navigate(`/posts/${response.data.id}`);
+      createdPost = response.data;
     } catch (error) {
       const errorMessage = findCreatePostErrorMessage(error);
       showToast({
@@ -321,6 +312,33 @@ export default function HomePage() {
       });
       throw new Error(errorMessage);
     }
+
+    if (values.imageFile) {
+      try {
+        const imageResponse = await postAPI.uploadImage(createdPost.id, values.imageFile);
+        createdPost = imageResponse.data;
+        didImageUploadSucceed = true;
+      } catch (error) {
+        showToast({
+          variant: "error",
+          message: findPostRequestErrorMessage(
+            error,
+            "Post created, but the image could not be uploaded right now. You can retry from Edit Post.",
+          ),
+        });
+      }
+    }
+
+    if (didImageUploadSucceed) {
+      showToast({
+        variant: "success",
+        message: "Post created successfully",
+      });
+    }
+
+    const createdPostCard = mapPostToCardData(createdPost);
+    setHomePosts((previousPosts) => [createdPostCard, ...previousPosts]);
+    navigate(`/posts/${createdPost.id}`);
   }
 
   // Opens the edit modal for the selected post card.
@@ -343,23 +361,13 @@ export default function HomePage() {
 
   // Submits post update payload and refreshes the edited card in the feed.
   async function handleEditPostSubmit(values: EditPostFormValues): Promise<void> {
+    let didImageUploadSucceed = !values.imageFile;
+
     try {
       await postAPI.update(Number(values.postId), {
         title: values.title,
         body: values.body,
         categoryId: values.categoryId,
-      });
-
-      if (values.imageUrl) {
-        postImageStorage.setImageUrl(values.postId, values.imageUrl);
-      } else {
-        postImageStorage.removeImage(values.postId);
-      }
-
-      setPostsReloadKey((previousKey) => previousKey + 1);
-      showToast({
-        variant: "success",
-        message: "Post updated successfully",
       });
     } catch (error) {
       const errorMessage = findPostRequestErrorMessage(
@@ -374,6 +382,30 @@ export default function HomePage() {
       });
       throw new Error(errorMessage);
     }
+
+    if (values.imageFile) {
+      try {
+        await postAPI.uploadImage(Number(values.postId), values.imageFile);
+        didImageUploadSucceed = true;
+      } catch (error) {
+        showToast({
+          variant: "error",
+          message: findPostRequestErrorMessage(
+            error,
+            "Post updated, but the image could not be uploaded right now. You can retry from Edit Post.",
+          ),
+        });
+      }
+    }
+
+    if (didImageUploadSucceed) {
+      showToast({
+        variant: "success",
+        message: "Post updated successfully",
+      });
+    }
+
+    setPostsReloadKey((previousKey) => previousKey + 1);
   }
 
   // Opens the delete confirmation popup for the selected post.
@@ -419,7 +451,6 @@ export default function HomePage() {
       }
 
       await postAPI.delete(parsedPostId);
-      postImageStorage.removeImage(parsedPostId);
       setPostBeingDeleted(null);
 
       if (homePosts.length === 1 && currentPage > 1) {

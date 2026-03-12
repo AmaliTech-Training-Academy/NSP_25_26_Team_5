@@ -1,7 +1,6 @@
 import type { PostCardData } from "../../features/post/components/PostCard/PostCard.types";
 import type { Post } from "../../features/post/types/post.type";
 import { findCategoryData, formatRelativeTime } from "../../features/post/utils/post.utils";
-import { resolvePostImageUrl } from "../../features/post/utils/post-image.storage";
 
 const API_TIMESTAMP_WITHOUT_OFFSET =
   /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?$/;
@@ -18,7 +17,7 @@ export function mapPostToCardData(post: Post): PostCardData {
     id: String(post.id),
     title: post.title,
     content: post.body,
-    imageUrl: resolvePostImageUrl(post.id, post.imageUrl),
+    imageUrl: post.imageUrl ?? null,
     writerName: post.authorName,
     authorEmail: post.authorEmail,
     categoryName: post.categoryName,
