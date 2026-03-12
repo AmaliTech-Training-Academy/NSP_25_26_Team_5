@@ -11,6 +11,7 @@ import CloseIcon from "../../../assets/Icons/CloseIcon";
 export default function NavBar({
   className,
   user,
+  showAnalytics = false,
   variant = "default",
   onMenuClick,
   onAnalyticsClick,
@@ -57,35 +58,37 @@ export default function NavBar({
 
           {user && (
             <div className={styles.desktopActions}>
-              <button
-                type="button"
-                className={joinNavBarClassName(
-                  styles.desktopActionButton,
-                  isAnalyticsVariant ? styles.analyticsActionButton : undefined,
-                )}
-                onClick={onAnalyticsClick}
-                disabled={isAnalyticsVariant}
-                aria-current={isAnalyticsVariant ? "page" : undefined}
-              >
-                <ChartColumnIcon
+              {showAnalytics && (
+                <button
+                  type="button"
                   className={joinNavBarClassName(
-                    styles.actionIcon,
-                    isAnalyticsVariant
-                      ? styles.analyticsPageAnalyticsIcon
-                      : styles.analyticsIcon,
+                    styles.desktopActionButton,
+                    isAnalyticsVariant ? styles.analyticsActionButton : undefined,
                   )}
-                />
-                <span
-                  className={joinNavBarClassName(
-                    styles.analyticsText,
-                    isAnalyticsVariant
-                      ? styles.analyticsPageAnalyticsText
-                      : undefined,
-                  )}
+                  onClick={onAnalyticsClick}
+                  disabled={isAnalyticsVariant}
+                  aria-current={isAnalyticsVariant ? "page" : undefined}
                 >
-                  Analytics
-                </span>
-              </button>
+                  <ChartColumnIcon
+                    className={joinNavBarClassName(
+                      styles.actionIcon,
+                      isAnalyticsVariant
+                        ? styles.analyticsPageAnalyticsIcon
+                        : styles.analyticsIcon,
+                    )}
+                  />
+                  <span
+                    className={joinNavBarClassName(
+                      styles.analyticsText,
+                      isAnalyticsVariant
+                        ? styles.analyticsPageAnalyticsText
+                        : undefined,
+                    )}
+                  >
+                    Analytics
+                  </span>
+                </button>
+              )}
 
               <div className={styles.userInfo}>
                 <div className={styles.avatar}>{initials}</div>
@@ -132,23 +135,27 @@ export default function NavBar({
           </div>
 
           <div className={styles.mobileSidebarActions}>
-            <button
-              type="button"
-              className={styles.mobileActionButton}
-              onClick={onAnalyticsClick}
-              disabled={isAnalyticsVariant}
-              aria-current={isAnalyticsVariant ? "page" : undefined}
-            >
-              <ChartColumnIcon
-                className={joinNavBarClassName(
-                  styles.actionIcon,
-                  styles.analyticsIcon,
-                )}
-              />
-              <span className={styles.analyticsText}>Analytics</span>
-            </button>
+            {showAnalytics && (
+              <button
+                type="button"
+                className={styles.mobileActionButton}
+                onClick={onAnalyticsClick}
+                disabled={isAnalyticsVariant}
+                aria-current={isAnalyticsVariant ? "page" : undefined}
+              >
+                <ChartColumnIcon
+                  className={joinNavBarClassName(
+                    styles.actionIcon,
+                    styles.analyticsIcon,
+                  )}
+                />
+                <span className={styles.analyticsText}>Analytics</span>
+              </button>
+            )}
 
-            <div className={styles.mobileSidebarDivider} aria-hidden="true" />
+            {showAnalytics && (
+              <div className={styles.mobileSidebarDivider} aria-hidden="true" />
+            )}
 
             <button
               type="button"

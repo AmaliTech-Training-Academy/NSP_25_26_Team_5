@@ -36,8 +36,10 @@ const persistAuth = (userData: AuthUser, authToken: string): void => {
 };
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
-  const [user, setUser] = useState<AuthUser | null>(null);
   const [token, setToken] = useState<string | null>(authStorage.getToken());
+  const [user, setUser] = useState<AuthUser | null>(() =>
+    token ? readStoredUser() : null,
+  );
 
   useEffect(() => {
     if (!token) {

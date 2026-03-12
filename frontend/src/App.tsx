@@ -1,4 +1,5 @@
 import { Route, Routes } from "react-router";
+import AdminRoute from "./app/router/AdminRoute";
 import PublicRoute from "./app/router/PublicRoute";
 import Login from "./features/auth/pages/Login/Login";
 import Register from "./features/auth/pages/Register/Register";
@@ -24,7 +25,9 @@ const App = () => {
       <Route element={<ProtectedRoute />}>
         <Route element={<MainLayout />}>
           <Route index element={<Home />} />
-          <Route path="analytics" element={<AnalyticsDashboard />} />
+          <Route element={<AdminRoute />}>
+            <Route path="analytics" element={<AnalyticsDashboard />} />
+          </Route>
         </Route>
       </Route>
     </Routes>
