@@ -12,7 +12,7 @@
 
 .inputWrapper {
   width: 100%;
-  min-height: 48px;
+  min-height: 42px;
   display: flex;
   align-items: center;
   gap: 0;
@@ -71,7 +71,7 @@
 
 .searchButton {
   align-self: stretch;
-  width: 40px;
+  width: 44px;
   border: 1px solid #08283b;
   border-radius: 8px;
   padding: 0;
