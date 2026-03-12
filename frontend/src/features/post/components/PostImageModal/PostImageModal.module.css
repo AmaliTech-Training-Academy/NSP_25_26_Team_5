@@ -7,7 +7,7 @@
   z-index: 230;
   background: #fdfdfd;
   overflow-y: auto;
-  padding: 24px;
+  padding: 16px;
   box-sizing: border-box;
 }
 
@@ -17,6 +17,8 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
+  max-height: calc(100dvh - 79px);
+  overflow-y: auto;
 }
 
 .modalHeader {
@@ -47,8 +49,8 @@
 
 .imageFrame {
   width: 100%;
-  min-height: 240px;
-  height: clamp(240px, 55vh, 560px);
+  min-height: 200px;
+  height: min(42dvh, 360px);
   border-radius: 16px;
   overflow: hidden;
   background:
@@ -158,14 +160,16 @@
     inset: 0;
     background: rgba(44, 44, 44, 0.7);
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     padding: 24px;
+    overflow-y: auto;
   }
 
   .modal {
+    width: min(720px, 100%);
     max-width: 720px;
-    max-height: calc(100vh - 48px);
+    max-height: calc(100dvh - 48px);
     overflow-y: auto;
     border: 1px solid #e6eaeb;
     border-radius: 16px;
@@ -175,7 +179,8 @@
   }
 
   .imageFrame {
-    height: clamp(320px, 60vh, 640px);
+    min-height: 240px;
+    height: min(50dvh, 520px);
     padding: 20px;
   }
 }

@@ -4,6 +4,7 @@ import {
   useState,
   type MouseEvent as ReactMouseEvent,
 } from "react";
+import { createPortal } from "react-dom";
 import ClockIcon from "../../../../assets/Icons/ClockIcon";
 import CloseIcon from "../../../../assets/Icons/CloseIcon";
 import { useAuth } from "../../../../context/AuthContext/AuthContext";
@@ -154,11 +155,21 @@ export default function PostImageModal({
     }
   }
 
+  function handleCloseButtonClick(event: ReactMouseEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+    onClose();
+  }
+
   if (!isOpen || !imageUrl) {
     return null;
   }
 
-  return (
+  if (typeof document === "undefined") {
+    return null;
+  }
+
+  return createPortal(
     <div className={styles.overlay} role="presentation" onMouseDown={handleBackdropMouseDown}>
       <section className={styles.modal} role="dialog" aria-modal="true" aria-labelledby={titleId}>
         <div className={styles.modalHeader}>
@@ -166,7 +177,7 @@ export default function PostImageModal({
             type="button"
             className={styles.closeButton}
             aria-label="Close post image"
-            onClick={onClose}
+            onClick={handleCloseButtonClick}
           >
             <CloseIcon className={styles.closeIcon} />
           </button>
@@ -205,6 +216,7 @@ export default function PostImageModal({
           )}
         </div>
       </section>
-    </div>
+    </div>,
+    document.body,
   );
 }
