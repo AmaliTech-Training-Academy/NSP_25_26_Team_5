@@ -1,7 +1,17 @@
 .loginLayout {
+  background: #fdfdfd;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   min-height: 100vh;
+  min-height: 100svh;
+  padding: 64px 0 32px;
   width: 100%;
+}
+
+@media (min-width: 521px) {
+  .loginLayout {
+    align-items: center;
+    padding: 24px;
+  }
 }
