@@ -37,12 +37,14 @@ interface PostDetailContentProps {
   cacheKey: string;
   postId: number;
   onNavigateHome: () => void;
+  onRetry: () => void;
 }
 
 function PostDetailContent({
   cacheKey,
   postId,
   onNavigateHome,
+  onRetry,
 }: PostDetailContentProps) {
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const result = readSuspenseResource<PostDetailLoadResult>(cacheKey, async () => {
@@ -82,9 +84,18 @@ function PostDetailContent({
 
   if (result.status === "error") {
     return (
-      <p className={styles.errorMessage} role="alert">
-        {result.errorMessage}
-      </p>
+      <div className={styles.retryState}>
+        <p className={styles.errorMessage} role="alert">
+          {result.errorMessage}
+        </p>
+        <Button
+          variant="secondary"
+          className={styles.retryButton}
+          onClick={onRetry}
+        >
+          Retry loading post
+        </Button>
+      </div>
     );
   }
 
@@ -171,7 +182,9 @@ function PostDetailContent({
 export default function PostDetail() {
   const navigate = useNavigate();
   const { postId } = useParams();
+  const [postReloadKey, setPostReloadKey] = useState(0);
   const parsedPostId = Number(postId);
+  const cacheKey = `post-detail:${parsedPostId}`;
 
   if (!postId || Number.isNaN(parsedPostId) || parsedPostId <= 0) {
     return <PostNotFound />;
@@ -182,10 +195,14 @@ export default function PostDetail() {
       <section className={styles.content}>
         <Suspense fallback={<PostDetailSkeleton />}>
           <PostDetailContent
-            key={parsedPostId}
-            cacheKey={`post-detail:${parsedPostId}`}
+            key={`${parsedPostId}:${postReloadKey}`}
+            cacheKey={cacheKey}
             postId={parsedPostId}
             onNavigateHome={() => navigate("/")}
+            onRetry={() => {
+              invalidateSuspenseResource(cacheKey);
+              setPostReloadKey((currentKey) => currentKey + 1);
+            }}
           />
         </Suspense>
       </section>

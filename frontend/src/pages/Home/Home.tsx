@@ -122,6 +122,7 @@ interface HomePostsContentProps {
   onEditPost: (post: PostCardData) => void;
   onDeletePost: (post: PostCardData) => void;
   onPageChange: (page: number) => void;
+  onRetry: () => void;
 }
 
 function HomePostsContent({
@@ -134,6 +135,7 @@ function HomePostsContent({
   onEditPost,
   onDeletePost,
   onPageChange,
+  onRetry,
 }: HomePostsContentProps) {
   const result = readSuspenseResource<HomePostsLoadResult>(cacheKey, async () => {
     try {
@@ -167,9 +169,18 @@ function HomePostsContent({
 
   if (result.status === "error") {
     return (
-      <p className={styles.errorMessage} role="alert">
-        {result.errorMessage}
-      </p>
+      <div className={styles.retryState}>
+        <p className={styles.errorMessage} role="alert">
+          {result.errorMessage}
+        </p>
+        <Button
+          variant="secondary"
+          className={styles.retryButton}
+          onClick={onRetry}
+        >
+          Retry loading posts
+        </Button>
+      </div>
     );
   }
 
@@ -381,6 +392,11 @@ export default function HomePage() {
     setPostFeedScope((previousScope) =>
       previousScope === "MY_POSTS" ? "ALL_POSTS" : "MY_POSTS",
     );
+  }
+
+  function handleRetryPosts() {
+    invalidateSuspenseResource(postsQueryKey);
+    setPostsReloadKey((currentKey) => currentKey + 1);
   }
 
   // Opens the create-post modal from the top action button.
@@ -643,6 +659,7 @@ export default function HomePage() {
           onEditPost={handleEditPost}
           onDeletePost={handleDeletePost}
           onPageChange={setCurrentPage}
+          onRetry={handleRetryPosts}
         />
       </Suspense>
 

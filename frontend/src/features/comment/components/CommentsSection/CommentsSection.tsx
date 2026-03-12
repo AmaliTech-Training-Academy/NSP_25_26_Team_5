@@ -42,6 +42,7 @@ export default function CommentsSection({
   const [isSavingComment, setIsSavingComment] = useState(false);
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [commentsErrorMessage, setCommentsErrorMessage] = useState<string | null>(null);
+  const [commentsReloadKey, setCommentsReloadKey] = useState(0);
 
   const commentsSectionClassName = joinCommentsSectionClassName(
     styles.commentsSection,
@@ -93,7 +94,7 @@ export default function CommentsSection({
     return () => {
       isUnmounted = true;
     };
-  }, [postId]);
+  }, [postId, commentsReloadKey]);
 
   // Keeps the composer input aligned with the current validation state.
   function handleCommentDraftChange(nextValue: string) {
@@ -322,9 +323,18 @@ export default function CommentsSection({
         )}
 
         {!isLoadingComments && commentsErrorMessage && (
-          <p className={styles.errorMessage} role="alert">
-            {commentsErrorMessage}
-          </p>
+          <div className={styles.retryState}>
+            <p className={styles.errorMessage} role="alert">
+              {commentsErrorMessage}
+            </p>
+            <Button
+              variant="secondary"
+              className={styles.retryButton}
+              onClick={() => setCommentsReloadKey((currentKey) => currentKey + 1)}
+            >
+              Retry loading comments
+            </Button>
+          </div>
         )}
 
         {!isLoadingComments &&
