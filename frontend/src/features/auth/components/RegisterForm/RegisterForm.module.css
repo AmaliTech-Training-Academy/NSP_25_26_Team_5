@@ -30,11 +30,7 @@
   font-family: "Inter", "Segoe UI", sans-serif;
   font-size: 14px;
   font-weight: 400;
-  line-height: 1.25;
-}
-
-.passwordHintError {
-  color: #c81e1e;
+  line-height: 1.35;
 }
 
 .actionSection {

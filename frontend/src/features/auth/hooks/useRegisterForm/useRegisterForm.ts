@@ -3,7 +3,7 @@ import { useNavigate } from "react-router";
 import { useAuth } from "../../../../context/AuthContext/AuthContext";
 import { useToast } from "../../../../context/ToastContext/ToastContext";
 import {
-  hasSpecialCharacter,
+  findPasswordValidationError,
   isValidEmail,
   mapRegisterErrorMessage,
 } from "./useRegisterForm.utils";
@@ -58,8 +58,8 @@ export function useRegisterForm() {
 
     const trimmedName = name.trim();
     const trimmedEmail = email.trim();
-    const trimmedPassword = password.trim();
-    const trimmedConfirmPassword = confirmPassword.trim();
+    const nextPassword = password;
+    const nextConfirmPassword = confirmPassword;
 
     const nextNameError = !trimmedName ? "Full name can't be empty" : "";
     const nextEmailError = !trimmedEmail
@@ -67,16 +67,10 @@ export function useRegisterForm() {
       : !isValidEmail(trimmedEmail)
         ? "Please enter a valid email address"
         : "";
-    const nextPasswordError = !trimmedPassword
-      ? "Password field can't be empty"
-      : trimmedPassword.length < 8
-        ? "Password must be at least 8 characters"
-        : !hasSpecialCharacter(trimmedPassword)
-          ? "Password must include at least 1 special character"
-        : "";
-    const nextConfirmPasswordError = !trimmedConfirmPassword
+    const nextPasswordError = findPasswordValidationError(nextPassword);
+    const nextConfirmPasswordError = !nextConfirmPassword
       ? "Confirm password can't be empty"
-      : trimmedPassword !== trimmedConfirmPassword
+      : nextPassword !== nextConfirmPassword
         ? "Passwords do not match"
         : "";
 
@@ -100,7 +94,7 @@ export function useRegisterForm() {
       await register({
         fullName: trimmedName,
         email: trimmedEmail,
-        password: trimmedPassword,
+        password: nextPassword,
       });
       showToast({
         variant: "success",
