@@ -1,12 +1,22 @@
-.notFoundLayout {
-  background:#fdfdfd;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  min-height: 100vh;
-  min-height: 100svh;
-  padding: 80px 0 40px;
+.postNotFoundPage {
   width: 100%;
+  padding: 16px 24px 48px;
+  box-sizing: border-box;
+}
+
+.content {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  align-items: center;
+}
+
+.breadcrumbs {
+  width: fit-content;
+  align-self: flex-start;
 }
 
 .notFoundCard {
@@ -65,8 +75,13 @@
   width: 100%;
 }
 
-.title {
+.title,
+.subtitle,
+.description {
   margin: 0;
+}
+
+.title {
   color: #041620;
   font-family: "Poppins", "Segoe UI", sans-serif;
   font-size: 32px;
@@ -75,7 +90,7 @@
 }
 
 .subtitle {
-  margin: 12px 0 0;
+  margin-top: 12px;
   color: #395362;
   font-family: "Inter", "Segoe UI", sans-serif;
   font-size: 16px;
@@ -88,7 +103,6 @@
 }
 
 .description {
-  margin: 0;
   color: #4f6775;
   font-family: "Inter", "Segoe UI", sans-serif;
   font-size: 14px;
@@ -97,17 +111,16 @@
   text-align: center;
 }
 
-.loginButton {
+.actionButton {
+  width: min(100%, 311px);
   display: inline-flex;
   align-items: center;
-  width: min(100%, 311px);
   justify-content: center;
   padding: 12px 18px;
 }
 
 @media (min-width: 521px) {
-  .notFoundLayout {
-    align-items: center;
+  .postNotFoundPage {
     padding: 24px;
   }
 

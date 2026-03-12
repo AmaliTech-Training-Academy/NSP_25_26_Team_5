@@ -7,6 +7,7 @@ import ProtectedRoute from "./app/router/ProtectedRoute";
 import MainLayout from "./components/shared/MainLayout/MainLayout";
 import AnalyticsDashboard from "./features/analytics/pages/AnalyticsDashboard";
 import PostDetail from "./features/post/pages/PostDetail/PostDetail";
+import PostNotFound from "./features/post/pages/PostNotFound/PostNotFound";
 import Home from "./pages/Home/Home";
 import NotFound from "./pages/NotFound/NotFound";
 
@@ -19,7 +20,9 @@ const App = () => {
       </Route>
 
       <Route element={<MainLayout />}>
+        <Route path="posts" element={<PostNotFound />} />
         <Route path="posts/:postId" element={<PostDetail />} />
+        <Route path="posts/*" element={<PostNotFound />} />
       </Route>
 
       <Route element={<ProtectedRoute />}>

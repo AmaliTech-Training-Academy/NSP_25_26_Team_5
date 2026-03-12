@@ -1,3 +1,4 @@
+import { isAxiosError } from "axios";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import ClockIcon from "../../../../assets/Icons/ClockIcon";
@@ -8,6 +9,7 @@ import Button from "../../../../components/ui/Button/Button";
 import CommentsSection from "../../../comment/components/CommentsSection";
 import { postAPI } from "../../api/api.post";
 import PostImageModal from "../../components/PostImageModal";
+import PostNotFound from "../PostNotFound/PostNotFound";
 import type { Post } from "../../types/post.type";
 import {
   findCategoryData,
@@ -22,6 +24,7 @@ export default function PostDetail() {
   const { postId } = useParams();
   const [post, setPost] = useState<Post | null>(null);
   const [isLoadingPost, setIsLoadingPost] = useState(true);
+  const [isPostMissing, setIsPostMissing] = useState(false);
   const [postErrorMessage, setPostErrorMessage] = useState<string | null>(null);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
 
@@ -31,7 +34,8 @@ export default function PostDetail() {
 
     if (!postId || Number.isNaN(parsedPostId) || parsedPostId <= 0) {
       setPost(null);
-      setPostErrorMessage("Post not found.");
+      setIsPostMissing(true);
+      setPostErrorMessage(null);
       setIsLoadingPost(false);
       return;
     }
@@ -39,6 +43,7 @@ export default function PostDetail() {
     // Loads the selected post details without the comment-side concerns.
     async function loadPostDetails() {
       setIsLoadingPost(true);
+      setIsPostMissing(false);
       setPostErrorMessage(null);
 
       try {
@@ -55,6 +60,12 @@ export default function PostDetail() {
         }
 
         setPost(null);
+        if (isAxiosError(error) && error.response?.status === 404) {
+          setIsPostMissing(true);
+          setPostErrorMessage(null);
+          return;
+        }
+
         setPostErrorMessage(
           findPostRequestErrorMessage(
             error,
@@ -92,6 +103,10 @@ export default function PostDetail() {
       label: "Post Details",
     },
   ];
+
+  if (!isLoadingPost && isPostMissing) {
+    return <PostNotFound />;
+  }
 
   return (
     <main className={styles.postDetailPage}>
