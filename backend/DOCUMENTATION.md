@@ -103,7 +103,6 @@ To view data from a specific table (e.g., posts), use:
 SELECT * FROM posts LIMIT 5;
 
 LIMIT 5 shows the first 5 rows of the table.
-
 Always end SQL statements with a semicolon (;).
 
  ### 4. Describe Table Structure (Optional)

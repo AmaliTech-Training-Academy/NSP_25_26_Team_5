@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-
 // Admin Service : handles admin-only operations like user management.
 @Service
 @RequiredArgsConstructor

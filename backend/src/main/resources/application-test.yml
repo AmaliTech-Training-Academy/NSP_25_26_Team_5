@@ -2,13 +2,16 @@ server:
   port: 8083
 
 spring:
+  #  Test Database (PostgreSQL on port 5433)
   datasource:
-    url: jdbc:h2:mem:test_db
-    driver-class-name: org.h2.Driver
-    username: sa
-    password: Annet@25437
+    url: jdbc:postgresql://localhost:5433/communityboard_test
+    username: postgres
+    password: postgres
 
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: none   # don't auto-create/drop schema in test DB
     show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
