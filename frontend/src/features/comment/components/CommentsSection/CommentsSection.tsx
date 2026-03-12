@@ -4,6 +4,7 @@ import Trash2Icon from "../../../../assets/Icons/Trash2Icon";
 import EmptyPostsIcon from "../../../../assets/Icons/EmptyPostsIcon";
 import Button from "../../../../components/ui/Button/Button";
 import { useAuth } from "../../../../context/AuthContext/AuthContext";
+import { useToast } from "../../../../context/ToastContext/ToastContext";
 import DeletePostModal from "../../../post/components/DeletePostModal";
 import { commentAPI } from "../../api/comment.api";
 import type { Comment } from "../../types/comment.types";
@@ -26,6 +27,7 @@ export default function CommentsSection({
   postId,
 }: CommentsSectionProps) {
   const { isAuthenticated, user } = useAuth();
+  const { showToast } = useToast();
   const commentInputId = useId();
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentDraft, setCommentDraft] = useState("");
@@ -124,6 +126,10 @@ export default function CommentsSection({
         sortCommentsOldestFirst([...previousComments, response.data]),
       );
       setCommentDraft("");
+      showToast({
+        variant: "success",
+        message: "Comment added successfully",
+      });
     } catch (error) {
       setCommentRequestError(
         findCommentRequestErrorMessage(
@@ -182,6 +188,10 @@ export default function CommentsSection({
       );
       setEditingCommentId(null);
       setEditingDraft("");
+      showToast({
+        variant: "success",
+        message: "Comment updated successfully",
+      });
     } catch (error) {
       setCommentRequestError(
         findCommentRequestErrorMessage(
@@ -233,6 +243,10 @@ export default function CommentsSection({
       }
 
       setCommentBeingDeleted(null);
+      showToast({
+        variant: "success",
+        message: "Comment deleted successfully",
+      });
     } catch (error) {
       setCommentRequestError(
         findCommentRequestErrorMessage(
