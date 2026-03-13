@@ -287,10 +287,21 @@ jobs:
           docker pull "$ECR_BACKEND:$TAG"
           docker pull "$ECR_FRONTEND:$TAG"
 
-          docker stop backend frontend 2>/dev/null || true
-          docker rm   backend frontend 2>/dev/null || true
+          docker stop backend frontend postgres 2>/dev/null || true
+          docker rm   backend frontend postgres 2>/dev/null || true
 
           docker network create appnet 2>/dev/null || true
+          docker volume create pgdata 2>/dev/null || true
+
+          docker run -d --name postgres --restart unless-stopped --network appnet \
+            -e POSTGRES_DB="$DB_NAME" \
+            -e POSTGRES_USER="$DB_USER" \
+            -e POSTGRES_PASSWORD="$DB_PASS" \
+            -v pgdata:/var/lib/postgresql/data \
+            -p 5432:5432 \
+            postgres:15-alpine
+          until docker exec postgres pg_isready -U "$DB_USER" -d "$DB_NAME"; do sleep 2; done
+          sleep 3
 
           docker run -d --name backend --restart unless-stopped --network appnet \
             -e SPRING_DATASOURCE_URL="jdbc:postgresql://postgres:5432/$DB_NAME" \
