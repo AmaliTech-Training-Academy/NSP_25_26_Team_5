@@ -12,7 +12,7 @@ Infrastructure: VPC, ALB, **ECR**, ECS (backend), RDS (Postgres), Amplify (front
 - AWS CLI / credentials (or OIDC in CI)
 - Required variables set (see below)
 
-## Quick start
+## Quick start  
 
 ```bash
 cd devops/infra/terraform
