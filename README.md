@@ -23,7 +23,7 @@ docker-compose up --build
 | admin@amalitech.com | password123 | ADMIN |
 | user@amalitech.com | password123 | USER |
 
-## Project Structure
+## Project Structure  
 ```
 backend/          - Spring Boot REST API
 frontend/         - React 18 SPA
