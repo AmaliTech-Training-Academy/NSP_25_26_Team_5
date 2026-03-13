@@ -16,9 +16,10 @@ module "network" {
 
 # --- Security groups ---
 module "security" {
-  source       = "../../modules/security"
-  vpc_id       = module.network.vpc_id
-  project_name = local.name_prefix
+  source           = "../../modules/security"
+  vpc_id           = module.network.vpc_id
+  project_name     = local.name_prefix
+  allowed_ssh_cidr = var.allowed_ssh_cidr
 }
 
 # --- ALB (single: path /api/* -> backend:8080, default -> frontend:80) ---
@@ -63,6 +64,7 @@ module "ec2_app" {
   jwt_secret                = var.jwt_secret
   aws_region                = var.aws_region
   instance_type             = var.instance_type
+  ssh_public_key            = var.ssh_public_key
 }
 
 # --- SNS (notifications / alerts) ---

@@ -65,13 +65,21 @@ terraform apply
 | `TF_VAR_DB_USERNAME` | Yes | Postgres username on EC2 (or set per env). |
 | `TF_VAR_DB_PASSWORD` | Yes | Postgres password (or set per env). |
 | `TF_VAR_JWT_SECRET` | Yes | Backend JWT signing secret (or set per env). |
+| `EC2_SSH_PRIVATE_KEY` | Yes (for CD deploy) | Private key (PEM) for `ec2-user`; pair with Terraform var `ssh_public_key`. CD SSHs to EC2 and runs `/opt/app/deploy.sh <tag>` to pull images and restart containers. |
 
-### 5. GitHub: Environment secrets (optional overrides)
+### 5. Terraform: SSH key for EC2 deploy
+
+- In each environment (e.g. **staging**), set the **public** key that matches `EC2_SSH_PRIVATE_KEY`:
+  - **Option A:** In `terraform.tfvars`: `ssh_public_key = "ssh-rsa AAAA... your-key"` (the same key you store as `EC2_SSH_PRIVATE_KEY` in GitHub Secrets).
+  - **Option B:** Pass at apply: `terraform apply -var="ssh_public_key=$(cat deploy_key.pub)"`.
+- If `ssh_public_key` is empty, the instance is created without a key; CD’s SSH deploy step will fail (no way to log in). Ensure the instance is in a **public subnet** so it gets a **public IP** (output `ec2_public_ip`); CD uses this to SSH.
+
+### 6. GitHub: Environment secrets (optional overrides)
 
 - To use **different** DB credentials or JWT per environment: **Settings → Environments → [dev | staging | production] → Environment secrets**.
 - Add the same secret names (e.g. `TF_VAR_DB_USERNAME`, `TF_VAR_DB_PASSWORD`, `TF_VAR_JWT_SECRET`). The deploy job uses `environment: ${{ env.ENVIRONMENT }}`, so it reads that environment’s secrets; environment values override repository secrets.
 
-### 6. GitHub: Repository variables
+### 7. GitHub: Repository variables
 
 - **Settings → Secrets and variables → Actions → Variables**.
 - These are **repository-level** (same value for all environments unless you add environment-specific variables):
@@ -80,17 +88,17 @@ terraform apply
 |----------|----------|-------------|
 | `TF_VAR_ALERT_EMAIL` | No | Email for SNS alerts; empty = no subscription. |
 
-### 7. GitHub: Environment variables (optional overrides)
+### 8. GitHub: Environment variables (optional overrides)
 
 - **Settings → Environments → [dev | staging | production] → Environment variables**.
 - Use when a variable must differ per env (e.g. different `TF_VAR_ALERT_EMAIL` per environment). Same names as repository variables; environment value overrides repo.
 
-### 8. CI secrets (repository)
+### 9. CI secrets (repository)
 
 - **Settings → Secrets and variables → Actions → Secrets**.
 - Used by **CI** (build/test): `POSTGRES_USER`, `POSTGRES_PASSWORD`, `SPRING_DATASOURCE_URL`. Optional: `SONAR_TOKEN` (and Sonar vars if you use SonarCloud).
 
-### 9. First deploy
+### 10. First deploy
 
 - Push to **dev** / **staging** / **main**. CI runs, then CD runs for that branch’s environment.
 - App URL: `http://<alb_dns_name>` (from Terraform output or AWS console). Frontend and `/api` use the same origin (ALB).
@@ -107,7 +115,7 @@ terraform apply
 | **State**       | S3 + DynamoDB          | Remote Terraform state with locking          |
 | **Auth (CD)**   | OIDC                    | GitHub Actions → AWS via `AWS_ROLE_ARN`      |
 
-**Flow:** Push to `main`/`dev`/`staging` → **CI** runs. When CI succeeds → **CD** runs: Terraform validate → apply ECR only (both repos) → build & push backend and frontend images (tag = commit SHA) → Terraform apply full stack. EC2 user-data pulls the images and runs Postgres, backend, and frontend containers; ALB routes traffic to the single instance.
+**Flow:** Push to `main`/`dev`/`staging` → **CI** runs. When CI succeeds → **CD** runs: Terraform validate → get outputs (ALB DNS, EC2 IP) → apply ECR only → build & push backend image → build & push **frontend** image with `VITE_API_BASE_URL=http://<alb_dns_name>` (baked in at build time) → Terraform apply remaining → **SSH to EC2** and run `/opt/app/deploy.sh <tag>` to pull new images and restart backend/frontend containers. Postgres stays on the instance; only app containers are updated. ALB routes traffic to the single instance.
 
 ---
 
@@ -135,10 +143,12 @@ flowchart LR
 
   subgraph cd["CD Pipeline (cd.yml) — after CI success"]
     V[terraform validate]
+    O[outputs ALB + EC2 IP]
     E[apply ECR only]
     I[build & push backend + frontend :sha]
-    A[terraform apply full]
-    V --> E --> I --> A
+    A[terraform apply remaining]
+    S[SSH → deploy.sh tag]
+    V --> O --> E --> I --> A --> S
   end
 
   P --> ci
@@ -179,6 +189,7 @@ flowchart TB
   cd[GitHub Actions CD] -.->|push images| ECR_B
   cd -.->|push images| ECR_F
   cd -.->|apply| S3
+  cd -.->|SSH deploy.sh| EC2
 ```
 
 ---
@@ -244,12 +255,19 @@ devops/
 
 2. **terraform-deploy** (needs `terraform-validate`, uses GitHub Environment = env)
    - Terraform init (same backend).
+   - **Get outputs** from current state: `alb_dns_name` (for frontend build), `ec2_public_ip` (for SSH).
    - **Plan** with `TF_VAR_backend_image_tag` and `TF_VAR_frontend_image_tag` = commit SHA; DB, JWT, alert email from secrets/vars.
    - **Apply ECR only:** `terraform apply -target=module.ecr -target=module.ecr_frontend` so both repos exist.
-   - **Login to ECR** → **Build & push** backend image from `./backend`, then **build & push** frontend image from `./frontend` (tag = commit SHA).
-   - **Full apply:** `terraform apply` so EC2, ALB, target groups, etc. use the new images.
+   - **Login to ECR** → **Build & push** backend image from `./backend` (tag = commit SHA).
+   - **Build & push frontend** from `./frontend` with **`--build-arg VITE_API_BASE_URL=http://<alb_dns_name>`** so the deployed frontend uses the correct API base URL (see [Frontend API URL](#frontend-api-url-vite_api_base_url)).
+   - **Terraform apply remaining** so EC2, ALB, target groups, etc. are up to date.
+   - **Deploy on EC2 via SSH:** use `EC2_SSH_PRIVATE_KEY` to SSH as `ec2-user@<ec2_public_ip>` and run `/opt/app/deploy.sh <commit_sha>`, which pulls the new backend and frontend images and restarts only those containers (Postgres and data are unchanged).
 
-**Important:** ECR is applied first so the CD job can push both images; the rest of the stack (EC2, ALB) is applied after. EC2 user-data pulls `backend_image_tag` and `frontend_image_tag` (commit SHA).
+**Important:** The frontend Docker image is built with `VITE_API_BASE_URL` set to the environment’s ALB URL so API calls from the browser go to the same origin. The EC2 instance must have a **public IP** and **`ssh_public_key`** set in Terraform so CD can SSH and run the deploy script.
+
+#### Frontend API URL (`VITE_API_BASE_URL`)
+
+The frontend uses `VITE_API_BASE_URL` (see `frontend/src/lib/axios/client.ts` and `frontend/.env.example`) for the API base URL. Vite bakes this in at **build time**. In CD, the Docker build gets `--build-arg VITE_API_BASE_URL=http://<alb_dns_name>` so the deployed app talks to the correct backend. For local dev, set `VITE_API_BASE_URL` in `frontend/.env` (e.g. `http://localhost:8080`); the Dockerfile uses `ARG`/`ENV` so the value is set when building the image.
 
 ---
 
@@ -258,9 +276,9 @@ devops/
 ### Architecture
 
 - **VPC** (e.g. `10.0.0.0/16`): public and private subnets in 2 AZs; IGW for public; NAT Gateway for private outbound (ECR pull).
-- **Security groups:** ALB (80 from internet); app SG (80 and 8080 from ALB only).
+- **Security groups:** ALB (80 from internet); app SG (80 and 8080 from ALB; 22 from `allowed_ssh_cidr` for CD deploy).
 - **ALB:** Public; one listener :80; path `/api/*` → backend target group (port 8080); default → frontend target group (port 80). Health: backend `/api/categories`, frontend `/`.
-- **EC2:** Single instance in private subnet; IAM role for ECR pull; user-data installs Docker and runs three containers: Postgres 15, backend (Spring Boot :8080), frontend (Nginx :80). Backend connects to Postgres on Docker network.
+- **EC2:** Single instance in **public** subnet (so it has a public IP for SSH); optional key pair from `ssh_public_key`; IAM role for ECR pull; user-data installs Docker, runs Postgres 15 + backend + frontend, and writes `/opt/app/deploy.sh` and `/opt/app/app.env` for in-place deploys. CD SSHs in and runs `deploy.sh <tag>` to pull new images and restart backend/frontend only.
 - **ECR:** Two repositories (backend, frontend); lifecycle keeps last 10 images each.
 - **SNS:** Optional alert topic per environment.
 
@@ -281,7 +299,7 @@ devops/
 
 ### Outputs
 
-- `vpc_id`, `alb_dns_name`, `alb_zone_id`, `ec2_instance_id`, `ecr_backend_url`, `ecr_frontend_url`, `sns_topic_arn`
+- `vpc_id`, `alb_dns_name`, `alb_zone_id`, `ec2_instance_id`, **`ec2_public_ip`** (for SSH deploy), `ecr_backend_url`, `ecr_frontend_url`, `sns_topic_arn`
 
 ---
 
@@ -352,6 +370,7 @@ Set under **Settings → Secrets and variables → Actions → Secrets**.
 | `TF_VAR_DB_USERNAME` | Yes | CD | Postgres username (EC2 container). |
 | `TF_VAR_DB_PASSWORD` | Yes | CD | Postgres password. |
 | `TF_VAR_JWT_SECRET` | Yes | CD | Backend JWT signing secret. |
+| `EC2_SSH_PRIVATE_KEY` | Yes (for CD) | CD | PEM private key for `ec2-user`; CD SSHs to EC2 and runs `/opt/app/deploy.sh <tag>`. Must match Terraform var `ssh_public_key` (public key). |
 | `POSTGRES_USER` | Yes | CI | Postgres user for CI test DB. |
 | `POSTGRES_PASSWORD` | Yes | CI | Postgres password for CI test DB. |
 | `SPRING_DATASOURCE_URL` | Yes | CI | JDBC URL for CI tests (e.g. `jdbc:postgresql://localhost:5432/communityboard`). |
@@ -414,7 +433,8 @@ Things that can cause CD or runtime to fail, and how to avoid or fix them:
 | **Backend fails to start** | ALB backend target group unhealthy (e.g. /api/categories not 200) | Check EC2 system log or container logs: DB connect (user/password, `postgres` host), schema/data.sql errors. Ensure `defer-datasource-initialization: true` and Postgres is up before backend starts. |
 | **Frontend container fails** | ALB frontend target group unhealthy | Check that frontend image builds (Vite `outDir: "build"`) and Nginx serves `/`; check EC2/container logs. |
 | **Secrets with special characters** | user-data script fails or wrong env in container | Avoid `$`, `"`, `` ` `` in `TF_VAR_DB_PASSWORD` and `TF_VAR_JWT_SECRET`; or escape for shell if you need them. |
-| **Instance replaced every deploy** | Short downtime on each deploy | `user_data_replace_on_change = true` and new image tags force new instance. Expected; new instance takes 2–5 min to boot and pass health checks. |
+| **Instance replaced every deploy** | Short downtime on each deploy | With SSH deploy, the instance is **not** replaced; only backend/frontend containers are restarted. If you see a new instance each time, check that you are not changing `user_data` or forcing replacement. |
+| **SSH deploy fails** | "ec2_public_ip is empty" or "Permission denied (publickey)" | Set Terraform var `ssh_public_key` (public key) in the environment and GitHub secret `EC2_SSH_PRIVATE_KEY` (matching private key). Ensure the instance is in a **public subnet** so it has a public IP. |
 
 ---
 
@@ -424,7 +444,7 @@ Things that can cause CD or runtime to fail, and how to avoid or fix them:
    Create S3 bucket and DynamoDB table for state; configure OIDC in AWS for GitHub; set CD secrets/vars.
 
 2. **Redeploy app (backend + frontend)**
-   Push to the branch for the env (e.g. `main` → production); CI passes → CD runs, builds and pushes both images (tag = SHA), then Terraform apply. EC2 user-data runs on new instance and pulls the new images (or replace instance to pick up new tags).
+   Push to the branch for the env (e.g. `main` → production); CI passes → CD runs, builds and pushes both images (tag = SHA; frontend built with `VITE_API_BASE_URL` for that env), Terraform apply remaining, then CD SSHs to EC2 and runs `/opt/app/deploy.sh <SHA>` to pull the new images and restart backend/frontend containers. No instance replacement; DB is preserved.
 
 3. **Terraform changes only (no app code)**
    Change Terraform under `devops/infra/terraform/environments/<env>` and push. CI runs; CD runs Terraform with same image tags as last run.

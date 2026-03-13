@@ -27,11 +27,11 @@ resource "aws_security_group" "alb_sg" {
   tags = { Name = "${var.project_name}-alb-sg" }
 }
 
-# App (EC2): allow 80 (frontend) and 8080 (backend) from ALB only
+# App (EC2): allow 80 (frontend), 8080 (backend) from ALB; 22 (SSH) for deploy
 resource "aws_security_group" "backend_sg" {
   vpc_id      = var.vpc_id
   name        = "${var.project_name}-app-sg"
-  description = "EC2 app: allow 80 and 8080 from ALB"
+  description = "EC2 app: allow 80/8080 from ALB, 22 from allowed_ssh_cidr"
 
   ingress {
     description     = "Frontend from ALB"
@@ -46,6 +46,13 @@ resource "aws_security_group" "backend_sg" {
     to_port         = 8080
     protocol        = "tcp"
     security_groups = [aws_security_group.alb_sg.id]
+  }
+  ingress {
+    description = "SSH for CD deploy (GitHub Actions)"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = [var.allowed_ssh_cidr]
   }
   egress {
     from_port   = 0

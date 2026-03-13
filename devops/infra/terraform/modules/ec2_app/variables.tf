@@ -66,3 +66,10 @@ variable "sns_topic_prefix" {
   default     = "communityboard"
   description = "Prefix for SNS topics created by the app (must match backend aws.sns.topic-prefix)"
 }
+
+variable "ssh_public_key" {
+  type        = string
+  default     = ""
+  sensitive   = true
+  description = "SSH public key for ec2-user (CD uses private key to run deploy script). Empty = no key."
+}

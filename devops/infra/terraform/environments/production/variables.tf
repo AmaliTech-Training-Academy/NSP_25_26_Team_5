@@ -91,3 +91,16 @@ variable "alert_email" {
   default     = ""
   description = "Email for SNS notifications (alerts). Empty = no subscription."
 }
+
+# --- SSH (for CD deploy) ---
+variable "allowed_ssh_cidr" {
+  type        = string
+  default     = "0.0.0.0/0"
+  description = "CIDR allowed to SSH to app instance."
+}
+variable "ssh_public_key" {
+  type        = string
+  default     = ""
+  sensitive   = true
+  description = "SSH public key for ec2-user (pair with EC2_SSH_PRIVATE_KEY in GitHub Secrets)."
+}

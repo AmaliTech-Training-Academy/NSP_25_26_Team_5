@@ -125,6 +125,16 @@ jobs:
           TF_VAR_jwt_secret: ${{ secrets.TF_VAR_JWT_SECRET }}
           TF_VAR_alert_email: ${{ vars.TF_VAR_ALERT_EMAIL }}
 
+      - name: Get Terraform outputs (ALB URL, EC2 IP for deploy)
+        id: tf-out
+        working-directory: ${{ needs.setup.outputs.tf_working_dir }}
+        run: |
+          ALB_DNS=$(terraform output -raw alb_dns_name 2>/dev/null || echo "")
+          EC2_IP=$(terraform output -raw ec2_public_ip 2>/dev/null || echo "")
+          echo "alb_dns_name=$ALB_DNS" >> $GITHUB_OUTPUT
+          echo "ec2_public_ip=$EC2_IP" >> $GITHUB_OUTPUT
+          echo "API base URL: http://$ALB_DNS"
+
       - name: Terraform apply ECR only (backend + frontend repos)
         working-directory: ${{ needs.setup.outputs.tf_working_dir }}
         run: terraform apply -input=false -no-color -auto-approve -target=module.ecr -target=module.ecr_frontend
@@ -150,7 +160,10 @@ jobs:
       - name: Build & push frontend image
         run: |
           ECR_FRONTEND=communityboard-frontend-${{ needs.setup.outputs.environment }}
-          docker build -t ${{ steps.login-ecr.outputs.registry }}/$ECR_FRONTEND:${{ needs.setup.outputs.head_sha }} ./frontend
+          ALB_DNS="${{ steps.tf-out.outputs.alb_dns_name }}"
+          VITE_API_BASE_URL="${ALB_DNS:+http://$ALB_DNS}"
+          docker build --build-arg VITE_API_BASE_URL="$VITE_API_BASE_URL" \
+            -t ${{ steps.login-ecr.outputs.registry }}/$ECR_FRONTEND:${{ needs.setup.outputs.head_sha }} ./frontend
           docker push ${{ steps.login-ecr.outputs.registry }}/$ECR_FRONTEND:${{ needs.setup.outputs.head_sha }}
 
       - name: Terraform apply remaining
@@ -165,30 +178,17 @@ jobs:
           TF_VAR_jwt_secret: ${{ secrets.TF_VAR_JWT_SECRET }}
           TF_VAR_alert_email: ${{ vars.TF_VAR_ALERT_EMAIL }}
 
-      - name: Deploy new images on EC2 (in-place update)
+      - name: Deploy on EC2 via SSH (pull images, restart containers)
         working-directory: ${{ needs.setup.outputs.tf_working_dir }}
         run: |
-          terraform init -input=false -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
-            -backend-config="key=community-board/${{ needs.setup.outputs.environment }}/terraform.tfstate" \
-            -backend-config="region=${{ secrets.AWS_REGION }}" \
-            -backend-config="dynamodb_table=${{ secrets.TF_LOCK_TABLE }}"
-          INSTANCE_ID=$(terraform output -raw ec2_instance_id)
-          echo "Running deploy on instance $INSTANCE_ID with tag ${{ needs.setup.outputs.head_sha }}"
-          COMMAND_ID=$(aws ssm send-command \
-            --instance-ids "$INSTANCE_ID" \
-            --document-name "AWS-RunShellScript" \
-            --parameters 'commands=["/opt/app/deploy.sh '"${{ needs.setup.outputs.head_sha }}"'"]' \
-            --region ${{ secrets.AWS_REGION }} \
-            --query 'Command.CommandId' --output text)
-          echo "SSM Command ID: $COMMAND_ID"
-          for i in $(seq 1 30); do
-            STATUS=$(aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "$INSTANCE_ID" --region ${{ secrets.AWS_REGION }} --query 'Status' --output text 2>/dev/null || echo "Pending")
-            echo "Status: $STATUS"
-            [ "$STATUS" = "Success" ] && break
-            [ "$STATUS" = "Failed" ] || [ "$STATUS" = "Cancelled" ] && { aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "$INSTANCE_ID" --region ${{ secrets.AWS_REGION }}; exit 1; }
-            sleep 10
-          done
-          [ "$STATUS" != "Success" ] && { echo "Deploy timed out"; exit 1; }
-          echo "Deploy completed."
-        env:
-          AWS_REGION: ${{ secrets.AWS_REGION }}
+          EC2_IP=$(terraform output -raw ec2_public_ip)
+          TAG="${{ needs.setup.outputs.head_sha }}"
+          if [ -z "$EC2_IP" ] || [ "$EC2_IP" = "null" ]; then
+            echo "::error::ec2_public_ip is empty; ensure instance is in public subnet and ssh_public_key is set in Terraform"
+            exit 1
+          fi
+          echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > deploy_key.pem
+          chmod 600 deploy_key.pem
+          ssh -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/dev/null -i deploy_key.pem ec2-user@$EC2_IP "/opt/app/deploy.sh $TAG"
+          rm -f deploy_key.pem
+          echo "Deploy completed on EC2."

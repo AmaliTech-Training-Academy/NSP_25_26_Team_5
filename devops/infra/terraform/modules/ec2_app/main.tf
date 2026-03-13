@@ -18,12 +18,6 @@ resource "aws_iam_role_policy_attachment" "ecr" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
 
-# So CD can run deploy script on the instance (pull new images, restart containers)
-resource "aws_iam_role_policy_attachment" "ssm" {
-  role       = aws_iam_role.app.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
-}
-
 # SNS: app creates per-category topics and subscribes user emails (category notifications)
 data "aws_caller_identity" "current" {}
 
@@ -75,6 +69,14 @@ locals {
   })
 }
 
+# SSH key for CD (GitHub Actions SSHs and runs /opt/app/deploy.sh <tag>)
+resource "aws_key_pair" "deploy" {
+  count      = var.ssh_public_key != "" ? 1 : 0
+  key_name   = "${var.project_name}-deploy-key"
+  public_key = var.ssh_public_key
+  tags       = { Name = "${var.project_name}-deploy-key" }
+}
+
 # Instance in public subnet (public IP) or first available subnet
 locals {
   instance_subnet_id = length(var.public_subnet_ids) > 0 ? var.public_subnet_ids[0] : var.private_subnet_ids[0]
@@ -87,6 +89,7 @@ resource "aws_instance" "app" {
   associate_public_ip_address = length(var.public_subnet_ids) > 0
   vpc_security_group_ids      = [var.app_sg_id]
   iam_instance_profile        = aws_iam_instance_profile.app.name
+  key_name                    = var.ssh_public_key != "" ? aws_key_pair.deploy[0].key_name : null
   user_data                   = base64encode(local.user_data)
   user_data_replace_on_change = false
 
