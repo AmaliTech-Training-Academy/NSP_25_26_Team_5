@@ -252,15 +252,15 @@ jobs:
         run: |
           EC2_IP="${{ steps.tf-out.outputs.ec2_public_ip }}"
           SSH="ssh -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10 -i deploy_key.pem ec2-user@$EC2_IP"
-          echo "Waiting for Docker and /opt/app/app.env..."
-          for i in $(seq 1 20); do
+          echo "Waiting for Docker and /opt/app/app.env (user_data can take 6–10 min on first boot)..."
+          for i in $(seq 1 40); do
             if $SSH "systemctl is-active docker &>/dev/null && test -f /opt/app/app.env" 2>/dev/null; then
               echo "Instance is ready"
               break
             fi
-            echo "Attempt $i/20: not ready yet, waiting 15s..."
-            if [ "$i" = "20" ]; then
-              echo "::error::Instance never became ready (Docker or app.env missing)"
+            echo "Attempt $i/40: not ready yet, waiting 15s..."
+            if [ "$i" = "40" ]; then
+              echo "::error::Instance never became ready (Docker or /opt/app/app.env missing after ~10 min). If instance is new, user_data may still be running; re-run the job. If instance was created before app.env was added to user_data, recreate the instance (terraform taint module.ec2_app.aws_instance.app && apply)."
               exit 1
             fi
             sleep 15

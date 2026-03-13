@@ -59,7 +59,7 @@ docker run -d --name frontend --restart unless-stopped \
 
 # Persist config and deploy script for in-place updates (CD runs via SSM: /opt/app/deploy.sh <new-tag>)
 mkdir -p /opt/app
-cat > /opt/app/app.env << 'APPENV'
+cat > /opt/app/app.env << APPENV
 AWS_REGION=${aws_region}
 ECR_BACKEND=${ecr_backend_repo}
 ECR_FRONTEND=${ecr_frontend_repo}
