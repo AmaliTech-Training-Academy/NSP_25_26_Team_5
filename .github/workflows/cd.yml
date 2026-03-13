@@ -161,7 +161,7 @@ jobs:
         run: |
           ECR_FRONTEND=communityboard-frontend-${{ needs.setup.outputs.environment }}
           ALB_DNS="${{ steps.tf-out.outputs.alb_dns_name }}"
-          VITE_API_BASE_URL="${ALB_DNS:+http://$ALB_DNS}"
+          VITE_API_BASE_URL="${ALB_DNS:+http://$ALB_DNS/api}"
           docker build --build-arg VITE_API_BASE_URL="$VITE_API_BASE_URL" \
             -t ${{ steps.login-ecr.outputs.registry }}/$ECR_FRONTEND:${{ needs.setup.outputs.head_sha }} ./frontend
           docker push ${{ steps.login-ecr.outputs.registry }}/$ECR_FRONTEND:${{ needs.setup.outputs.head_sha }}
