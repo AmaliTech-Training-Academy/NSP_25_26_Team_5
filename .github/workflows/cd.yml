@@ -1,9 +1,6 @@
 name: CD (Terraform)
 
 on:
-  push:
-    branches: [main, dev, staging]
-
   workflow_run:
     workflows: ["CI Pipeline"]
     branches: [main, dev, staging]
@@ -13,8 +10,7 @@ jobs:
   setup:
     name: Set environment variables
     runs-on: ubuntu-latest
-    # Run when: (1) CD triggered by workflow_run and CI succeeded, or (2) CD triggered by push
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    if: github.event.workflow_run.conclusion == 'success'
     outputs:
       environment: ${{ steps.set-env.outputs.environment }}
       tf_working_dir: ${{ steps.set-env.outputs.tf_working_dir }}
@@ -23,14 +19,8 @@ jobs:
       - name: Set environment and working dir
         id: set-env
         run: |
-          # workflow_run = CI completed; push = direct push to branch
-          if [ "${{ github.event_name }}" = "workflow_run" ]; then
-            BRANCH="${{ github.event.workflow_run.head_branch }}"
-            SHA="${{ github.event.workflow_run.head_sha }}"
-          else
-            BRANCH="${GITHUB_REF#refs/heads/}"
-            SHA="${{ github.sha }}"
-          fi
+          BRANCH="${{ github.event.workflow_run.head_branch }}"
+          SHA="${{ github.event.workflow_run.head_sha }}"
           if [ "$BRANCH" = "main" ]; then
             ENV="production"
           else
@@ -135,14 +125,12 @@ jobs:
           TF_VAR_alert_email: ${{ vars.TF_VAR_ALERT_EMAIL }}
           TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
 
-      - name: Get Terraform outputs (ALB URL, EC2 IP for deploy)
+      - name: Get Terraform outputs before apply (ALB URL)
         id: tf-out
         working-directory: ${{ needs.setup.outputs.tf_working_dir }}
         run: |
           ALB_DNS=$(terraform output -raw alb_dns_name 2>/dev/null || echo "")
-          EC2_IP=$(terraform output -raw ec2_public_ip 2>/dev/null || echo "")
           echo "alb_dns_name=$ALB_DNS" >> $GITHUB_OUTPUT
-          echo "ec2_public_ip=$EC2_IP" >> $GITHUB_OUTPUT
           echo "API base URL: http://$ALB_DNS"
 
       - name: Terraform apply ECR only (backend + frontend repos)
@@ -165,14 +153,15 @@ jobs:
       - name: Build & push backend image
         run: |
           ECR_BACKEND=communityboard-${{ needs.setup.outputs.environment }}
-          docker build -t ${{ steps.login-ecr.outputs.registry }}/$ECR_BACKEND:${{ needs.setup.outputs.head_sha }} ./backend
+          docker build \
+            -t ${{ steps.login-ecr.outputs.registry }}/$ECR_BACKEND:${{ needs.setup.outputs.head_sha }} \
+            ./backend
           docker push ${{ steps.login-ecr.outputs.registry }}/$ECR_BACKEND:${{ needs.setup.outputs.head_sha }}
 
       - name: Build & push frontend image
         run: |
           ECR_FRONTEND=communityboard-frontend-${{ needs.setup.outputs.environment }}
           ALB_DNS="${{ steps.tf-out.outputs.alb_dns_name }}"
-          # Base URL must include /api so /auth/login becomes /api/auth/login (backend path)
           if [ -n "$ALB_DNS" ]; then
             VITE_API_BASE_URL="http://${ALB_DNS%/}/api"
           else
@@ -180,7 +169,8 @@ jobs:
           fi
           echo "VITE_API_BASE_URL=$VITE_API_BASE_URL"
           docker build --build-arg VITE_API_BASE_URL="$VITE_API_BASE_URL" \
-            -t ${{ steps.login-ecr.outputs.registry }}/$ECR_FRONTEND:${{ needs.setup.outputs.head_sha }} ./frontend
+            -t ${{ steps.login-ecr.outputs.registry }}/$ECR_FRONTEND:${{ needs.setup.outputs.head_sha }} \
+            ./frontend
           docker push ${{ steps.login-ecr.outputs.registry }}/$ECR_FRONTEND:${{ needs.setup.outputs.head_sha }}
 
       - name: Terraform apply remaining
@@ -202,21 +192,104 @@ jobs:
         run: |
           EC2_IP=$(terraform output -raw ec2_public_ip)
           if [ -z "$EC2_IP" ] || [ "$EC2_IP" = "null" ]; then
-            echo "::error::ec2_public_ip is empty after apply; ensure instance is in public subnet and ssh_public_key is set in Terraform"
+            echo "::error::ec2_public_ip is empty after apply"
             exit 1
           fi
           echo "ec2_public_ip=$EC2_IP" >> $GITHUB_OUTPUT
 
-      - name: Deploy on EC2 via SSH (pull images, restart containers)
+      - name: Write SSH key
+        run: |
+          echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > deploy_key.pem
+          chmod 600 deploy_key.pem
+
+      - name: Wait for SSH to be available
+        run: |
+          EC2_IP="${{ steps.ec2-ip.outputs.ec2_public_ip }}"
+          echo "Waiting for SSH on $EC2_IP..."
+          for i in $(seq 1 20); do
+            if ssh -o StrictHostKeyChecking=accept-new \
+                   -o UserKnownHostsFile=/dev/null \
+                   -o ConnectTimeout=10 \
+                   -i deploy_key.pem \
+                   ec2-user@$EC2_IP "echo ok" 2>/dev/null; then
+              echo "SSH is ready"
+              break
+            fi
+            echo "Attempt $i/20 failed, retrying in 15s..."
+            if [ "$i" = "20" ]; then
+              echo "::error::SSH never became available on $EC2_IP"
+              exit 1
+            fi
+            sleep 15
+          done
+
+      - name: Wait for user_data to finish (Docker + app.env must exist)
+        run: |
+          EC2_IP="${{ steps.ec2-ip.outputs.ec2_public_ip }}"
+          SSH="ssh -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10 -i deploy_key.pem ec2-user@$EC2_IP"
+          echo "Waiting for Docker and /opt/app/app.env..."
+          for i in $(seq 1 20); do
+            if $SSH "systemctl is-active docker &>/dev/null && test -f /opt/app/app.env" 2>/dev/null; then
+              echo "Instance is ready"
+              break
+            fi
+            echo "Attempt $i/20: not ready yet, waiting 15s..."
+            if [ "$i" = "20" ]; then
+              echo "::error::Instance never became ready (Docker or app.env missing)"
+              exit 1
+            fi
+            sleep 15
+          done
+
+      - name: Write deploy.sh to EC2 and run it
         run: |
           EC2_IP="${{ steps.ec2-ip.outputs.ec2_public_ip }}"
           TAG="${{ needs.setup.outputs.head_sha }}"
-          echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > deploy_key.pem
-          chmod 600 deploy_key.pem
-          ssh -o StrictHostKeyChecking=accept-new \
-              -o UserKnownHostsFile=/dev/null \
-              -o ConnectTimeout=30 \
-              -i deploy_key.pem \
-              ec2-user@$EC2_IP "/opt/app/deploy.sh $TAG"
-          rm -f deploy_key.pem
-          echo "Deploy completed on EC2 at $EC2_IP"
+          SSH="ssh -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/dev/null -o ConnectTimeout=30 -i deploy_key.pem ec2-user@$EC2_IP"
+
+          # Always write the latest deploy.sh — never rely on user_data having created it
+          $SSH "sudo mkdir -p /opt/app && sudo tee /opt/app/deploy.sh > /dev/null" << 'DEPLOYSH'
+          #!/bin/bash
+          set -e
+          TAG="$1"
+          if [ -z "$TAG" ]; then echo "Usage: deploy.sh <image-tag>"; exit 1; fi
+
+          source /opt/app/app.env
+          export AWS_REGION ECR_BACKEND ECR_FRONTEND DB_NAME DB_USER DB_PASS JWT_SECRET
+
+          # ECR login
+          aws ecr get-login-password --region "$AWS_REGION" \
+            | docker login --username AWS --password-stdin "${ECR_BACKEND%%/*}"
+
+          # Pull new images
+          docker pull "$ECR_BACKEND:$TAG"
+          docker pull "$ECR_FRONTEND:$TAG"
+
+          # Stop and remove old containers (leave postgres untouched)
+          docker stop backend frontend 2>/dev/null || true
+          docker rm   backend frontend 2>/dev/null || true
+
+          # Ensure network exists
+          docker network create appnet 2>/dev/null || true
+
+          docker run -d --name backend --restart unless-stopped --network appnet \
+            -e SPRING_DATASOURCE_URL="jdbc:postgresql://postgres:5432/$DB_NAME" \
+            -e SPRING_DATASOURCE_USERNAME="$DB_USER" \
+            -e SPRING_DATASOURCE_PASSWORD="$DB_PASS" \
+            -e JWT_SECRET="$JWT_SECRET" \
+            -p 8080:8080 \
+            "$ECR_BACKEND:$TAG"
+
+          docker run -d --name frontend --restart unless-stopped \
+            -p 80:80 \
+            "$ECR_FRONTEND:$TAG"
+
+          echo "Deploy completed: tag=$TAG"
+          DEPLOYSH
+
+          $SSH "sudo chmod +x /opt/app/deploy.sh"
+          $SSH "sudo /opt/app/deploy.sh $TAG"
+
+      - name: Clean up SSH key
+        if: always()
+        run: rm -f deploy_key.pem
