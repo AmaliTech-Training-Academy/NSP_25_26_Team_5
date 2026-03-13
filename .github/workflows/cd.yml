@@ -150,7 +150,8 @@ jobs:
     name: Build & deploy containers (${{ needs.setup.outputs.environment }})
     runs-on: ubuntu-latest
     needs: [setup, terraform-deploy]
-    if: always() && needs.setup.result == 'success' && needs.terraform-deploy.result != 'cancelled'
+    # Run every time after setup: build images, push, SSH deploy to EC2 (regardless of Terraform changes or terraform-deploy success/failure)
+    if: always() && needs.setup.result == 'success'
     permissions:
       id-token: write
       contents: read

@@ -95,6 +95,7 @@ resource "aws_instance" "app" {
 
   tags = {
     Name = "${var.project_name}-app"
+    app  = "${var.project_name}"
   }
 }
 
