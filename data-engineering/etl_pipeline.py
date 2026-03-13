@@ -1,353 +1,298 @@
 """
-etl_pipeline.py — CommunityBoard Analytics ETL Pipeline.
+ETL Pipeline for CommunityBoard Analytics — 7 transforms.
 
-Extract → Transform → Load pipeline that reads from the application DB
-and writes analytics-ready aggregate tables.
-
-Analytics tables produced:
-  analytics_daily_activity        — daily posts by category
-  analytics_user_engagement       — per-user posts + comments + score
-  analytics_category_popularity   — posts, comments, avg per category
-  analytics_content_metrics       — avg word count / length by category
-  analytics_hourly_activity       — post/comment counts by hour of day
-  analytics_top_contributors      — leaderboard of most active users
-  analytics_comment_response_time — avg hours from post to first comment
-
-All queries filter is_deleted = FALSE / is_active = TRUE (soft-delete convention).
+Run order:
+  1. python seed_data.py      (first time only)
+  2. python etl_pipeline.py
 """
 import pandas as pd
 from sqlalchemy import text
+from db import get_engine, get_logger, validate_schema
 
-from db import get_engine, setup_logging, ensure_schema
+logger = get_logger("etl_pipeline")
+engine = get_engine()
 
-logger = setup_logging("etl_pipeline")
 
-# ---------------------------------------------------------------------------
-# Extraction
-# ---------------------------------------------------------------------------
+# ─────────────────────────────────────────
+# EXTRACT
+# ─────────────────────────────────────────
 
 def extract_posts() -> pd.DataFrame:
-    """Extract all non-deleted posts with author and category metadata."""
-    sql = text("""
-        SELECT
-            p.id,
-            p.title,
-            p.content,
-            p.created_at,
-            p.updated_at,
-            u.name  AS author_name,
-            u.email AS author_email,
-            c.name  AS category_name
-        FROM posts p
-        JOIN users u           ON p.author_id   = u.id
-        LEFT JOIN categories c ON p.category_id = c.id
-        WHERE p.is_deleted = FALSE
-          AND u.is_active   = TRUE
-    """)
-    engine = get_engine()
+    """Active posts with author and category info."""
     with engine.connect() as conn:
-        df = pd.read_sql(sql, conn)
-    logger.info("Extracted %d posts.", len(df))
-    return df
+        return pd.read_sql(text("""
+            SELECT  p.id,
+                    p.title,
+                    p.content,
+                    p.created_at,
+                    p.updated_at,
+                    u.name        AS author_name,
+                    u.email       AS author_email,
+                    c.name        AS category_name
+            FROM    posts         p
+            JOIN    users         u  ON p.author_id   = u.id
+            LEFT JOIN categories  c  ON p.category_id = c.id
+            WHERE   (p.is_deleted IS NULL OR p.is_deleted = FALSE)
+              AND   (u.is_active  IS NULL OR u.is_active  = TRUE)
+        """), conn)
 
 
 def extract_comments() -> pd.DataFrame:
-    """Extract all non-deleted comments with post and author metadata."""
-    sql = text("""
-        SELECT
-            c.id,
-            c.content,
-            c.created_at,
-            c.post_id,
-            u.name  AS author_name,
-            u.email AS author_email
-        FROM comments c
-        JOIN users u ON c.author_id = u.id
-        WHERE c.is_deleted = FALSE
-          AND u.is_active   = TRUE
-    """)
-    engine = get_engine()
+    """Active comments with author and parent-post info."""
     with engine.connect() as conn:
-        df = pd.read_sql(sql, conn)
-    logger.info("Extracted %d comments.", len(df))
-    return df
+        return pd.read_sql(text("""
+            SELECT  c.id,
+                    c.content,
+                    c.created_at,
+                    c.post_id,
+                    u.name   AS author_name,
+                    u.email  AS author_email,
+                    p.created_at AS post_created_at
+            FROM    comments  c
+            JOIN    users     u  ON c.author_id = u.id
+            JOIN    posts     p  ON c.post_id   = p.id
+            WHERE   (p.is_deleted IS NULL OR p.is_deleted = FALSE)
+              AND   (u.is_active  IS NULL OR u.is_active  = TRUE)
+        """), conn)
 
 
-# ---------------------------------------------------------------------------
-# Transformations
-# ---------------------------------------------------------------------------
+# ─────────────────────────────────────────
+# TRANSFORM — 7 functions
+# ─────────────────────────────────────────
 
 def transform_daily_activity(posts_df: pd.DataFrame) -> pd.DataFrame:
-    """Aggregate post counts by date and category."""
+    """[1] Posts per calendar date per category."""
     if posts_df.empty:
-        logger.warning("transform_daily_activity: posts_df is empty — returning empty frame.")
         return pd.DataFrame(columns=["date", "category", "post_count"])
-
-    posts_df = posts_df.copy()
-    posts_df["date"] = pd.to_datetime(posts_df["created_at"]).dt.date
-    daily = (
-        posts_df
-        .groupby(["date", "category_name"])
-        .size()
-        .reset_index(name="post_count")
+    df = posts_df.copy()
+    df["date"] = pd.to_datetime(df["created_at"]).dt.date
+    return (
+        df.groupby(["date", "category_name"])
+          .size()
+          .reset_index(name="post_count")
+          .rename(columns={"category_name": "category"})
     )
-    daily.columns = ["date", "category", "post_count"]
-    logger.info("transform_daily_activity: %d rows produced.", len(daily))
-    return daily
 
 
-def transform_user_engagement(posts_df: pd.DataFrame, comments_df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Per-user engagement: posts created + comments made + composite score.
-    Engagement score = posts_created * 3 + comments_made
-    """
-    if posts_df.empty and comments_df.empty:
-        logger.warning("transform_user_engagement: both frames empty — returning empty frame.")
-        return pd.DataFrame(
-            columns=["user_email", "user_name", "posts_created", "comments_made", "engagement_score"]
-        )
+def transform_user_engagement(posts_df: pd.DataFrame,
+                               comments_df: pd.DataFrame) -> pd.DataFrame:
+    """[2] Engagement metrics per user. Score = posts×2 + comments."""
+    post_counts    = posts_df.groupby(["author_email", "author_name"]).size().reset_index(name="posts_created")
+    comment_counts = comments_df.groupby(["author_email", "author_name"]).size().reset_index(name="comments_made")
 
-    post_counts = (
-        posts_df.groupby(["author_email", "author_name"]).size()
-        .reset_index(name="posts_created")
-    ) if not posts_df.empty else pd.DataFrame(columns=["author_email", "author_name", "posts_created"])
-
-    comment_counts = (
-        comments_df.groupby(["author_email", "author_name"]).size()
-        .reset_index(name="comments_made")
-    ) if not comments_df.empty else pd.DataFrame(columns=["author_email", "author_name", "comments_made"])
-
-    merged = pd.merge(
-        post_counts, comment_counts,
-        on=["author_email", "author_name"], how="outer"
-    ).fillna(0)
-
-    merged["posts_created"]    = merged["posts_created"].astype(int)
-    merged["comments_made"]    = merged["comments_made"].astype(int)
-    merged["engagement_score"] = merged["posts_created"] * 3 + merged["comments_made"]
-
-    result = (
-        merged
-        .rename(columns={"author_email": "user_email", "author_name": "user_name"})
-        .sort_values("engagement_score", ascending=False)
-        .reset_index(drop=True)
-    )
-    logger.info("transform_user_engagement: %d users profiled.", len(result))
-    return result
+    merged = post_counts.merge(comment_counts, on=["author_email", "author_name"], how="outer").fillna(0)
+    merged["posts_created"]   = merged["posts_created"].astype(int)
+    merged["comments_made"]   = merged["comments_made"].astype(int)
+    merged["engagement_score"]   = merged["posts_created"] * 2 + merged["comments_made"]
+    # Alias columns expected by dashboard.py
+    merged["user_name"]           = merged["author_name"]
+    merged["total_contributions"] = merged["engagement_score"]
+    return merged.sort_values("engagement_score", ascending=False).reset_index(drop=True)
 
 
-def transform_category_popularity(posts_df: pd.DataFrame, comments_df: pd.DataFrame) -> pd.DataFrame:
-    """Posts and comments per category, plus average comments per post."""
+def transform_category_popularity(posts_df: pd.DataFrame,
+                                   comments_df: pd.DataFrame) -> pd.DataFrame:
+    """[3] Post/comment counts + avg comments per post per category."""
     if posts_df.empty:
-        logger.warning("transform_category_popularity: posts_df is empty — returning empty frame.")
-        return pd.DataFrame(columns=["category", "total_posts", "total_comments", "avg_comments_per_post"])
+        return pd.DataFrame(columns=[
+            "category", "total_posts", "comment_count",
+            "avg_comments_per_post", "avg_content_length"
+        ])
 
-    post_counts = (
-        posts_df.groupby("category_name").size()
-        .reset_index(name="total_posts")
-        .rename(columns={"category_name": "category"})
+    post_stats = (
+        posts_df.groupby("category_name")
+                .agg(
+                    total_posts=("id", "count"),
+                    avg_content_length=("content", lambda x: round(x.str.len().mean(), 1))
+                )
+                .reset_index()
+                .rename(columns={"category_name": "category"})
     )
 
     if not comments_df.empty:
-        posts_slim = posts_df[["id", "category_name"]].rename(columns={"id": "post_id"})
-        comments_with_cat = comments_df.merge(posts_slim, on="post_id", how="left")
+        post_cat = posts_df[["id", "category_name"]].rename(columns={"id": "post_id"})
         comment_counts = (
-            comments_with_cat.groupby("category_name").size()
-            .reset_index(name="total_comments")
-            .rename(columns={"category_name": "category"})
+            comments_df.merge(post_cat, on="post_id", how="left")
+                       .groupby("category_name")
+                       .size()
+                       .reset_index(name="comment_count")
+                       .rename(columns={"category_name": "category"})
         )
+        post_stats = post_stats.merge(comment_counts, on="category", how="left").fillna(0)
+        post_stats["comment_count"] = post_stats["comment_count"].astype(int)
     else:
-        comment_counts = pd.DataFrame(columns=["category", "total_comments"])
+        post_stats["comment_count"] = 0
 
-    merged = post_counts.merge(comment_counts, on="category", how="left").fillna(0)
-    merged["total_comments"]       = merged["total_comments"].astype(int)
-    merged["avg_comments_per_post"] = (merged["total_comments"] / merged["total_posts"].replace(0, 1)).round(2)
-    merged = merged.sort_values("total_posts", ascending=False).reset_index(drop=True)
-
-    logger.info("transform_category_popularity: %d categories summarised.", len(merged))
-    return merged
+    post_stats["avg_comments_per_post"] = (
+        post_stats["comment_count"] / post_stats["total_posts"].replace(0, 1)
+    ).round(2)
+    # Alias: dashboard.py queries post_count, verify.py checks total_posts — keep both
+    post_stats["post_count"] = post_stats["total_posts"]
+    return post_stats
 
 
 def transform_content_metrics(posts_df: pd.DataFrame) -> pd.DataFrame:
-    """Average word count and character length of post content, grouped by category."""
+    """[4] Avg title/content character length + word count per category."""
     if posts_df.empty:
-        logger.warning("transform_content_metrics: posts_df is empty — returning empty frame.")
-        return pd.DataFrame(columns=["category", "avg_word_count", "avg_content_length", "total_posts"])
-
-    posts_df = posts_df.copy()
-    posts_df["word_count"]     = posts_df["content"].str.split().str.len().fillna(0).astype(int)
-    posts_df["content_length"] = posts_df["content"].str.len().fillna(0).astype(int)
-
-    result = (
-        posts_df.groupby("category_name")
-        .agg(
-            avg_word_count     =("word_count",     "mean"),
-            avg_content_length =("content_length", "mean"),
-            total_posts        =("id",             "count"),
-        )
-        .round(1)
-        .reset_index()
-        .rename(columns={"category_name": "category"})
+        return pd.DataFrame(columns=[
+            "category", "avg_title_length", "avg_content_length",
+            "avg_word_count", "total_posts"
+        ])
+    df = posts_df.copy()
+    df["title_len"]  = df["title"].str.len()
+    df["content_len"] = df["content"].str.len()
+    df["word_count"]  = df["content"].str.split().str.len()
+    return (
+        df.groupby("category_name")
+          .agg(
+              avg_title_length  =("title_len",   lambda x: round(x.mean(), 1)),
+              avg_content_length=("content_len", lambda x: round(x.mean(), 1)),
+              avg_word_count    =("word_count",  lambda x: round(x.mean(), 1)),
+              total_posts       =("id", "count")
+          )
+          .reset_index()
+          .rename(columns={"category_name": "category"})
     )
-    logger.info("transform_content_metrics: %d category rows produced.", len(result))
-    return result
 
 
-def transform_hourly_activity(posts_df: pd.DataFrame, comments_df: pd.DataFrame) -> pd.DataFrame:
-    """Count posts and comments created by hour of day (0–23)."""
-    hours = pd.DataFrame({"hour": range(24)})
+def transform_hourly_activity(posts_df: pd.DataFrame,
+                               comments_df: pd.DataFrame) -> pd.DataFrame:
+    """[5] Post AND comment counts by hour-of-day (0–23)."""
+    all_hours = pd.DataFrame({"hour": range(24)})
+    if posts_df.empty:
+        return all_hours.assign(post_count=0, comment_count=0)
 
-    if not posts_df.empty:
-        post_h = pd.to_datetime(posts_df["created_at"]).dt.hour.value_counts().reset_index()
-        post_h.columns = ["hour", "post_count"]
-    else:
-        post_h = pd.DataFrame(columns=["hour", "post_count"])
+    posts_h = (
+        posts_df.copy()
+                .assign(hour=lambda df: pd.to_datetime(df["created_at"]).dt.hour)
+                .groupby("hour").size()
+                .reset_index(name="post_count")
+    )
+    result = all_hours.merge(posts_h, on="hour", how="left").fillna(0)
 
     if not comments_df.empty:
-        comment_h = pd.to_datetime(comments_df["created_at"]).dt.hour.value_counts().reset_index()
-        comment_h.columns = ["hour", "comment_count"]
+        comments_h = (
+            comments_df.copy()
+                       .assign(hour=lambda df: pd.to_datetime(df["created_at"]).dt.hour)
+                       .groupby("hour").size()
+                       .reset_index(name="comment_count")
+        )
+        result = result.merge(comments_h, on="hour", how="left").fillna(0)
     else:
-        comment_h = pd.DataFrame(columns=["hour", "comment_count"])
+        result["comment_count"] = 0
 
-    result = (
-        hours
-        .merge(post_h,    on="hour", how="left")
-        .merge(comment_h, on="hour", how="left")
-        .fillna(0)
+    return result.astype({"post_count": int, "comment_count": int})
+
+
+def transform_top_contributors(engagement_df: pd.DataFrame,
+                                top_n: int = 5) -> pd.DataFrame:
+    """[6] Top N users by engagement score."""
+    return (
+        engagement_df.nlargest(top_n, "engagement_score")
+                     .reset_index(drop=True)
+                     .assign(rank=lambda df: df.index + 1)
+                     .assign(author_name=lambda df: df["user_name"])
+                     [[
+                         "rank", "user_name", "author_name", "author_email",
+                         "posts_created", "comments_made",
+                         "engagement_score", "total_contributions"
+                     ]]
     )
-    result["post_count"]    = result["post_count"].astype(int)
-    result["comment_count"] = result["comment_count"].astype(int)
-    result = result.sort_values("hour").reset_index(drop=True)
-
-    logger.info("transform_hourly_activity: 24 hour-buckets produced.")
-    return result
 
 
-def transform_top_contributors(posts_df: pd.DataFrame, comments_df: pd.DataFrame) -> pd.DataFrame:
-    """Leaderboard: users ranked by total posts + comments."""
-    if posts_df.empty and comments_df.empty:
-        logger.warning("transform_top_contributors: both frames empty — returning empty frame.")
-        return pd.DataFrame(columns=["user_name", "user_email", "posts", "comments", "total_contributions"])
+def transform_comment_response_time(posts_df: pd.DataFrame,
+                                     comments_df: pd.DataFrame) -> pd.DataFrame:
+    """[7] Avg and median hours from post creation to first comment, per category."""
+    if posts_df.empty or comments_df.empty:
+        return pd.DataFrame(columns=[
+            "category", "avg_hours_to_first_comment",
+            "median_hours_to_first_comment", "post_count"
+        ])
 
-    post_c = (
-        posts_df.groupby(["author_email", "author_name"]).size().reset_index(name="posts")
-    ) if not posts_df.empty else pd.DataFrame(columns=["author_email", "author_name", "posts"])
-
-    comment_c = (
-        comments_df.groupby(["author_email", "author_name"]).size().reset_index(name="comments")
-    ) if not comments_df.empty else pd.DataFrame(columns=["author_email", "author_name", "comments"])
-
-    merged = pd.merge(post_c, comment_c, on=["author_email", "author_name"], how="outer").fillna(0)
-    merged["posts"]               = merged["posts"].astype(int)
-    merged["comments"]            = merged["comments"].astype(int)
-    merged["total_contributions"] = merged["posts"] + merged["comments"]
-
-    result = (
-        merged
-        .rename(columns={"author_email": "user_email", "author_name": "user_name"})
-        .sort_values("total_contributions", ascending=False)
-        .reset_index(drop=True)
+    first_comments = (
+        comments_df[["post_id", "created_at"]]
+        .rename(columns={"created_at": "comment_at"})
+        .sort_values("comment_at")
+        .groupby("post_id")
+        .first()
+        .reset_index()
     )
-    logger.info("transform_top_contributors: %d contributors ranked.", len(result))
-    return result
+
+    merged = posts_df[["id", "created_at", "category_name"]].merge(
+        first_comments, left_on="id", right_on="post_id", how="inner"
+    )
+    merged["hours_to_first"] = (
+        (pd.to_datetime(merged["comment_at"]) - pd.to_datetime(merged["created_at"]))
+        .dt.total_seconds() / 3600
+    ).clip(lower=0)
+
+    return (
+        merged.groupby("category_name")
+              .agg(
+                  avg_hours_to_first_comment   =("hours_to_first", lambda x: round(x.mean(), 2)),
+                  median_hours_to_first_comment=("hours_to_first", lambda x: round(x.median(), 2)),
+                  post_count                   =("id", "count")
+              )
+              .reset_index()
+              .rename(columns={"category_name": "category"})
+    )
 
 
-def transform_comment_response_time() -> pd.DataFrame:
-    """Avg time (hours) from post creation to first comment — computed via SQL LATERAL join."""
-    from datetime import datetime as _dt
-    sql = text("""
-        SELECT
-            ROUND(
-                AVG(EXTRACT(EPOCH FROM (fc.first_comment - p.created_at)) / 3600)::NUMERIC,
-                1
-            ) AS avg_hours_to_first_comment
-        FROM posts p
-        JOIN LATERAL (
-            SELECT MIN(created_at) AS first_comment
-            FROM comments
-            WHERE post_id   = p.id
-              AND is_deleted = FALSE
-        ) fc ON TRUE
-        WHERE p.is_deleted     = FALSE
-          AND fc.first_comment IS NOT NULL
-    """)
-    engine = get_engine()
-    with engine.connect() as conn:
-        row = conn.execute(sql).fetchone()
-
-    avg_hours = float(row[0]) if row and row[0] is not None else 0.0
-    result = pd.DataFrame([{
-        "avg_hours_to_first_comment": avg_hours,
-        "computed_at": _dt.utcnow().isoformat(),
-    }])
-    logger.info("transform_comment_response_time: avg = %.1f hours.", avg_hours)
-    return result
-
-
-# ---------------------------------------------------------------------------
-# Load
-# ---------------------------------------------------------------------------
+# ─────────────────────────────────────────
+# LOAD
+# ─────────────────────────────────────────
 
 def load_analytics(df: pd.DataFrame, table_name: str) -> None:
-    """Write a DataFrame to an analytics table (replace strategy, cost-efficient)."""
-    if df.empty:
-        logger.warning("load_analytics: skipping '%s' — DataFrame is empty.", table_name)
-        return
-    engine = get_engine()
+    """Replace analytics table with transformed data."""
     df.to_sql(table_name, engine, if_exists="replace", index=False)
-    logger.info("Loaded %d rows into '%s'.", len(df), table_name)
+    logger.info("  ✓ %d rows → %s", len(df), table_name)
 
 
-# ---------------------------------------------------------------------------
-# Pipeline orchestration
-# ---------------------------------------------------------------------------
+# ─────────────────────────────────────────
+# PIPELINE RUNNER
+# ─────────────────────────────────────────
 
 def run_pipeline() -> None:
-    """Execute the full ETL pipeline end-to-end with error isolation per transform."""
-    logger.info("=== CommunityBoard ETL pipeline starting ===")
+    logger.info("=" * 55)
+    logger.info("CommunityBoard ETL Pipeline")
+    logger.info("=" * 55)
 
-    engine = get_engine()
-    with engine.connect() as conn:
-        if not ensure_schema(conn, logger):
-            logger.error("Schema check failed. Aborting pipeline.")
-            return
+    validate_schema()
 
-    # --- Extract ---
-    try:
-        posts_df    = extract_posts()
-        comments_df = extract_comments()
-    except Exception as exc:
-        logger.error("Extraction failed: %s", exc, exc_info=True)
+    # ── Extract ──────────────────────────────────────────
+    logger.info("[1/3] Extracting from source tables...")
+    posts_df    = extract_posts()
+    comments_df = extract_comments()
+    logger.info("  posts=%d  comments=%d", len(posts_df), len(comments_df))
+
+    if posts_df.empty:
+        logger.warning("No posts found. Run seed_data.py first, then re-run.")
         return
 
-    logger.info("Extraction complete — %d posts, %d comments.", len(posts_df), len(comments_df))
+    # ── Transform ────────────────────────────────────────
+    logger.info("[2/3] Running 7 transforms...")
 
-    # --- Transform + Load (error-isolated per table) ---
-    transforms = [
-        ("analytics_daily_activity",
-         lambda: transform_daily_activity(posts_df)),
-        ("analytics_user_engagement",
-         lambda: transform_user_engagement(posts_df, comments_df)),
-        ("analytics_category_popularity",
-         lambda: transform_category_popularity(posts_df, comments_df)),
-        ("analytics_content_metrics",
-         lambda: transform_content_metrics(posts_df)),
-        ("analytics_hourly_activity",
-         lambda: transform_hourly_activity(posts_df, comments_df)),
-        ("analytics_top_contributors",
-         lambda: transform_top_contributors(posts_df, comments_df)),
-        ("analytics_comment_response_time",
-         lambda: transform_comment_response_time()),
-    ]
+    # Compute user engagement once — reused by both [2] and [6]
+    user_engagement = transform_user_engagement(posts_df, comments_df)
 
-    for table_name, transform_fn in transforms:
-        try:
-            df = transform_fn()
-            load_analytics(df, table_name)
-        except Exception as exc:
-            logger.error("Transform/load failed for '%s': %s", table_name, exc, exc_info=True)
+    transforms = {
+        "analytics_daily_activity"      : transform_daily_activity(posts_df),
+        "analytics_user_engagement"     : user_engagement,
+        "analytics_category_popularity" : transform_category_popularity(posts_df, comments_df),
+        "analytics_content_metrics"     : transform_content_metrics(posts_df),
+        "analytics_hourly_activity"     : transform_hourly_activity(posts_df, comments_df),
+        "analytics_top_contributors"    : transform_top_contributors(user_engagement),
+        "analytics_comment_response_time": transform_comment_response_time(posts_df, comments_df),
+    }
 
-    logger.info("=== CommunityBoard ETL pipeline complete ===")
+    # ── Load ─────────────────────────────────────────────
+    logger.info("[3/3] Loading %d analytics tables...", len(transforms))
+    for table_name, df in transforms.items():
+        load_analytics(df, table_name)
+
+    logger.info("=" * 55)
+    logger.info("ETL complete. All 7 analytics tables updated.")
+    logger.info("=" * 55)
 
 
 if __name__ == "__main__":
