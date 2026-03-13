@@ -13,23 +13,32 @@ jobs:
   setup:
     name: Set environment variables
     runs-on: ubuntu-latest
-    if: github.event.workflow_run.conclusion == 'success'
+    # Run when: (1) CD triggered by workflow_run and CI succeeded, or (2) CD triggered by push
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     outputs:
       environment: ${{ steps.set-env.outputs.environment }}
       tf_working_dir: ${{ steps.set-env.outputs.tf_working_dir }}
-      head_sha: ${{ github.event.workflow_run.head_sha }}
+      head_sha: ${{ steps.set-env.outputs.head_sha }}
     steps:
       - name: Set environment and working dir
         id: set-env
         run: |
-          BRANCH="${{ github.event.workflow_run.head_branch }}"
-          if [[ "$BRANCH" == "main" ]]; then
+          # workflow_run = CI completed; push = direct push to branch
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            BRANCH="${{ github.event.workflow_run.head_branch }}"
+            SHA="${{ github.event.workflow_run.head_sha }}"
+          else
+            BRANCH="${GITHUB_REF#refs/heads/}"
+            SHA="${{ github.sha }}"
+          fi
+          if [ "$BRANCH" = "main" ]; then
             ENV="production"
           else
             ENV="$BRANCH"
           fi
           echo "environment=$ENV" >> $GITHUB_OUTPUT
           echo "tf_working_dir=devops/infra/terraform/environments/$ENV" >> $GITHUB_OUTPUT
+          echo "head_sha=$SHA" >> $GITHUB_OUTPUT
 
   terraform-validate:
     name: Terraform validate (${{ needs.setup.outputs.environment }})
@@ -184,7 +193,13 @@ jobs:
           TF_VAR_jwt_secret: ${{ secrets.TF_VAR_JWT_SECRET }}
           TF_VAR_alert_email: ${{ vars.TF_VAR_ALERT_EMAIL }}
 
+      - name: Note if SSH deploy will be skipped
+        if: success() && secrets.EC2_SSH_PRIVATE_KEY == ''
+        run: |
+          echo "::notice::EC2_SSH_PRIVATE_KEY is not set. Add it (repo or environment secret) to run in-place deploy on EC2. Images are already pushed; instance will use them on next deploy or manual pull."
+
       - name: Deploy on EC2 via SSH (pull images, restart containers)
+        if: success() && secrets.EC2_SSH_PRIVATE_KEY != ''
         working-directory: ${{ needs.setup.outputs.tf_working_dir }}
         run: |
           EC2_IP=$(terraform output -raw ec2_public_ip)
