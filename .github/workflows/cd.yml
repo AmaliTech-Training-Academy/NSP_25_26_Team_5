@@ -3,7 +3,7 @@ name: CD (Terraform)
 on:
   push:
     branches: [main, dev, staging]
-  
+
   workflow_run:
     workflows: ["CI Pipeline"]
     branches: [main, dev, staging]
@@ -68,10 +68,10 @@ jobs:
         working-directory: ${{ needs.setup.outputs.tf_working_dir }}
         run: |
           terraform init \
-          -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
-          -backend-config="key=community-board/${{ needs.setup.outputs.environment }}/terraform.tfstate" \
-          -backend-config="region=${{ secrets.AWS_REGION }}" \
-          -backend-config="dynamodb_table=${{ secrets.TF_LOCK_TABLE }}"
+            -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
+            -backend-config="key=community-board/${{ needs.setup.outputs.environment }}/terraform.tfstate" \
+            -backend-config="region=${{ secrets.AWS_REGION }}" \
+            -backend-config="dynamodb_table=${{ secrets.TF_LOCK_TABLE }}"
 
       - name: Terraform validate
         working-directory: ${{ needs.setup.outputs.tf_working_dir }}
@@ -110,10 +110,10 @@ jobs:
         working-directory: ${{ needs.setup.outputs.tf_working_dir }}
         run: |
           terraform init -input=false \
-          -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
-          -backend-config="key=community-board/${{ needs.setup.outputs.environment }}/terraform.tfstate" \
-          -backend-config="region=${{ secrets.AWS_REGION }}" \
-          -backend-config="dynamodb_table=${{ secrets.TF_LOCK_TABLE }}"
+            -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
+            -backend-config="key=community-board/${{ needs.setup.outputs.environment }}/terraform.tfstate" \
+            -backend-config="region=${{ secrets.AWS_REGION }}" \
+            -backend-config="dynamodb_table=${{ secrets.TF_LOCK_TABLE }}"
 
       - name: Ensure head SHA is set
         run: |
@@ -133,6 +133,7 @@ jobs:
           TF_VAR_frontend_image_tag: ${{ needs.setup.outputs.head_sha }}
           TF_VAR_jwt_secret: ${{ secrets.TF_VAR_JWT_SECRET }}
           TF_VAR_alert_email: ${{ vars.TF_VAR_ALERT_EMAIL }}
+          TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
 
       - name: Get Terraform outputs (ALB URL, EC2 IP for deploy)
         id: tf-out
@@ -155,6 +156,7 @@ jobs:
           TF_VAR_frontend_image_tag: ${{ needs.setup.outputs.head_sha }}
           TF_VAR_jwt_secret: ${{ secrets.TF_VAR_JWT_SECRET }}
           TF_VAR_alert_email: ${{ vars.TF_VAR_ALERT_EMAIL }}
+          TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
 
       - name: Login to ECR
         id: login-ecr
@@ -192,24 +194,29 @@ jobs:
           TF_VAR_frontend_image_tag: ${{ needs.setup.outputs.head_sha }}
           TF_VAR_jwt_secret: ${{ secrets.TF_VAR_JWT_SECRET }}
           TF_VAR_alert_email: ${{ vars.TF_VAR_ALERT_EMAIL }}
+          TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
 
-      - name: Note if SSH deploy will be skipped
-        if: success() && secrets.EC2_SSH_PRIVATE_KEY == ''
-        run: |
-          echo "::notice::EC2_SSH_PRIVATE_KEY is not set. Add it (repo or environment secret) to run in-place deploy on EC2. Images are already pushed; instance will use them on next deploy or manual pull."
-
-      - name: Deploy on EC2 via SSH (pull images, restart containers)
-        if: success() && secrets.EC2_SSH_PRIVATE_KEY != ''
+      - name: Get EC2 IP after apply
+        id: ec2-ip
         working-directory: ${{ needs.setup.outputs.tf_working_dir }}
         run: |
           EC2_IP=$(terraform output -raw ec2_public_ip)
-          TAG="${{ needs.setup.outputs.head_sha }}"
           if [ -z "$EC2_IP" ] || [ "$EC2_IP" = "null" ]; then
-            echo "::error::ec2_public_ip is empty; ensure instance is in public subnet and ssh_public_key is set in Terraform"
+            echo "::error::ec2_public_ip is empty after apply; ensure instance is in public subnet and ssh_public_key is set in Terraform"
             exit 1
           fi
+          echo "ec2_public_ip=$EC2_IP" >> $GITHUB_OUTPUT
+
+      - name: Deploy on EC2 via SSH (pull images, restart containers)
+        run: |
+          EC2_IP="${{ steps.ec2-ip.outputs.ec2_public_ip }}"
+          TAG="${{ needs.setup.outputs.head_sha }}"
           echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > deploy_key.pem
           chmod 600 deploy_key.pem
-          ssh -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/dev/null -i deploy_key.pem ec2-user@$EC2_IP "/opt/app/deploy.sh $TAG"
+          ssh -o StrictHostKeyChecking=accept-new \
+              -o UserKnownHostsFile=/dev/null \
+              -o ConnectTimeout=30 \
+              -i deploy_key.pem \
+              ec2-user@$EC2_IP "/opt/app/deploy.sh $TAG"
           rm -f deploy_key.pem
-          echo "Deploy completed on EC2."
+          echo "Deploy completed on EC2 at $EC2_IP"
