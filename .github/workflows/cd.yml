@@ -34,6 +34,7 @@ jobs:
     name: Terraform validate (${{ needs.setup.outputs.environment }})
     runs-on: ubuntu-latest
     needs: [setup]
+    if: always() && needs.setup.result == 'success'
     permissions:
       id-token: write
       contents: read
@@ -75,6 +76,7 @@ jobs:
     name: Terraform plan & apply (${{ needs.setup.outputs.environment }})
     runs-on: ubuntu-latest
     needs: [setup, terraform-validate]
+    if: always() && needs.setup.result == 'success' && needs.terraform-validate.result != 'cancelled'
     permissions:
       id-token: write
       contents: read
