@@ -35,7 +35,8 @@ docker run -d --name postgres --restart unless-stopped --network appnet \
   -e POSTGRES_USER="$DB_USER" \
   -e POSTGRES_PASSWORD="$DB_PASS" \
   -v pgdata:/var/lib/postgresql/data \
-  -p 127.0.0.1:5432:5432 \
+  # expose the db to the internet for testing data analitycs
+  -p 5432:5432 \
   postgres:15-alpine
 
 # Wait for Postgres to accept connections
@@ -69,28 +70,4 @@ JWT_SECRET=${jwt_secret}
 APPENV
 chmod 600 /opt/app/app.env
 
-cat > /opt/app/deploy.sh << 'DEPLOYSH'
-#!/bin/bash
-set -e
-TAG="$$1"
-if [ -z "$$TAG" ]; then echo "Usage: deploy.sh <image-tag>"; exit 1; fi
-source /opt/app/app.env
-export AWS_REGION ECR_BACKEND ECR_FRONTEND DB_NAME DB_USER DB_PASS JWT_SECRET
-aws ecr get-login-password --region "$$AWS_REGION" | docker login --username AWS --password-stdin "$${ECR_BACKEND%%/*}"
-docker pull "$$ECR_BACKEND:$$TAG"
-docker pull "$$ECR_FRONTEND:$$TAG"
-docker stop backend frontend 2>/dev/null || true
-docker rm backend frontend 2>/dev/null || true
-docker run -d --name backend --restart unless-stopped --network appnet \
-  -e SPRING_DATASOURCE_URL="jdbc:postgresql://postgres:5432/$$DB_NAME" \
-  -e SPRING_DATASOURCE_USERNAME="$$DB_USER" \
-  -e SPRING_DATASOURCE_PASSWORD="$$DB_PASS" \
-  -e JWT_SECRET="$$JWT_SECRET" \
-  -p 8080:8080 \
-  "$$ECR_BACKEND:$$TAG"
-docker run -d --name frontend --restart unless-stopped \
-  -p 80:80 \
-  "$$ECR_FRONTEND:$$TAG"
-echo "Deploy completed: tag=$$TAG"
-DEPLOYSH
-chmod +x /opt/app/deploy.sh
+

@@ -54,6 +54,17 @@ resource "aws_security_group" "backend_sg" {
     protocol    = "tcp"
     cidr_blocks = [var.allowed_ssh_cidr]
   }
+
+  // allow db to be accessible on internet temporaly for testing purpose
+ 
+ ingress{
+   description = "db for testing data analitycs"
+    from_port   = 5432
+    to_port     = 5432
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+ }
+
   egress {
     from_port   = 0
     to_port     = 0

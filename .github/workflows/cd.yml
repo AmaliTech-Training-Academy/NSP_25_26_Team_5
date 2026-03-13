@@ -273,7 +273,7 @@ jobs:
           docker network create appnet 2>/dev/null || true
 
           docker run -d --name backend --restart unless-stopped --network appnet \
-            -e SPRING_DATASOURCE_URL="jdbc:postgresql://postgres:5432/$DB_NAME" \
+            -e SPRING_DATASOURCE_URL="jdbc:postgresql://postgres`:5432/$DB_NAME" \
             -e SPRING_DATASOURCE_USERNAME="$DB_USER" \
             -e SPRING_DATASOURCE_PASSWORD="$DB_PASS" \
             -e JWT_SECRET="$JWT_SECRET" \

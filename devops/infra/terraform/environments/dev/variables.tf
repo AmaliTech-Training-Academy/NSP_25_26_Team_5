@@ -102,5 +102,5 @@ variable "ssh_public_key" {
   type        = string
   default     = ""
   sensitive   = true
-  description = "SSH public key for ec2-user (pair with EC2_SSH_PRIVATE_KEY in GitHub Secrets)."
+  description = "SSH public key for ec2-user (pair with  in GitHub Secrets)."
 }
