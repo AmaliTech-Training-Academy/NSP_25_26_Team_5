@@ -7,9 +7,14 @@ ID convention (per README):
   Data Engineering   : 100–999  ← this file
   Application runtime: 1000+
 
+Actual DB schema (from inspection):
+  users    : id, created_at, email, name, password, role
+  posts    : id, content, created_at, image_url, title, updated_at, author_id, category_id
+  comments : id, body, created_at, updated_at, author_id, post_id
+  categories: id, description, name
+
 Safe to re-run: ON CONFLICT (id) DO NOTHING on all tables.
 Uses OVERRIDING SYSTEM VALUE to support GENERATED ALWAYS AS IDENTITY columns.
-After seeding, sequences are advanced past 999 so Spring Boot never conflicts.
 """
 import random
 import bcrypt
@@ -164,12 +169,7 @@ def random_date(days_back: int = 30) -> datetime:
     return datetime.now() - timedelta(minutes=offset_minutes)
 
 
-def get_columns(table: str) -> set:
-    return {c["name"] for c in inspect(engine).get_columns(table)}
-
-
 def uses_identity(table: str, column: str = "id") -> bool:
-    """Detect if a column uses GENERATED ALWAYS AS IDENTITY (requires OVERRIDING SYSTEM VALUE)."""
     try:
         with engine.connect() as conn:
             result = conn.execute(text("""
@@ -188,42 +188,34 @@ def uses_identity(table: str, column: str = "id") -> bool:
 
 def seed_categories(conn) -> None:
     for name in CATEGORIES:
-        conn.execute(
-            text("INSERT INTO categories (name) VALUES (:name) ON CONFLICT (name) DO NOTHING"),
-            {"name": name}
-        )
+        conn.execute(text("""
+            INSERT INTO categories (name, description)
+            VALUES (:name, :description)
+            ON CONFLICT (name) DO NOTHING
+        """), {
+            "name":        name,
+            "description": f"Posts related to neighbourhood {name.lower()} updates.",
+        })
     logger.info("Categories ensured: %s", CATEGORIES)
 
 
 def seed_users(conn, count: int = 10) -> None:
-    user_cols  = get_columns("users")
-    has_active = "is_active" in user_cols
-    identity   = uses_identity("users")
-    override   = "OVERRIDING SYSTEM VALUE" if identity else ""
-
+    override = "OVERRIDING SYSTEM VALUE" if uses_identity("users") else ""
     inserted = 0
     for i in range(count):
         uid   = 100 + i
         name  = fake.name()
         email = f"seed.user{uid}@communityboard.test"
+        ts    = random_date(45)
 
-        if has_active:
-            sql = text(f"""
-                INSERT INTO users (id, name, email, password, role, is_active)
-                {override}
-                VALUES (:id, :name, :email, :password, 'USER', TRUE)
-                ON CONFLICT (id) DO NOTHING
-            """)
-        else:
-            sql = text(f"""
-                INSERT INTO users (id, name, email, password, role)
-                {override}
-                VALUES (:id, :name, :email, :password, 'USER')
-                ON CONFLICT (id) DO NOTHING
-            """)
-        result = conn.execute(sql, {
-            "id": uid, "name": name,
-            "email": email, "password": HASHED_PASSWORD
+        result = conn.execute(text(f"""
+            INSERT INTO users (id, name, email, password, role, created_at)
+            {override}
+            VALUES (:id, :name, :email, :password, 'USER', :created_at)
+            ON CONFLICT (id) DO NOTHING
+        """), {
+            "id": uid, "name": name, "email": email,
+            "password": HASHED_PASSWORD, "created_at": ts,
         })
         inserted += result.rowcount
 
@@ -231,16 +223,9 @@ def seed_users(conn, count: int = 10) -> None:
 
 
 def seed_posts(conn, num_posts: int = 60) -> list:
-    user_cols     = get_columns("users")
-    post_cols     = get_columns("posts")
-    active_filter = "AND (is_active IS NULL OR is_active = TRUE)" if "is_active" in user_cols else ""
-    has_deleted   = "is_deleted" in post_cols
-    identity      = uses_identity("posts")
-    override      = "OVERRIDING SYSTEM VALUE" if identity else ""
+    override = "OVERRIDING SYSTEM VALUE" if uses_identity("posts") else ""
 
-    user_rows = conn.execute(
-        text(f"SELECT id FROM users WHERE role = 'USER' {active_filter}")
-    ).fetchall()
+    user_rows = conn.execute(text("SELECT id FROM users WHERE role = 'USER'")).fetchall()
     cat_rows  = conn.execute(text("SELECT id, name FROM categories")).fetchall()
 
     user_ids = [r[0] for r in user_rows]
@@ -252,7 +237,14 @@ def seed_posts(conn, num_posts: int = 60) -> list:
         cat_name = random.choice(CATEGORIES)
         ts       = random_date(30)
 
-        params = {
+        conn.execute(text(f"""
+            INSERT INTO posts (id, title, content, created_at, updated_at,
+                               author_id, category_id, image_url)
+            {override}
+            VALUES (:id, :title, :content, :created_at, :updated_at,
+                    :author_id, :category_id, NULL)
+            ON CONFLICT (id) DO NOTHING
+        """), {
             "id":          pid,
             "title":       generate_title(cat_name),
             "content":     generate_content(cat_name),
@@ -260,28 +252,7 @@ def seed_posts(conn, num_posts: int = 60) -> list:
             "updated_at":  ts,
             "author_id":   random.choice(user_ids),
             "category_id": cat_map[cat_name],
-        }
-
-        if has_deleted:
-            sql = text(f"""
-                INSERT INTO posts (id, title, content, created_at, updated_at,
-                                   author_id, category_id, is_deleted)
-                {override}
-                VALUES (:id, :title, :content, :created_at, :updated_at,
-                        :author_id, :category_id, FALSE)
-                ON CONFLICT (id) DO NOTHING
-            """)
-        else:
-            sql = text(f"""
-                INSERT INTO posts (id, title, content, created_at, updated_at,
-                                   author_id, category_id)
-                {override}
-                VALUES (:id, :title, :content, :created_at, :updated_at,
-                        :author_id, :category_id)
-                ON CONFLICT (id) DO NOTHING
-            """)
-
-        conn.execute(sql, params)
+        })
         post_ids.append(pid)
 
     logger.info("Posts seeded: %d (IDs 200–%d)", len(post_ids), 200 + num_posts - 1)
@@ -289,14 +260,9 @@ def seed_posts(conn, num_posts: int = 60) -> list:
 
 
 def seed_comments(conn, post_ids: list, num_comments: int = 240) -> None:
-    user_cols     = get_columns("users")
-    comment_cols  = get_columns("comments")
-    active_filter = "WHERE (is_active IS NULL OR is_active = TRUE)" if "is_active" in user_cols else ""
-    has_deleted   = "is_deleted" in comment_cols
-    identity      = uses_identity("comments")
-    override      = "OVERRIDING SYSTEM VALUE" if identity else ""
+    override = "OVERRIDING SYSTEM VALUE" if uses_identity("comments") else ""
 
-    user_rows = conn.execute(text(f"SELECT id FROM users {active_filter}")).fetchall()
+    user_rows = conn.execute(text("SELECT id FROM users")).fetchall()
     user_ids  = [r[0] for r in user_rows]
 
     weights = [random.uniform(0.5, 3.0) for _ in post_ids]
@@ -305,28 +271,18 @@ def seed_comments(conn, post_ids: list, num_comments: int = 240) -> None:
 
     for i in range(num_comments):
         ts = random_date(29)
-
-        if has_deleted:
-            sql = text(f"""
-                INSERT INTO comments (id, content, created_at, post_id, author_id, is_deleted)
-                {override}
-                VALUES (:id, :content, :created_at, :post_id, :author_id, FALSE)
-                ON CONFLICT (id) DO NOTHING
-            """)
-        else:
-            sql = text(f"""
-                INSERT INTO comments (id, content, created_at, post_id, author_id)
-                {override}
-                VALUES (:id, :content, :created_at, :post_id, :author_id)
-                ON CONFLICT (id) DO NOTHING
-            """)
-
-        conn.execute(sql, {
-            "id":        500 + i,
-            "content":   generate_comment(),
+        conn.execute(text(f"""
+            INSERT INTO comments (id, body, created_at, updated_at, post_id, author_id)
+            {override}
+            VALUES (:id, :body, :created_at, :updated_at, :post_id, :author_id)
+            ON CONFLICT (id) DO NOTHING
+        """), {
+            "id":         500 + i,
+            "body":       generate_comment(),
             "created_at": ts,
-            "post_id":   random.choices(post_ids, weights=weights, k=1)[0],
-            "author_id": random.choice(user_ids),
+            "updated_at": ts,
+            "post_id":    random.choices(post_ids, weights=weights, k=1)[0],
+            "author_id":  random.choice(user_ids),
         })
 
     logger.info("Comments seeded: %d (IDs 500–739)", num_comments)

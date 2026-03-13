@@ -32,8 +32,8 @@ def extract_posts() -> pd.DataFrame:
             FROM    posts         p
             JOIN    users         u  ON p.author_id   = u.id
             LEFT JOIN categories  c  ON p.category_id = c.id
-            WHERE   (p.is_deleted IS NULL OR p.is_deleted = FALSE)
-              AND   (u.is_active  IS NULL OR u.is_active  = TRUE)
+            WHERE   1=1
+
         """), conn)
 
 
@@ -42,7 +42,7 @@ def extract_comments() -> pd.DataFrame:
     with engine.connect() as conn:
         return pd.read_sql(text("""
             SELECT  c.id,
-                    c.content,
+                    c.body AS content,
                     c.created_at,
                     c.post_id,
                     u.name   AS author_name,
@@ -51,8 +51,8 @@ def extract_comments() -> pd.DataFrame:
             FROM    comments  c
             JOIN    users     u  ON c.author_id = u.id
             JOIN    posts     p  ON c.post_id   = p.id
-            WHERE   (p.is_deleted IS NULL OR p.is_deleted = FALSE)
-              AND   (u.is_active  IS NULL OR u.is_active  = TRUE)
+            WHERE   1=1
+
         """), conn)
 
 
